@@ -1,16 +1,42 @@
 'use client';
 
-import { AddToCart } from 'components/cart/add-to-cart';
 import Price from 'components/price';
 import { Product } from 'lib/shopify/types';
+import { useState } from 'react';
+import { ShareModal } from './share-modal';
 import { VariantSelector } from './variant-selector';
 
 export function ProductDescription({ product }: { product: Product }) {
+  const [isShareModalOpen, setIsShareModalOpen] = useState(false);
+
   return (
     <>
       <div className="mb-6 flex flex-col">
-        <h1 className="mb-2 text-xl font-medium">{product.title}</h1>
+        {/* Title and Share Button */}
+        <div className="flex items-start justify-between">
+          <h1 className="mb-2 flex-grow text-lg font-normal text-gray-800">{product.title}</h1>
+          <button
+            onClick={() => setIsShareModalOpen(true)}
+            aria-label="Share product"
+            className="p-2"
+          >
+            <svg
+              className="h-5 w-5 text-gray-500"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M4 12v8a2 2 0 002 2h12a2 2 0 002-2v-8m-4-6l-4-4m0 0L8 6m4-4v12"
+              />
+            </svg>
+          </button>
+        </div>
 
+        {/* Price and Reviews */}
         <div className="mb-4 flex items-center justify-between">
           <Price
             className="text-lg font-bold"
@@ -31,11 +57,15 @@ export function ProductDescription({ product }: { product: Product }) {
         </div>
 
         <VariantSelector options={product.options} />
-
-        <div className="mt-6">
-          <AddToCart product={product} />
-        </div>
       </div>
+
+      {/* Share Modal Component */}
+      <ShareModal
+        isOpen={isShareModalOpen}
+        onClose={() => setIsShareModalOpen(false)}
+        productTitle={product.title}
+        productImage={product.featuredImage.url}
+      />
     </>
   );
 }

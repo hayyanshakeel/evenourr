@@ -1,6 +1,8 @@
 import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 
+import { AddToCart } from 'components/cart/add-to-cart';
+import { GridTileImage } from 'components/grid/tile';
 import Footer from 'components/layout/footer';
 import { Gallery } from 'components/product/gallery';
 import { ProductProvider } from 'components/product/product-context';
@@ -10,10 +12,12 @@ import { getProduct, getProductRecommendations } from 'lib/shopify';
 import { Image } from 'lib/shopify/types';
 import Link from 'next/link';
 import { Suspense } from 'react';
-import { GridTileImage } from 'components/grid/tile';
 
-
-export async function generateMetadata({ params }: { params: { handle: string } }): Promise<Metadata> {
+export async function generateMetadata({
+  params
+}: {
+  params: { handle: string };
+}): Promise<Metadata> {
   const product = await getProduct(params.handle);
 
   if (!product) return notFound();
@@ -71,32 +75,45 @@ export default async function ProductPage({ params }: { params: { handle: string
 
   return (
     <ProductProvider>
-      <script
-        type="application/ld+json"
-        dangerouslySetInnerHTML={{
-          __html: JSON.stringify(productJsonLd)
-        }}
-      />
-      <Suspense
-        fallback={
-          <div className="relative aspect-square h-full max-h-[550px] w-full overflow-hidden" />
-        }
-      >
-        <Gallery
-          images={product.images.map((image: Image) => ({
-            src: image.url,
-            altText: image.altText
-          }))}
+      <div className="pb-24">
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{
+            __html: JSON.stringify(productJsonLd)
+          }}
         />
-      </Suspense>
+        <Suspense
+          fallback={
+            <div className="relative aspect-square h-full max-h-[550px] w-full overflow-hidden" />
+          }
+        >
+          <Gallery
+            images={product.images.map((image: Image) => ({
+              src: image.url,
+              altText: image.altText
+            }))}
+          />
+        </Suspense>
 
-      {/* Black separator line */}
-      <hr className="border-t border-gray-200" />
+        <hr className="border-t border-gray-200" />
 
-      <div className="p-4">
-        <ProductDescription product={product} />
+        <div className="p-4">
+          <ProductDescription product={product} />
+        </div>
+
+        <div className="px-4">
+          <Suspense>
+            <RelatedProducts id={product.id} />
+          </Suspense>
+        </div>
+        <Footer />
       </div>
-      <Footer />
+
+      <div className="fixed bottom-0 left-0 z-10 w-full border-t border-gray-200 bg-white p-4 shadow-[0_-2px_10px_rgba(0,0,0,0.05)]">
+        <div className="mx-auto max-w-lg">
+          <AddToCart product={product} />
+        </div>
+      </div>
     </ProductProvider>
   );
 }
@@ -115,11 +132,7 @@ async function RelatedProducts({ id }: { id: string }) {
             key={product.handle}
             className="aspect-square w-full flex-none min-[475px]:w-1/2 sm:w-1/3 md:w-1/4 lg:w-1/5"
           >
-            <Link
-              className="relative h-full w-full"
-              href={`/product/${product.handle}`}
-              prefetch={true}
-            >
+            <Link className="relative h-full w-full" href={`/product/${product.handle}`}>
               <GridTileImage
                 alt={product.title}
                 label={{

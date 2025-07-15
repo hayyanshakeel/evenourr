@@ -15,8 +15,9 @@ function SubmitButton({
   availableForSale: boolean;
   selectedVariantId: string | undefined;
 }) {
+  // Updated button classes for black background and white text
   const buttonClasses =
-    'relative flex w-full items-center justify-center rounded-md bg-white p-3 text-center text-sm font-medium text-black';
+    'relative flex w-full items-center justify-center rounded-full bg-black p-4 text-sm font-semibold tracking-wide text-white';
   const disabledClasses = 'cursor-not-allowed opacity-60 hover:opacity-60';
 
   if (!availableForSale) {
@@ -34,7 +35,7 @@ function SubmitButton({
         disabled
         className={clsx(buttonClasses, disabledClasses)}
       >
-        Add To Cart
+        ADD TO BAG
       </button>
     );
   }
@@ -49,7 +50,7 @@ function SubmitButton({
         'hover:opacity-90': true
       })}
     >
-      Add To Cart
+      ADD TO BAG
     </button>
   );
 }
@@ -79,7 +80,7 @@ export function AddToCart({ product }: { product: Product }) {
 
         addCartItem(variantToUse, product);
         actionWithVariant();
-        toast.success('Item added to cart!');
+        toast.success('Item added to bag!');
       }}
     >
       <SubmitButton
