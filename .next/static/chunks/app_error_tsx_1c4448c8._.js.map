@@ -1,0 +1,6 @@
+{
+  "version": 3,
+  "sources": [],
+  "sections": [
+    {"offset": {"line": 7, "column": 0}, "map": {"version":3,"sources":["file:///Users/hayyaanshakeel/Desktop/untitled%20folder%203/jsevenour/app/error.tsx"],"sourcesContent":["'use client';\n\nexport default function Error({ reset }: { reset: () => void }) {\n  return (\n    <div className=\"mx-auto my-4 flex max-w-xl flex-col rounded-lg border border-neutral-200 bg-white p-8 md:p-12 dark:border-neutral-800 dark:bg-black\">\n      <h2 className=\"text-xl font-bold\">Oh no!</h2>\n      <p className=\"my-2\">\n        There was an issue with our storefront. This could be a temporary issue, please try your\n        action again.\n      </p>\n      <button\n        className=\"mx-auto mt-4 flex w-full items-center justify-center rounded-full bg-blue-600 p-4 tracking-wide text-white hover:opacity-90\"\n        onClick={() => reset()}\n      >\n        Try Again\n      </button>\n    </div>\n  );\n}\n"],"names":[],"mappings":";;;;AAAA;;AAEe,SAAS,MAAM,EAAE,KAAK,EAAyB;IAC5D,qBACE,6MAAC;QAAI,WAAU;;0BACb,6MAAC;gBAAG,WAAU;0BAAoB;;;;;;0BAClC,6MAAC;gBAAE,WAAU;0BAAO;;;;;;0BAIpB,6MAAC;gBACC,WAAU;gBACV,SAAS,IAAM;0BAChB;;;;;;;;;;;;AAKP;KAhBwB","debugId":null}}]
+}
