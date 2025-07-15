@@ -779,16 +779,15 @@ const useUpdateURL = (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_mo
     throw new Error("Attempted to call useUpdateURL() from the server but useUpdateURL is on the client. It's not possible to invoke a client function from the server, it can only be rendered as a Component or passed to props of a Client Component.");
 }, "[project]/components/product/product-context.tsx", "useUpdateURL");
 }}),
-"[project]/components/product/product-context.tsx [app-rsc] (ecmascript)": ((__turbopack_context__) => {
-"use strict";
+"[project]/components/product/product-context.tsx [app-rsc] (ecmascript)": (function(__turbopack_context__) {
 
-var { g: global, __dirname } = __turbopack_context__;
+var { g: global, __dirname, m: module, e: exports } = __turbopack_context__;
 {
-var __TURBOPACK__imported__module__$5b$project$5d2f$components$2f$product$2f$product$2d$context$2e$tsx__$28$client__reference$2f$proxy$29$__$3c$module__evaluation$3e$__ = __turbopack_context__.i("[project]/components/product/product-context.tsx (client reference/proxy) <module evaluation>");
-var __TURBOPACK__imported__module__$5b$project$5d2f$components$2f$product$2f$product$2d$context$2e$tsx__$28$client__reference$2f$proxy$29$__ = __turbopack_context__.i("[project]/components/product/product-context.tsx (client reference/proxy)");
-;
-__turbopack_context__.n(__TURBOPACK__imported__module__$5b$project$5d2f$components$2f$product$2f$product$2d$context$2e$tsx__$28$client__reference$2f$proxy$29$__);
-}}),
+const e = new Error(`Could not parse module '[project]/components/product/product-context.tsx'
+
+Unexpected eof`);
+e.code = 'MODULE_UNPARSEABLE';
+throw e;}}),
 "[project]/components/product/product-description.tsx (client reference/proxy) <module evaluation>": ((__turbopack_context__) => {
 "use strict";
 
