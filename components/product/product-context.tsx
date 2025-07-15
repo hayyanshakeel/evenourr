@@ -1,59 +1,81 @@
-// components/product/product-context.tsx
-
 'use client';
 
-import { getProduct } from 'lib/shopify';
-import type { Product, ProductVariant } from 'lib/shopify/types';
-import { useSearchParams } from 'next/navigation';
-import React, { createContext, useContext, useMemo, useState } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
+import React, { createContext, useContext, useMemo, useOptimistic } from 'react';
 
-type ProductContextState = {
-  variant?: ProductVariant;
-  quantity: number;
-  color?: string;
-  size?: string;
+type ProductState = {
+  [key: string]: string;
+} & {
+  image?: string;
 };
 
-const ProductContext = createContext<{
-  state: ProductContextState;
-  updateOption: (name: string, value: string) => ProductContextState;
-}>({
-  state: {
-    quantity: 1
-  },
-  updateOption: () => {
-    throw new Error('Not implemented');
-  }
-});
+type ProductContextType = {
+  state: ProductState;
+  updateOption: (name: string, value: string) => ProductState;
+  updateImage: (index: string) => ProductState;
+};
 
-export function ProductProvider({ children, product }: { children: React.ReactNode; product: Product }) {
+const ProductContext = createContext<ProductContextType | undefined>(undefined);
+
+export function ProductProvider({ children }: { children: React.ReactNode }) {
   const searchParams = useSearchParams();
 
-  const initialVariant = useMemo(() => {
-    let variant: ProductVariant | undefined;
-    for (const v of product.variants) {
-      if (v.availableForSale) {
-        variant = v;
-        break;
-      }
+  const getInitialState = () => {
+    const params: ProductState = {};
+    for (const [key, value] of searchParams.entries()) {
+      params[key] = value;
     }
-    if (!variant) {
-      variant = product.variants[0];
-    }
-    return variant;
-  }, [product.variants]);
+    return params;
+  };
 
-  const [state, setState] = useState<ProductContextState>({
-    variant: initialVariant,
-    quantity: 1,
-    // FIX: Correctly get initial color and size from the variant's selectedOptions
-    color: initialVariant?.selectedOptions.find((opt) => opt.name.toLowerCase() === 'color')?.value,
-    size: initialVariant?.selectedOptions.find((opt) => opt.name.toLowerCase() === 'size')?.value
-  });
+  const [state, setOptimisticState] = useOptimistic(
+    getInitialState(),
+    (prevState: ProductState, update: ProductState) => ({
+      ...prevState,
+      ...update
+    })
+  );
 
   const updateOption = (name: string, value: string) => {
-    const newState = { ...state, [name.toLowerCase()]: value };
-    const { color, size } = newState;
-    let newVariant: ProductVariant | undefined;
+    const newState = { [name]: value };
+    setOptimisticState(newState);
+    return { ...state, ...newState };
+  };
 
-    for (const v of product
+  const updateImage = (index: string) => {
+    const newState = { image: index };
+    setOptimisticState(newState);
+    return { ...state, ...newState };
+  };
+
+  const value = useMemo(
+    () => ({
+      state,
+      updateOption,
+      updateImage
+    }),
+    [state]
+  );
+
+  return <ProductContext.Provider value={value}>{children}</ProductContext.Provider>;
+}
+
+export function useProduct() {
+  const context = useContext(ProductContext);
+  if (context === undefined) {
+    throw new Error('useProduct must be used within a ProductProvider');
+  }
+  return context;
+}
+
+export function useUpdateURL() {
+  const router = useRouter();
+
+  return (state: ProductState) => {
+    const newParams = new URLSearchParams(window.location.search);
+    Object.entries(state).forEach(([key, value]) => {
+      newParams.set(key, value);
+    });
+    router.push(`?${newParams.toString()}`, { scroll: false });
+  };
+}

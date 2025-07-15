@@ -1,17 +1,17 @@
-(globalThis.TURBOPACK = globalThis.TURBOPACK || []).push(["static/chunks/components_3780fd6d._.js", {
+(globalThis.TURBOPACK = globalThis.TURBOPACK || []).push(["static/chunks/components_083b5d57._.js", {
 
-"[project]/components/cart/data:62e425 [app-client] (ecmascript) <text/javascript>": ((__turbopack_context__) => {
+"[project]/components/cart/data:b8abdd [app-client] (ecmascript) <text/javascript>": ((__turbopack_context__) => {
 "use strict";
 
 var { g: global, __dirname, k: __turbopack_refresh__, m: module } = __turbopack_context__;
 {
-/* __next_internal_action_entry_do_not_use__ [{"608825d1e136619fb1301bd5cf4ec9da2f96a8e2b8":"addItem"},"components/cart/actions.ts",""] */ __turbopack_context__.s({
+/* __next_internal_action_entry_do_not_use__ [{"604649b201f61c27dfa9066b919bc5a0cf302974b8":"addItem"},"components/cart/actions.ts",""] */ __turbopack_context__.s({
     "addItem": (()=>addItem)
 });
 var __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$build$2f$webpack$2f$loaders$2f$next$2d$flight$2d$loader$2f$action$2d$client$2d$wrapper$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__ = __turbopack_context__.i("[project]/node_modules/next/dist/build/webpack/loaders/next-flight-loader/action-client-wrapper.js [app-client] (ecmascript)");
 "use turbopack no side effects";
 ;
-var addItem = /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$build$2f$webpack$2f$loaders$2f$next$2d$flight$2d$loader$2f$action$2d$client$2d$wrapper$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["createServerReference"])("608825d1e136619fb1301bd5cf4ec9da2f96a8e2b8", __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$build$2f$webpack$2f$loaders$2f$next$2d$flight$2d$loader$2f$action$2d$client$2d$wrapper$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["callServer"], void 0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$build$2f$webpack$2f$loaders$2f$next$2d$flight$2d$loader$2f$action$2d$client$2d$wrapper$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["findSourceMapURL"], "addItem"); //# sourceMappingURL=data:application/json;base64,eyJ2ZXJzaW9uIjozLCJzb3VyY2VzIjpbIi4vYWN0aW9ucy50cyJdLCJzb3VyY2VzQ29udGVudCI6WyIndXNlIHNlcnZlcic7XG5cbmltcG9ydCB7IFRBR1MgfSBmcm9tICdsaWIvY29uc3RhbnRzJztcbmltcG9ydCB7XG4gIGFkZFRvQ2FydCxcbiAgY3JlYXRlQ2FydCxcbiAgZ2V0Q2FydCxcbiAgcmVtb3ZlRnJvbUNhcnQsXG4gIHVwZGF0ZUNhcnRcbn0gZnJvbSAnbGliL3Nob3BpZnknO1xuaW1wb3J0IHsgcmV2YWxpZGF0ZVRhZyB9IGZyb20gJ25leHQvY2FjaGUnO1xuaW1wb3J0IHsgY29va2llcyB9IGZyb20gJ25leHQvaGVhZGVycyc7XG5pbXBvcnQgeyByZWRpcmVjdCB9IGZyb20gJ25leHQvbmF2aWdhdGlvbic7XG5cbmV4cG9ydCBhc3luYyBmdW5jdGlvbiBhZGRJdGVtKFxuICBwcmV2U3RhdGU6IGFueSxcbiAgc2VsZWN0ZWRWYXJpYW50SWQ6IHN0cmluZyB8IHVuZGVmaW5lZFxuKSB7XG4gIGlmICghc2VsZWN0ZWRWYXJpYW50SWQpIHtcbiAgICByZXR1cm4gJ0Vycm9yIGFkZGluZyBpdGVtIHRvIGNhcnQnO1xuICB9XG5cbiAgdHJ5IHtcbiAgICBhd2FpdCBhZGRUb0NhcnQoW3sgbWVyY2hhbmRpc2VJZDogc2VsZWN0ZWRWYXJpYW50SWQsIHF1YW50aXR5OiAxIH1dKTtcbiAgICByZXZhbGlkYXRlVGFnKFRBR1MuY2FydCk7XG4gIH0gY2F0Y2ggKGUpIHtcbiAgICByZXR1cm4gJ0Vycm9yIGFkZGluZyBpdGVtIHRvIGNhcnQnO1xuICB9XG59XG5cbmV4cG9ydCBhc3luYyBmdW5jdGlvbiByZW1vdmVJdGVtKHByZXZTdGF0ZTogYW55LCBtZXJjaGFuZGlzZUlkOiBzdHJpbmcpIHtcbiAgdHJ5IHtcbiAgICBjb25zdCBjYXJ0ID0gYXdhaXQgZ2V0Q2FydCgpO1xuXG4gICAgaWYgKCFjYXJ0KSB7XG4gICAgICByZXR1cm4gJ0Vycm9yIGZldGNoaW5nIGNhcnQnO1xuICAgIH1cblxuICAgIGNvbnN0IGxpbmVJdGVtID0gY2FydC5saW5lcy5maW5kKFxuICAgICAgKGxpbmUpID0+IGxpbmUubWVyY2hhbmRpc2UuaWQgPT09IG1lcmNoYW5kaXNlSWRcbiAgICApO1xuXG4gICAgaWYgKGxpbmVJdGVtICYmIGxpbmVJdGVtLmlkKSB7XG4gICAgICBhd2FpdCByZW1vdmVGcm9tQ2FydChbbGluZUl0ZW0uaWRdKTtcbiAgICAgIHJldmFsaWRhdGVUYWcoVEFHUy5jYXJ0KTtcbiAgICB9IGVsc2Uge1xuICAgICAgcmV0dXJuICdJdGVtIG5vdCBmb3VuZCBpbiBjYXJ0JztcbiAgICB9XG4gIH0gY2F0Y2ggKGUpIHtcbiAgICByZXR1cm4gJ0Vycm9yIHJlbW92aW5nIGl0ZW0gZnJvbSBjYXJ0JztcbiAgfVxufVxuXG5leHBvcnQgYXN5bmMgZnVuY3Rpb24gdXBkYXRlSXRlbVF1YW50aXR5KFxuICBwcmV2U3RhdGU6IGFueSxcbiAgcGF5bG9hZDoge1xuICAgIG1lcmNoYW5kaXNlSWQ6IHN0cmluZztcbiAgICBxdWFudGl0eTogbnVtYmVyO1xuICB9XG4pIHtcbiAgY29uc3QgeyBtZXJjaGFuZGlzZUlkLCBxdWFudGl0eSB9ID0gcGF5bG9hZDtcblxuICB0cnkge1xuICAgIGNvbnN0IGNhcnQgPSBhd2FpdCBnZXRDYXJ0KCk7XG5cbiAgICBpZiAoIWNhcnQpIHtcbiAgICAgIHJldHVybiAnRXJyb3IgZmV0Y2hpbmcgY2FydCc7XG4gICAgfVxuXG4gICAgY29uc3QgbGluZUl0ZW0gPSBjYXJ0LmxpbmVzLmZpbmQoXG4gICAgICAobGluZSkgPT4gbGluZS5tZXJjaGFuZGlzZS5pZCA9PT0gbWVyY2hhbmRpc2VJZFxuICAgICk7XG5cbiAgICBpZiAobGluZUl0ZW0gJiYgbGluZUl0ZW0uaWQpIHtcbiAgICAgIGlmIChxdWFudGl0eSA9PT0gMCkge1xuICAgICAgICBhd2FpdCByZW1vdmVGcm9tQ2FydChbbGluZUl0ZW0uaWRdKTtcbiAgICAgIH0gZWxzZSB7XG4gICAgICAgIGF3YWl0IHVwZGF0ZUNhcnQoW1xuICAgICAgICAgIHtcbiAgICAgICAgICAgIGlkOiBsaW5lSXRlbS5pZCxcbiAgICAgICAgICAgIG1lcmNoYW5kaXNlSWQsXG4gICAgICAgICAgICBxdWFudGl0eVxuICAgICAgICAgIH1cbiAgICAgICAgXSk7XG4gICAgICB9XG4gICAgfSBlbHNlIGlmIChxdWFudGl0eSA+IDApIHtcbiAgICAgIC8vIElmIHRoZSBpdGVtIGRvZXNuJ3QgZXhpc3QgaW4gdGhlIGNhcnQgYW5kIHF1YW50aXR5ID4gMCwgYWRkIGl0XG4gICAgICBhd2FpdCBhZGRUb0NhcnQoW3sgbWVyY2hhbmRpc2VJZCwgcXVhbnRpdHkgfV0pO1xuICAgIH1cblxuICAgIHJldmFsaWRhdGVUYWcoVEFHUy5jYXJ0KTtcbiAgfSBjYXRjaCAoZSkge1xuICAgIGNvbnNvbGUuZXJyb3IoZSk7XG4gICAgcmV0dXJuICdFcnJvciB1cGRhdGluZyBpdGVtIHF1YW50aXR5JztcbiAgfVxufVxuXG5leHBvcnQgYXN5bmMgZnVuY3Rpb24gcmVkaXJlY3RUb0NoZWNrb3V0KCkge1xuICBsZXQgY2FydCA9IGF3YWl0IGdldENhcnQoKTtcbiAgcmVkaXJlY3QoY2FydCEuY2hlY2tvdXRVcmwpO1xufVxuXG5leHBvcnQgYXN5bmMgZnVuY3Rpb24gY3JlYXRlQ2FydEFuZFNldENvb2tpZSgpIHtcbiAgbGV0IGNhcnQgPSBhd2FpdCBjcmVhdGVDYXJ0KCk7XG4gIChhd2FpdCBjb29raWVzKCkpLnNldCgnY2FydElkJywgY2FydC5pZCEpO1xufVxuIl0sIm5hbWVzIjpbXSwibWFwcGluZ3MiOiIyUkFjc0IifQ==
+var addItem = /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$build$2f$webpack$2f$loaders$2f$next$2d$flight$2d$loader$2f$action$2d$client$2d$wrapper$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["createServerReference"])("604649b201f61c27dfa9066b919bc5a0cf302974b8", __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$build$2f$webpack$2f$loaders$2f$next$2d$flight$2d$loader$2f$action$2d$client$2d$wrapper$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["callServer"], void 0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$build$2f$webpack$2f$loaders$2f$next$2d$flight$2d$loader$2f$action$2d$client$2d$wrapper$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["findSourceMapURL"], "addItem"); //# sourceMappingURL=data:application/json;base64,eyJ2ZXJzaW9uIjozLCJzb3VyY2VzIjpbIi4vYWN0aW9ucy50cyJdLCJzb3VyY2VzQ29udGVudCI6WyIndXNlIHNlcnZlcic7XG5cbmltcG9ydCB7IFRBR1MgfSBmcm9tICdsaWIvY29uc3RhbnRzJztcbmltcG9ydCB7XG4gIGFkZFRvQ2FydCxcbiAgY3JlYXRlQ2FydCxcbiAgZ2V0Q2FydCxcbiAgcmVtb3ZlRnJvbUNhcnQsXG4gIHVwZGF0ZUNhcnRcbn0gZnJvbSAnbGliL3Nob3BpZnknO1xuaW1wb3J0IHsgcmV2YWxpZGF0ZVRhZyB9IGZyb20gJ25leHQvY2FjaGUnO1xuaW1wb3J0IHsgY29va2llcyB9IGZyb20gJ25leHQvaGVhZGVycyc7XG5pbXBvcnQgeyByZWRpcmVjdCB9IGZyb20gJ25leHQvbmF2aWdhdGlvbic7XG5cbmV4cG9ydCBhc3luYyBmdW5jdGlvbiBhZGRJdGVtKFxuICBwcmV2U3RhdGU6IGFueSxcbiAgc2VsZWN0ZWRWYXJpYW50SWQ6IHN0cmluZyB8IHVuZGVmaW5lZFxuKSB7XG4gIGlmICghc2VsZWN0ZWRWYXJpYW50SWQpIHtcbiAgICByZXR1cm4gJ0Vycm9yIGFkZGluZyBpdGVtIHRvIGNhcnQnO1xuICB9XG5cbiAgdHJ5IHtcbiAgICBhd2FpdCBhZGRUb0NhcnQoW3sgbWVyY2hhbmRpc2VJZDogc2VsZWN0ZWRWYXJpYW50SWQsIHF1YW50aXR5OiAxIH1dKTtcbiAgICByZXZhbGlkYXRlVGFnKFRBR1MuY2FydCk7XG4gIH0gY2F0Y2ggKGUpIHtcbiAgICByZXR1cm4gJ0Vycm9yIGFkZGluZyBpdGVtIHRvIGNhcnQnO1xuICB9XG59XG5cbmV4cG9ydCBhc3luYyBmdW5jdGlvbiByZW1vdmVJdGVtKHByZXZTdGF0ZTogYW55LCBtZXJjaGFuZGlzZUlkOiBzdHJpbmcpIHtcbiAgdHJ5IHtcbiAgICBjb25zdCBjYXJ0ID0gYXdhaXQgZ2V0Q2FydCgpO1xuXG4gICAgaWYgKCFjYXJ0KSB7XG4gICAgICByZXR1cm4gJ0Vycm9yIGZldGNoaW5nIGNhcnQnO1xuICAgIH1cblxuICAgIGNvbnN0IGxpbmVJdGVtID0gY2FydC5saW5lcy5maW5kKFxuICAgICAgKGxpbmUpID0+IGxpbmUubWVyY2hhbmRpc2UuaWQgPT09IG1lcmNoYW5kaXNlSWRcbiAgICApO1xuXG4gICAgaWYgKGxpbmVJdGVtICYmIGxpbmVJdGVtLmlkKSB7XG4gICAgICBhd2FpdCByZW1vdmVGcm9tQ2FydChbbGluZUl0ZW0uaWRdKTtcbiAgICAgIHJldmFsaWRhdGVUYWcoVEFHUy5jYXJ0KTtcbiAgICB9IGVsc2Uge1xuICAgICAgcmV0dXJuICdJdGVtIG5vdCBmb3VuZCBpbiBjYXJ0JztcbiAgICB9XG4gIH0gY2F0Y2ggKGUpIHtcbiAgICByZXR1cm4gJ0Vycm9yIHJlbW92aW5nIGl0ZW0gZnJvbSBjYXJ0JztcbiAgfVxufVxuXG5leHBvcnQgYXN5bmMgZnVuY3Rpb24gdXBkYXRlSXRlbVF1YW50aXR5KFxuICBwcmV2U3RhdGU6IGFueSxcbiAgcGF5bG9hZDoge1xuICAgIG1lcmNoYW5kaXNlSWQ6IHN0cmluZztcbiAgICBxdWFudGl0eTogbnVtYmVyO1xuICB9XG4pIHtcbiAgY29uc3QgeyBtZXJjaGFuZGlzZUlkLCBxdWFudGl0eSB9ID0gcGF5bG9hZDtcblxuICB0cnkge1xuICAgIGNvbnN0IGNhcnQgPSBhd2FpdCBnZXRDYXJ0KCk7XG5cbiAgICBpZiAoIWNhcnQpIHtcbiAgICAgIHJldHVybiAnRXJyb3IgZmV0Y2hpbmcgY2FydCc7XG4gICAgfVxuXG4gICAgY29uc3QgbGluZUl0ZW0gPSBjYXJ0LmxpbmVzLmZpbmQoXG4gICAgICAobGluZSkgPT4gbGluZS5tZXJjaGFuZGlzZS5pZCA9PT0gbWVyY2hhbmRpc2VJZFxuICAgICk7XG5cbiAgICBpZiAobGluZUl0ZW0gJiYgbGluZUl0ZW0uaWQpIHtcbiAgICAgIGlmIChxdWFudGl0eSA9PT0gMCkge1xuICAgICAgICBhd2FpdCByZW1vdmVGcm9tQ2FydChbbGluZUl0ZW0uaWRdKTtcbiAgICAgIH0gZWxzZSB7XG4gICAgICAgIGF3YWl0IHVwZGF0ZUNhcnQoW1xuICAgICAgICAgIHtcbiAgICAgICAgICAgIGlkOiBsaW5lSXRlbS5pZCxcbiAgICAgICAgICAgIG1lcmNoYW5kaXNlSWQsXG4gICAgICAgICAgICBxdWFudGl0eVxuICAgICAgICAgIH1cbiAgICAgICAgXSk7XG4gICAgICB9XG4gICAgfSBlbHNlIGlmIChxdWFudGl0eSA+IDApIHtcbiAgICAgIC8vIElmIHRoZSBpdGVtIGRvZXNuJ3QgZXhpc3QgaW4gdGhlIGNhcnQgYW5kIHF1YW50aXR5ID4gMCwgYWRkIGl0XG4gICAgICBhd2FpdCBhZGRUb0NhcnQoW3sgbWVyY2hhbmRpc2VJZCwgcXVhbnRpdHkgfV0pO1xuICAgIH1cblxuICAgIHJldmFsaWRhdGVUYWcoVEFHUy5jYXJ0KTtcbiAgfSBjYXRjaCAoZSkge1xuICAgIGNvbnNvbGUuZXJyb3IoZSk7XG4gICAgcmV0dXJuICdFcnJvciB1cGRhdGluZyBpdGVtIHF1YW50aXR5JztcbiAgfVxufVxuXG5leHBvcnQgYXN5bmMgZnVuY3Rpb24gcmVkaXJlY3RUb0NoZWNrb3V0KCkge1xuICBsZXQgY2FydCA9IGF3YWl0IGdldENhcnQoKTtcbiAgcmVkaXJlY3QoY2FydCEuY2hlY2tvdXRVcmwpO1xufVxuXG5leHBvcnQgYXN5bmMgZnVuY3Rpb24gY3JlYXRlQ2FydEFuZFNldENvb2tpZSgpIHtcbiAgbGV0IGNhcnQgPSBhd2FpdCBjcmVhdGVDYXJ0KCk7XG4gIChhd2FpdCBjb29raWVzKCkpLnNldCgnY2FydElkJywgY2FydC5pZCEpO1xufVxuIl0sIm5hbWVzIjpbXSwibWFwcGluZ3MiOiIyUkFjc0IifQ==
 if (typeof globalThis.$RefreshHelpers$ === 'object' && globalThis.$RefreshHelpers !== null) {
     __turbopack_context__.k.registerExports(module, globalThis.$RefreshHelpers$);
 }
@@ -139,7 +139,7 @@ __turbopack_context__.s({
 });
 var __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2d$experimental$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__ = __turbopack_context__.i("[project]/node_modules/next/dist/compiled/react-experimental/jsx-dev-runtime.js [app-client] (ecmascript)");
 var __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$clsx$2f$dist$2f$clsx$2e$mjs__$5b$app$2d$client$5d$__$28$ecmascript$29$__ = __turbopack_context__.i("[project]/node_modules/clsx/dist/clsx.mjs [app-client] (ecmascript)");
-var __TURBOPACK__imported__module__$5b$project$5d2f$components$2f$cart$2f$data$3a$62e425__$5b$app$2d$client$5d$__$28$ecmascript$29$__$3c$text$2f$javascript$3e$__ = __turbopack_context__.i("[project]/components/cart/data:62e425 [app-client] (ecmascript) <text/javascript>");
+var __TURBOPACK__imported__module__$5b$project$5d2f$components$2f$cart$2f$data$3a$b8abdd__$5b$app$2d$client$5d$__$28$ecmascript$29$__$3c$text$2f$javascript$3e$__ = __turbopack_context__.i("[project]/components/cart/data:b8abdd [app-client] (ecmascript) <text/javascript>");
 var __TURBOPACK__imported__module__$5b$project$5d2f$components$2f$product$2f$product$2d$context$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__ = __turbopack_context__.i("[project]/components/product/product-context.tsx [app-client] (ecmascript)");
 var __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2d$experimental$2f$index$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__ = __turbopack_context__.i("[project]/node_modules/next/dist/compiled/react-experimental/index.js [app-client] (ecmascript)");
 var __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$sonner$2f$dist$2f$index$2e$mjs__$5b$app$2d$client$5d$__$28$ecmascript$29$__ = __turbopack_context__.i("[project]/node_modules/sonner/dist/index.mjs [app-client] (ecmascript)");
@@ -200,7 +200,7 @@ function AddToCart({ product }) {
     _s();
     const { addCartItem } = (0, __TURBOPACK__imported__module__$5b$project$5d2f$components$2f$cart$2f$cart$2d$context$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["useCart"])();
     const { state } = (0, __TURBOPACK__imported__module__$5b$project$5d2f$components$2f$product$2f$product$2d$context$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["useProduct"])();
-    const [message, formAction] = (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2d$experimental$2f$index$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["useActionState"])(__TURBOPACK__imported__module__$5b$project$5d2f$components$2f$cart$2f$data$3a$62e425__$5b$app$2d$client$5d$__$28$ecmascript$29$__$3c$text$2f$javascript$3e$__["addItem"], null);
+    const [message, formAction] = (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2d$experimental$2f$index$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["useActionState"])(__TURBOPACK__imported__module__$5b$project$5d2f$components$2f$cart$2f$data$3a$b8abdd__$5b$app$2d$client$5d$__$28$ecmascript$29$__$3c$text$2f$javascript$3e$__["addItem"], null);
     const defaultVariant = product.variants.length === 1 ? product.variants[0] : undefined;
     const selectedVariant = product.variants.find((variant)=>variant.selectedOptions.every((option)=>option.value === state[option.name.toLowerCase()]));
     const variantToUse = selectedVariant || defaultVariant;
@@ -459,7 +459,52 @@ if (typeof globalThis.$RefreshHelpers$ === 'object' && globalThis.$RefreshHelper
     __turbopack_context__.k.registerExports(module, globalThis.$RefreshHelpers$);
 }
 }}),
-"[project]/components/product/product-description.tsx [app-client] (ecmascript)": ((__turbopack_context__) => {
+"[project]/components/StarRatingPlaceholder.tsx [app-client] (ecmascript)": ((__turbopack_context__) => {
+"use strict";
+
+var { g: global, __dirname, k: __turbopack_refresh__, m: module } = __turbopack_context__;
+{
+// components/StarRatingPlaceholder.tsx
+__turbopack_context__.s({
+    "default": (()=>StarRatingPlaceholder)
+});
+var __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2d$experimental$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__ = __turbopack_context__.i("[project]/node_modules/next/dist/compiled/react-experimental/jsx-dev-runtime.js [app-client] (ecmascript)");
+;
+function StarRatingPlaceholder() {
+    return /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2d$experimental$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
+        className: "flex cursor-pointer items-center gap-2",
+        children: [
+            /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2d$experimental$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("span", {
+                className: "text-lg text-black",
+                children: "★★★★★"
+            }, void 0, false, {
+                fileName: "[project]/components/StarRatingPlaceholder.tsx",
+                lineNumber: 6,
+                columnNumber: 7
+            }, this),
+            /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2d$experimental$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("span", {
+                className: "text-sm text-gray-600",
+                children: '15 >'
+            }, void 0, false, {
+                fileName: "[project]/components/StarRatingPlaceholder.tsx",
+                lineNumber: 8,
+                columnNumber: 7
+            }, this)
+        ]
+    }, void 0, true, {
+        fileName: "[project]/components/StarRatingPlaceholder.tsx",
+        lineNumber: 5,
+        columnNumber: 5
+    }, this);
+}
+_c = StarRatingPlaceholder;
+var _c;
+__turbopack_context__.k.register(_c, "StarRatingPlaceholder");
+if (typeof globalThis.$RefreshHelpers$ === 'object' && globalThis.$RefreshHelpers !== null) {
+    __turbopack_context__.k.registerExports(module, globalThis.$RefreshHelpers$);
+}
+}}),
+"[project]/components/product/variant-selector.tsx [app-client] (ecmascript)": ((__turbopack_context__) => {
 "use strict";
 
 var { g: global, __dirname, k: __turbopack_refresh__, m: module } = __turbopack_context__;
@@ -481,19 +526,16 @@ var _s = __turbopack_context__.k.signature();
 ;
 ;
 ;
-// This maps a color name to a Tailwind CSS background color class.
-// You can add more colors here if needed.
 const colorNameToClass = {
     black: 'bg-black',
     white: 'bg-white',
-    beige: 'bg-beige'
+    beige: 'bg-beige-200' // Using the correct class from your tailwind config
 };
 function VariantSelector({ options }) {
     _s();
     const { state, updateOption } = (0, __TURBOPACK__imported__module__$5b$project$5d2f$components$2f$product$2f$product$2d$context$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["useProduct"])();
     const updateURL = (0, __TURBOPACK__imported__module__$5b$project$5d2f$components$2f$product$2f$product$2d$context$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["useUpdateURL"])();
     const [isSizeSelectorOpen, setIsSizeSelectorOpen] = (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2d$experimental$2f$index$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["useState"])(false);
-    // Find the color and size options from the product data
     const colorOption = options.find((opt)=>opt.name.toLowerCase() === 'color');
     const sizeOption = options.find((opt)=>opt.name.toLowerCase() === 'size');
     return /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2d$experimental$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -505,15 +547,14 @@ function VariantSelector({ options }) {
                         className: "font-semibold uppercase",
                         children: state.color || ''
                     }, void 0, false, {
-                        fileName: "[project]/components/product/product-description.tsx",
-                        lineNumber: 34,
+                        fileName: "[project]/components/product/variant-selector.tsx",
+                        lineNumber: 30,
                         columnNumber: 11
                     }, this),
                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2d$experimental$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
                         className: "mt-3 flex flex-wrap gap-3",
                         children: colorOption.values.map((value)=>{
                             const isActive = state.color === value;
-                            // Use the color map, with a fallback for unknown colors
                             const colorClass = colorNameToClass[value.toLowerCase()] || 'bg-gray-200';
                             return /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2d$experimental$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("button", {
                                 onClick: ()=>{
@@ -521,25 +562,24 @@ function VariantSelector({ options }) {
                                     updateURL(newState);
                                 },
                                 title: value,
-                                className: (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$clsx$2f$dist$2f$clsx$2e$mjs__$5b$app$2d$client$5d$__$28$ecmascript$29$__["default"])('h-8 w-8 rounded-full border border-neutral-300 transition-transform hover:scale-110', colorClass, // Add a more prominent ring for the active state
-                                {
+                                className: (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$clsx$2f$dist$2f$clsx$2e$mjs__$5b$app$2d$client$5d$__$28$ecmascript$29$__["default"])('h-8 w-8 rounded-full border border-neutral-300 transition-transform hover:scale-110', colorClass, {
                                     'ring-2 ring-blue-600 ring-offset-2': isActive
                                 })
                             }, value, false, {
-                                fileName: "[project]/components/product/product-description.tsx",
-                                lineNumber: 42,
+                                fileName: "[project]/components/product/variant-selector.tsx",
+                                lineNumber: 37,
                                 columnNumber: 17
                             }, this);
                         })
                     }, void 0, false, {
-                        fileName: "[project]/components/product/product-description.tsx",
-                        lineNumber: 35,
+                        fileName: "[project]/components/product/variant-selector.tsx",
+                        lineNumber: 31,
                         columnNumber: 11
                     }, this)
                 ]
             }, void 0, true, {
-                fileName: "[project]/components/product/product-description.tsx",
-                lineNumber: 32,
+                fileName: "[project]/components/product/variant-selector.tsx",
+                lineNumber: 29,
                 columnNumber: 9
             }, this),
             sizeOption && /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2d$experimental$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -551,8 +591,8 @@ function VariantSelector({ options }) {
                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2d$experimental$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("span", {
                                 children: "Select Size"
                             }, void 0, false, {
-                                fileName: "[project]/components/product/product-description.tsx",
-                                lineNumber: 70,
+                                fileName: "[project]/components/product/variant-selector.tsx",
+                                lineNumber: 63,
                                 columnNumber: 13
                             }, this),
                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2d$experimental$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("svg", {
@@ -564,21 +604,21 @@ function VariantSelector({ options }) {
                                     strokeLinecap: "round",
                                     strokeLinejoin: "round",
                                     strokeWidth: 2,
-                                    d: "M9 5l7 7-7 7"
+                                    d: "M9 5l7 7-7-7"
                                 }, void 0, false, {
-                                    fileName: "[project]/components/product/product-description.tsx",
-                                    lineNumber: 77,
+                                    fileName: "[project]/components/product/variant-selector.tsx",
+                                    lineNumber: 70,
                                     columnNumber: 15
                                 }, this)
                             }, void 0, false, {
-                                fileName: "[project]/components/product/product-description.tsx",
-                                lineNumber: 71,
+                                fileName: "[project]/components/product/variant-selector.tsx",
+                                lineNumber: 64,
                                 columnNumber: 13
                             }, this)
                         ]
                     }, void 0, true, {
-                        fileName: "[project]/components/product/product-description.tsx",
-                        lineNumber: 65,
+                        fileName: "[project]/components/product/variant-selector.tsx",
+                        lineNumber: 59,
                         columnNumber: 11
                     }, this),
                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2d$experimental$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f40$headlessui$2f$react$2f$dist$2f$components$2f$transition$2f$transition$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["Transition"], {
@@ -600,13 +640,13 @@ function VariantSelector({ options }) {
                                         className: "fixed inset-0 bg-black/30",
                                         "aria-hidden": "true"
                                     }, void 0, false, {
-                                        fileName: "[project]/components/product/product-description.tsx",
-                                        lineNumber: 93,
+                                        fileName: "[project]/components/product/variant-selector.tsx",
+                                        lineNumber: 77,
                                         columnNumber: 17
                                     }, this)
                                 }, void 0, false, {
-                                    fileName: "[project]/components/product/product-description.tsx",
-                                    lineNumber: 84,
+                                    fileName: "[project]/components/product/variant-selector.tsx",
+                                    lineNumber: 76,
                                     columnNumber: 15
                                 }, this),
                                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2d$experimental$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f40$headlessui$2f$react$2f$dist$2f$components$2f$transition$2f$transition$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["Transition"].Child, {
@@ -629,8 +669,8 @@ function VariantSelector({ options }) {
                                                             className: "text-lg font-semibold",
                                                             children: "Select Size"
                                                         }, void 0, false, {
-                                                            fileName: "[project]/components/product/product-description.tsx",
-                                                            lineNumber: 107,
+                                                            fileName: "[project]/components/product/variant-selector.tsx",
+                                                            lineNumber: 83,
                                                             columnNumber: 23
                                                         }, this),
                                                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2d$experimental$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("button", {
@@ -646,24 +686,24 @@ function VariantSelector({ options }) {
                                                                     strokeWidth: 2,
                                                                     d: "M6 18L18 6M6 6l12 12"
                                                                 }, void 0, false, {
-                                                                    fileName: "[project]/components/product/product-description.tsx",
-                                                                    lineNumber: 110,
+                                                                    fileName: "[project]/components/product/variant-selector.tsx",
+                                                                    lineNumber: 86,
                                                                     columnNumber: 27
                                                                 }, this)
                                                             }, void 0, false, {
-                                                                fileName: "[project]/components/product/product-description.tsx",
-                                                                lineNumber: 109,
+                                                                fileName: "[project]/components/product/variant-selector.tsx",
+                                                                lineNumber: 85,
                                                                 columnNumber: 25
                                                             }, this)
                                                         }, void 0, false, {
-                                                            fileName: "[project]/components/product/product-description.tsx",
-                                                            lineNumber: 108,
+                                                            fileName: "[project]/components/product/variant-selector.tsx",
+                                                            lineNumber: 84,
                                                             columnNumber: 23
                                                         }, this)
                                                     ]
                                                 }, void 0, true, {
-                                                    fileName: "[project]/components/product/product-description.tsx",
-                                                    lineNumber: 106,
+                                                    fileName: "[project]/components/product/variant-selector.tsx",
+                                                    lineNumber: 82,
                                                     columnNumber: 21
                                                 }, this),
                                                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2d$experimental$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -677,52 +717,52 @@ function VariantSelector({ options }) {
                                                             className: "rounded-md border border-gray-300 p-3 text-center text-sm",
                                                             children: value
                                                         }, value, false, {
-                                                            fileName: "[project]/components/product/product-description.tsx",
-                                                            lineNumber: 121,
+                                                            fileName: "[project]/components/product/variant-selector.tsx",
+                                                            lineNumber: 92,
                                                             columnNumber: 25
                                                         }, this))
                                                 }, void 0, false, {
-                                                    fileName: "[project]/components/product/product-description.tsx",
-                                                    lineNumber: 119,
+                                                    fileName: "[project]/components/product/variant-selector.tsx",
+                                                    lineNumber: 90,
                                                     columnNumber: 21
                                                 }, this)
                                             ]
                                         }, void 0, true, {
-                                            fileName: "[project]/components/product/product-description.tsx",
-                                            lineNumber: 105,
+                                            fileName: "[project]/components/product/variant-selector.tsx",
+                                            lineNumber: 81,
                                             columnNumber: 19
                                         }, this)
                                     }, void 0, false, {
-                                        fileName: "[project]/components/product/product-description.tsx",
-                                        lineNumber: 104,
+                                        fileName: "[project]/components/product/variant-selector.tsx",
+                                        lineNumber: 80,
                                         columnNumber: 17
                                     }, this)
                                 }, void 0, false, {
-                                    fileName: "[project]/components/product/product-description.tsx",
-                                    lineNumber: 95,
+                                    fileName: "[project]/components/product/variant-selector.tsx",
+                                    lineNumber: 79,
                                     columnNumber: 15
                                 }, this)
                             ]
                         }, void 0, true, {
-                            fileName: "[project]/components/product/product-description.tsx",
-                            lineNumber: 83,
+                            fileName: "[project]/components/product/variant-selector.tsx",
+                            lineNumber: 75,
                             columnNumber: 13
                         }, this)
                     }, void 0, false, {
-                        fileName: "[project]/components/product/product-description.tsx",
-                        lineNumber: 82,
+                        fileName: "[project]/components/product/variant-selector.tsx",
+                        lineNumber: 74,
                         columnNumber: 11
                     }, this)
                 ]
             }, void 0, true, {
-                fileName: "[project]/components/product/product-description.tsx",
-                lineNumber: 64,
+                fileName: "[project]/components/product/variant-selector.tsx",
+                lineNumber: 58,
                 columnNumber: 9
             }, this)
         ]
     }, void 0, true, {
-        fileName: "[project]/components/product/product-description.tsx",
-        lineNumber: 29,
+        fileName: "[project]/components/product/variant-selector.tsx",
+        lineNumber: 26,
         columnNumber: 5
     }, this);
 }
@@ -739,6 +779,109 @@ if (typeof globalThis.$RefreshHelpers$ === 'object' && globalThis.$RefreshHelper
     __turbopack_context__.k.registerExports(module, globalThis.$RefreshHelpers$);
 }
 }}),
+"[project]/components/product/product-description.tsx [app-client] (ecmascript)": ((__turbopack_context__) => {
+"use strict";
+
+var { g: global, __dirname, k: __turbopack_refresh__, m: module } = __turbopack_context__;
+{
+// components/product/product-description.tsx
+__turbopack_context__.s({
+    "ProductDescription": (()=>ProductDescription)
+});
+var __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2d$experimental$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__ = __turbopack_context__.i("[project]/node_modules/next/dist/compiled/react-experimental/jsx-dev-runtime.js [app-client] (ecmascript)");
+var __TURBOPACK__imported__module__$5b$project$5d2f$components$2f$price$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__ = __turbopack_context__.i("[project]/components/price.tsx [app-client] (ecmascript)"); // FIX: Correct default import
+var __TURBOPACK__imported__module__$5b$project$5d2f$components$2f$StarRatingPlaceholder$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__ = __turbopack_context__.i("[project]/components/StarRatingPlaceholder.tsx [app-client] (ecmascript)"); // FIX: Correct default import
+var __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2d$experimental$2f$index$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__ = __turbopack_context__.i("[project]/node_modules/next/dist/compiled/react-experimental/index.js [app-client] (ecmascript)");
+var __TURBOPACK__imported__module__$5b$project$5d2f$components$2f$product$2f$product$2d$context$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__ = __turbopack_context__.i("[project]/components/product/product-context.tsx [app-client] (ecmascript)");
+var __TURBOPACK__imported__module__$5b$project$5d2f$components$2f$product$2f$variant$2d$selector$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__ = __turbopack_context__.i("[project]/components/product/variant-selector.tsx [app-client] (ecmascript)");
+;
+var _s = __turbopack_context__.k.signature();
+'use client';
+;
+;
+;
+;
+;
+function ProductDescription({ product }) {
+    _s();
+    const { state } = (0, __TURBOPACK__imported__module__$5b$project$5d2f$components$2f$product$2f$product$2d$context$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["useProduct"])();
+    // This is the key fix. We find the full variant object here, based on the
+    // color and size selected in the context state.
+    const selectedVariant = (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2d$experimental$2f$index$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["useMemo"])({
+        "ProductDescription.useMemo[selectedVariant]": ()=>{
+            return product.variants.find({
+                "ProductDescription.useMemo[selectedVariant]": (variant)=>variant.selectedOptions.every({
+                        "ProductDescription.useMemo[selectedVariant]": (option)=>state[option.name.toLowerCase()] === option.value
+                    }["ProductDescription.useMemo[selectedVariant]"])
+            }["ProductDescription.useMemo[selectedVariant]"]);
+        }
+    }["ProductDescription.useMemo[selectedVariant]"], [
+        product.variants,
+        state
+    ]);
+    // We determine the price based on the selected variant, with a fallback.
+    const price = selectedVariant?.price || product.priceRange.maxVariantPrice;
+    return /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2d$experimental$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2d$experimental$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["Fragment"], {
+        children: [
+            /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2d$experimental$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
+                className: "mb-6 flex flex-col gap-y-4 border-b pb-6 dark:border-neutral-700",
+                children: [
+                    /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2d$experimental$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("h1", {
+                        className: "text-2xl font-medium uppercase",
+                        children: product.title
+                    }, void 0, false, {
+                        fileName: "[project]/components/product/product-description.tsx",
+                        lineNumber: 31,
+                        columnNumber: 9
+                    }, this),
+                    /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2d$experimental$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
+                        className: "text-xl font-semibold",
+                        children: /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2d$experimental$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$components$2f$price$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["default"], {
+                            amount: price.amount,
+                            currencyCode: price.currencyCode
+                        }, void 0, false, {
+                            fileName: "[project]/components/product/product-description.tsx",
+                            lineNumber: 34,
+                            columnNumber: 11
+                        }, this)
+                    }, void 0, false, {
+                        fileName: "[project]/components/product/product-description.tsx",
+                        lineNumber: 33,
+                        columnNumber: 9
+                    }, this),
+                    /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2d$experimental$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$components$2f$StarRatingPlaceholder$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["default"], {}, void 0, false, {
+                        fileName: "[project]/components/product/product-description.tsx",
+                        lineNumber: 40,
+                        columnNumber: 9
+                    }, this)
+                ]
+            }, void 0, true, {
+                fileName: "[project]/components/product/product-description.tsx",
+                lineNumber: 30,
+                columnNumber: 7
+            }, this),
+            /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2d$experimental$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$components$2f$product$2f$variant$2d$selector$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["VariantSelector"], {
+                options: product.options
+            }, void 0, false, {
+                fileName: "[project]/components/product/product-description.tsx",
+                lineNumber: 43,
+                columnNumber: 7
+            }, this)
+        ]
+    }, void 0, true);
+}
+_s(ProductDescription, "M6G/QflFPYkCOeP0njEc0EcWneg=", false, function() {
+    return [
+        __TURBOPACK__imported__module__$5b$project$5d2f$components$2f$product$2f$product$2d$context$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["useProduct"]
+    ];
+});
+_c = ProductDescription;
+var _c;
+__turbopack_context__.k.register(_c, "ProductDescription");
+if (typeof globalThis.$RefreshHelpers$ === 'object' && globalThis.$RefreshHelpers !== null) {
+    __turbopack_context__.k.registerExports(module, globalThis.$RefreshHelpers$);
+}
+}}),
 }]);
 
-//# sourceMappingURL=components_3780fd6d._.js.map
+//# sourceMappingURL=components_083b5d57._.js.map
