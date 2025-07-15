@@ -1803,6 +1803,10 @@
     --tw-ring-color: var(--color-neutral-300);
   }
 
+  .ring-neutral-700 {
+    --tw-ring-color: var(--color-neutral-700);
+  }
+
   .ring-transparent {
     --tw-ring-color: transparent;
   }
@@ -1927,6 +1931,11 @@
     background-color: var(--color-neutral-300);
   }
 
+  .before\:bg-neutral-700:before {
+    content: var(--tw-content);
+    background-color: var(--color-neutral-700);
+  }
+
   .before\:transition-transform:before {
     content: var(--tw-content);
     transition-property: transform, translate, scale, rotate;
@@ -1952,6 +1961,12 @@
   @media (hover: hover) {
     .hover\:border-neutral-800:hover {
       border-color: var(--color-neutral-800);
+    }
+  }
+
+  @media (hover: hover) {
+    .hover\:border-white:hover {
+      border-color: var(--color-white);
     }
   }
 

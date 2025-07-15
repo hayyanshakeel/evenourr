@@ -446,7 +446,6 @@ __turbopack_context__.s({
     "AddToCart": (()=>AddToCart)
 });
 var __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__ = __turbopack_context__.i("[project]/node_modules/next/dist/server/route-modules/app-page/vendored/ssr/react-jsx-dev-runtime.js [app-ssr] (ecmascript)");
-var __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f40$heroicons$2f$react$2f$24$2f$outline$2f$esm$2f$PlusIcon$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__$3c$export__default__as__PlusIcon$3e$__ = __turbopack_context__.i("[project]/node_modules/@heroicons/react/24/outline/esm/PlusIcon.js [app-ssr] (ecmascript) <export default as PlusIcon>");
 var __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$clsx$2f$dist$2f$clsx$2e$mjs__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__ = __turbopack_context__.i("[project]/node_modules/clsx/dist/clsx.mjs [app-ssr] (ecmascript)");
 var __TURBOPACK__imported__module__$5b$project$5d2f$components$2f$cart$2f$data$3a$3dd932__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__$3c$text$2f$javascript$3e$__ = __turbopack_context__.i("[project]/components/cart/data:3dd932 [app-ssr] (ecmascript) <text/javascript>");
 var __TURBOPACK__imported__module__$5b$project$5d2f$components$2f$product$2f$product$2d$context$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__ = __turbopack_context__.i("[project]/components/product/product-context.tsx [app-ssr] (ecmascript)");
@@ -459,9 +458,9 @@ var __TURBOPACK__imported__module__$5b$project$5d2f$components$2f$cart$2f$cart$2
 ;
 ;
 ;
-;
 function SubmitButton({ availableForSale, selectedVariantId }) {
-    const buttonClasses = 'relative flex w-full items-center justify-center rounded-full bg-blue-600 p-4 tracking-wide text-white';
+    const buttonClasses = // UPDATED STYLES HERE
+    'relative flex w-full items-center justify-center rounded-md bg-white p-3 text-center text-sm font-medium text-black';
     const disabledClasses = 'cursor-not-allowed opacity-60 hover:opacity-60';
     if (!availableForSale) {
         return /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("button", {
@@ -479,24 +478,8 @@ function SubmitButton({ availableForSale, selectedVariantId }) {
             "aria-label": "Please select an option",
             disabled: true,
             className: (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$clsx$2f$dist$2f$clsx$2e$mjs__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["default"])(buttonClasses, disabledClasses),
-            children: [
-                /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
-                    className: "absolute left-0 ml-4",
-                    children: /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f40$heroicons$2f$react$2f$24$2f$outline$2f$esm$2f$PlusIcon$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__$3c$export__default__as__PlusIcon$3e$__["PlusIcon"], {
-                        className: "h-5"
-                    }, void 0, false, {
-                        fileName: "[project]/components/cart/add-to-cart.tsx",
-                        lineNumber: 38,
-                        columnNumber: 11
-                    }, this)
-                }, void 0, false, {
-                    fileName: "[project]/components/cart/add-to-cart.tsx",
-                    lineNumber: 37,
-                    columnNumber: 9
-                }, this),
-                "Add To Cart"
-            ]
-        }, void 0, true, {
+            children: "Add To Cart"
+        }, void 0, false, {
             fileName: "[project]/components/cart/add-to-cart.tsx",
             lineNumber: 32,
             columnNumber: 7
@@ -507,31 +490,15 @@ function SubmitButton({ availableForSale, selectedVariantId }) {
         className: (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$clsx$2f$dist$2f$clsx$2e$mjs__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["default"])(buttonClasses, {
             'hover:opacity-90': true
         }),
-        children: [
-            /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
-                className: "absolute left-0 ml-4",
-                children: /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f40$heroicons$2f$react$2f$24$2f$outline$2f$esm$2f$PlusIcon$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__$3c$export__default__as__PlusIcon$3e$__["PlusIcon"], {
-                    className: "h-5"
-                }, void 0, false, {
-                    fileName: "[project]/components/cart/add-to-cart.tsx",
-                    lineNumber: 53,
-                    columnNumber: 9
-                }, this)
-            }, void 0, false, {
-                fileName: "[project]/components/cart/add-to-cart.tsx",
-                lineNumber: 52,
-                columnNumber: 7
-            }, this),
-            "Add To Cart"
-        ]
-    }, void 0, true, {
+        children: "Add To Cart"
+    }, void 0, false, {
         fileName: "[project]/components/cart/add-to-cart.tsx",
-        lineNumber: 46,
+        lineNumber: 43,
         columnNumber: 5
     }, this);
 }
 function AddToCart({ product }) {
-    const { variants, availableForSale } = product;
+    const { variants } = product;
     const { addCartItem } = (0, __TURBOPACK__imported__module__$5b$project$5d2f$components$2f$cart$2f$cart$2d$context$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["useCart"])();
     const { state } = (0, __TURBOPACK__imported__module__$5b$project$5d2f$components$2f$product$2f$product$2d$context$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["useProduct"])();
     const [message, formAction] = (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["useActionState"])(__TURBOPACK__imported__module__$5b$project$5d2f$components$2f$cart$2f$data$3a$3dd932__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__$3c$text$2f$javascript$3e$__["addItem"], null);
@@ -542,16 +509,20 @@ function AddToCart({ product }) {
     const finalVariant = variants.find((variant)=>variant.id === selectedVariantId);
     return /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("form", {
         action: async ()=>{
-            addCartItem(finalVariant, product);
-            addItemAction();
+            // Optimistic UI update
+            if (finalVariant) {
+                addCartItem(finalVariant, product);
+            }
+            // Server action
+            await addItemAction();
         },
         children: [
             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(SubmitButton, {
-                availableForSale: availableForSale,
+                availableForSale: product.availableForSale,
                 selectedVariantId: selectedVariantId
             }, void 0, false, {
                 fileName: "[project]/components/cart/add-to-cart.tsx",
-                lineNumber: 85,
+                lineNumber: 83,
                 columnNumber: 7
             }, this),
             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("p", {
@@ -561,13 +532,13 @@ function AddToCart({ product }) {
                 children: message
             }, void 0, false, {
                 fileName: "[project]/components/cart/add-to-cart.tsx",
-                lineNumber: 89,
+                lineNumber: 87,
                 columnNumber: 7
             }, this)
         ]
     }, void 0, true, {
         fileName: "[project]/components/cart/add-to-cart.tsx",
-        lineNumber: 79,
+        lineNumber: 73,
         columnNumber: 5
     }, this);
 }
@@ -618,15 +589,12 @@ function VariantSelector({ options, variants }) {
                         className: "flex flex-wrap gap-3",
                         children: option.values.map((value)=>{
                             const optionNameLowerCase = option.name.toLowerCase();
-                            // Base option params on current selectedOptions so we can preserve any other param state.
                             const optionParams = {
                                 ...state,
                                 [optionNameLowerCase]: value
                             };
-                            // Filter out invalid options and check if the option combination is available for sale.
                             const filtered = Object.entries(optionParams).filter(([key, value])=>options.find((option)=>option.name.toLowerCase() === key && option.values.includes(value)));
                             const isAvailableForSale = combinations.find((combination)=>filtered.every(([key, value])=>combination[key] === value && combination.availableForSale));
-                            // The option is active if it's in the selected options.
                             const isActive = state[optionNameLowerCase] === value;
                             return /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("button", {
                                 formAction: ()=>{
@@ -636,15 +604,16 @@ function VariantSelector({ options, variants }) {
                                 "aria-disabled": !isAvailableForSale,
                                 disabled: !isAvailableForSale,
                                 title: `${option.name} ${value}${!isAvailableForSale ? ' (Out of Stock)' : ''}`,
-                                className: (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$clsx$2f$dist$2f$clsx$2e$mjs__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["default"])('flex min-w-[48px] items-center justify-center rounded-full border bg-neutral-100 px-2 py-1 text-sm dark:border-neutral-800 dark:bg-neutral-900', {
-                                    'cursor-default ring-2 ring-blue-600': isActive,
-                                    'ring-1 ring-transparent transition duration-300 ease-in-out hover:ring-blue-600': !isActive && isAvailableForSale,
-                                    'relative z-10 cursor-not-allowed overflow-hidden bg-neutral-100 text-neutral-500 ring-1 ring-neutral-300 before:absolute before:inset-x-0 before:-z-10 before:h-px before:-rotate-45 before:bg-neutral-300 before:transition-transform dark:bg-neutral-900 dark:text-neutral-400 dark:ring-neutral-700 dark:before:bg-neutral-700': !isAvailableForSale
+                                className: (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$clsx$2f$dist$2f$clsx$2e$mjs__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["default"])(// UPDATED STYLES HERE
+                                'flex min-w-[48px] items-center justify-center rounded-md border-2 bg-transparent px-3 py-2 text-sm', {
+                                    'border-white': isActive,
+                                    'border-neutral-700 transition duration-300 ease-in-out hover:border-white': !isActive && isAvailableForSale,
+                                    'relative z-10 cursor-not-allowed overflow-hidden border-neutral-700 text-neutral-500 ring-neutral-700 before:absolute before:inset-x-0 before:-z-10 before:h-px before:-rotate-45 before:bg-neutral-700 before:transition-transform': !isAvailableForSale
                                 }),
                                 children: value
                             }, value, false, {
                                 fileName: "[project]/components/product/variant-selector.tsx",
-                                lineNumber: 65,
+                                lineNumber: 59,
                                 columnNumber: 15
                             }, this);
                         })

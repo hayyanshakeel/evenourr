@@ -42,11 +42,7 @@ export function VariantSelector({
         <dd className="flex flex-wrap gap-3">
           {option.values.map((value) => {
             const optionNameLowerCase = option.name.toLowerCase();
-
-            // Base option params on current selectedOptions so we can preserve any other param state.
             const optionParams = { ...state, [optionNameLowerCase]: value };
-
-            // Filter out invalid options and check if the option combination is available for sale.
             const filtered = Object.entries(optionParams).filter(([key, value]) =>
               options.find(
                 (option) => option.name.toLowerCase() === key && option.values.includes(value)
@@ -57,8 +53,6 @@ export function VariantSelector({
                 ([key, value]) => combination[key] === value && combination.availableForSale
               )
             );
-
-            // The option is active if it's in the selected options.
             const isActive = state[optionNameLowerCase] === value;
 
             return (
@@ -72,12 +66,13 @@ export function VariantSelector({
                 disabled={!isAvailableForSale}
                 title={`${option.name} ${value}${!isAvailableForSale ? ' (Out of Stock)' : ''}`}
                 className={clsx(
-                  'flex min-w-[48px] items-center justify-center rounded-full border bg-neutral-100 px-2 py-1 text-sm dark:border-neutral-800 dark:bg-neutral-900',
+                  // UPDATED STYLES HERE
+                  'flex min-w-[48px] items-center justify-center rounded-md border-2 bg-transparent px-3 py-2 text-sm',
                   {
-                    'cursor-default ring-2 ring-blue-600': isActive,
-                    'ring-1 ring-transparent transition duration-300 ease-in-out hover:ring-blue-600':
+                    'border-white': isActive,
+                    'border-neutral-700 transition duration-300 ease-in-out hover:border-white':
                       !isActive && isAvailableForSale,
-                    'relative z-10 cursor-not-allowed overflow-hidden bg-neutral-100 text-neutral-500 ring-1 ring-neutral-300 before:absolute before:inset-x-0 before:-z-10 before:h-px before:-rotate-45 before:bg-neutral-300 before:transition-transform dark:bg-neutral-900 dark:text-neutral-400 dark:ring-neutral-700 dark:before:bg-neutral-700':
+                    'relative z-10 cursor-not-allowed overflow-hidden border-neutral-700 text-neutral-500 ring-neutral-700 before:absolute before:inset-x-0 before:-z-10 before:h-px before:-rotate-45 before:bg-neutral-700 before:transition-transform':
                       !isAvailableForSale
                   }
                 )}
