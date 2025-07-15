@@ -71,6 +71,12 @@ export type Page = {
 export type Product = Omit<ShopifyProduct, 'variants' | 'images'> & {
   variants: ProductVariant[];
   images: Image[];
+  details?: {
+    value: string;
+  };
+  shipping?: {
+    value: string;
+  };
 };
 
 export type ProductOption = {
@@ -133,6 +139,12 @@ export type ShopifyProduct = {
   seo: SEO;
   tags: string[];
   updatedAt: string;
+  details?: {
+    value: string;
+  };
+  shipping?: {
+    value: string;
+  };
 };
 
 export type ShopifyCartOperation = {

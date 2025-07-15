@@ -355,6 +355,12 @@ const productFragment = /* GraphQL */ `
     }
     tags
     updatedAt
+    details: metafield(namespace: "custom", key: "details") {
+      value
+    }
+    shipping: metafield(namespace: "custom", key: "shipping") {
+      value
+    }
   }
   ${__TURBOPACK__imported__module__$5b$project$5d2f$lib$2f$shopify$2f$fragments$2f$image$2e$ts__$5b$app$2d$rsc$5d$__$28$ecmascript$29$__["default"]}
   ${__TURBOPACK__imported__module__$5b$project$5d2f$lib$2f$shopify$2f$fragments$2f$seo$2e$ts__$5b$app$2d$rsc$5d$__$28$ecmascript$29$__["default"]}

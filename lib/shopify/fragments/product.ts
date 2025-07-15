@@ -56,6 +56,12 @@ const productFragment = /* GraphQL */ `
     }
     tags
     updatedAt
+    details: metafield(namespace: "custom", key: "details") {
+      value
+    }
+    shipping: metafield(namespace: "custom", key: "shipping") {
+      value
+    }
   }
   ${imageFragment}
   ${seoFragment}

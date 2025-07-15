@@ -66,7 +66,6 @@ export function VariantSelector({
                 disabled={!isAvailableForSale}
                 title={`${option.name} ${value}${!isAvailableForSale ? ' (Out of Stock)' : ''}`}
                 className={clsx(
-                  // UPDATED STYLES HERE
                   'flex min-w-[48px] items-center justify-center rounded-md border-2 bg-transparent px-3 py-2 text-sm',
                   {
                     'border-white': isActive,
