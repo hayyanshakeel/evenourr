@@ -80,8 +80,17 @@ export default async function ProductPage(props: { params: Promise<{ handle: str
           __html: JSON.stringify(productJsonLd)
         }}
       />
-      <div className="mx-auto max-w-(--breakpoint-2xl) px-4">
-        <div className="flex flex-col rounded-lg border border-neutral-200 bg-white p-8 md:p-12 lg:flex-row lg:gap-8 dark:border-neutral-800 dark:bg-black">
+      <div className="mx-auto max-w-screen-2xl px-4">
+        {/* BREADCRUMB ADDED HERE */}
+        <div className="mb-4 flex items-center gap-2 text-sm text-neutral-500 dark:text-neutral-400">
+          <span>HOME</span>
+          <span>›</span>
+          <span>ALL PRODUCTS</span>
+          <span>›</span>
+          <span className="font-semibold text-white">{product.title.toUpperCase()}</span>
+        </div>
+
+        <div className="flex flex-col rounded-lg lg:flex-row lg:gap-8">
           <div className="h-full w-full basis-full lg:basis-4/6">
             <Suspense
               fallback={
@@ -89,7 +98,7 @@ export default async function ProductPage(props: { params: Promise<{ handle: str
               }
             >
               <Gallery
-                images={product.images.slice(0, 5).map((image: Image) => ({
+                images={product.images.map((image: Image) => ({
                   src: image.url,
                   altText: image.altText
                 }))}
@@ -103,7 +112,9 @@ export default async function ProductPage(props: { params: Promise<{ handle: str
             </Suspense>
           </div>
         </div>
-        <RelatedProducts id={product.id} />
+        <Suspense>
+          <RelatedProducts id={product.id} />
+        </Suspense>
       </div>
       <Footer />
     </ProductProvider>

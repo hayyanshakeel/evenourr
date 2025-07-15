@@ -1,0 +1,19 @@
+{
+  "app": {
+    "[project]/app/_not-found/page": [
+      "static/media/Geist_Variable-s.p.f406b17f.woff2"
+    ],
+    "[project]/app/page": [
+      "static/media/Geist_Variable-s.p.f406b17f.woff2"
+    ],
+    "[project]/app/product/[handle]/page": [
+      "static/media/Geist_Variable-s.p.f406b17f.woff2"
+    ],
+    "[project]/app/search/page": [
+      "static/media/Geist_Variable-s.p.f406b17f.woff2"
+    ]
+  },
+  "appUsingSizeAdjust": true,
+  "pages": {},
+  "pagesUsingSizeAdjust": false
+}
