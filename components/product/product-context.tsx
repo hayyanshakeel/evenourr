@@ -1,5 +1,8 @@
+// components/product/product-context.tsx
+
 'use client';
 
+import type { Product } from 'lib/shopify/types';
 import { useRouter, useSearchParams } from 'next/navigation';
 import React, { createContext, useContext, useMemo, useOptimistic } from 'react';
 
@@ -17,14 +20,39 @@ type ProductContextType = {
 
 const ProductContext = createContext<ProductContextType | undefined>(undefined);
 
-export function ProductProvider({ children }: { children: React.ReactNode }) {
+export function ProductProvider({
+  children,
+  product
+}: {
+  children: React.ReactNode;
+  product: Product;
+}) {
   const searchParams = useSearchParams();
 
+  // FIX: This function now correctly sets a default state if URL params are missing
   const getInitialState = () => {
     const params: ProductState = {};
+    const firstVariant = product.variants[0];
+
+    // First, read any existing params from the URL
     for (const [key, value] of searchParams.entries()) {
       params[key] = value;
     }
+
+    // If any options are missing from the URL params, set them from the first available variant.
+    // This prevents the page from crashing on first load.
+    for (const option of product.options) {
+      const optionName = option.name.toLowerCase();
+      if (!params[optionName] && firstVariant) {
+        const firstVariantOption = firstVariant.selectedOptions.find(
+          (o) => o.name.toLowerCase() === optionName
+        );
+        if (firstVariantOption) {
+          params[optionName] = firstVariantOption.value;
+        }
+      }
+    }
+
     return params;
   };
 
@@ -37,7 +65,7 @@ export function ProductProvider({ children }: { children: React.ReactNode }) {
   );
 
   const updateOption = (name: string, value: string) => {
-    const newState = { [name]: value };
+    const newState = { [name.toLowerCase()]: value };
     setOptimisticState(newState);
     return { ...state, ...newState };
   };
@@ -74,8 +102,12 @@ export function useUpdateURL() {
   return (state: ProductState) => {
     const newParams = new URLSearchParams(window.location.search);
     Object.entries(state).forEach(([key, value]) => {
-      newParams.set(key, value);
+      if (value) {
+        newParams.set(key, value);
+      }
     });
-    router.push(`?${newParams.toString()}`, { scroll: false });
+
+    // Using replace to avoid polluting browser history on variant selection
+    router.replace(`?${newParams.toString()}`, { scroll: false });
   };
 }

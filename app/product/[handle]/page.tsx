@@ -1,17 +1,18 @@
+// app/product/[handle]/page.tsx
+
 import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
+import { Suspense } from 'react';
 
 import { AddToCart } from 'components/cart/add-to-cart';
-import { GridTileImage } from 'components/grid/tile';
 import Footer from 'components/layout/footer';
 import { Gallery } from 'components/product/gallery';
-import { ProductProvider } from 'components/product/product-context';
+import { ProductProvider } from 'components/product/product-context'; // We will use this
 import { ProductDescription } from 'components/product/product-description';
 import { HIDDEN_PRODUCT_TAG } from 'lib/constants';
 import { getProduct, getProductRecommendations } from 'lib/shopify';
-import { Image } from 'lib/shopify/types';
+import type { Image } from 'lib/shopify/types';
 import Link from 'next/link';
-import { Suspense } from 'react';
 
 export async function generateMetadata({
   params
@@ -74,34 +75,38 @@ export default async function ProductPage({ params }: { params: { handle: string
   };
 
   return (
-    <ProductProvider>
+    // FIX: Pass the fetched 'product' object into the ProductProvider
+    <ProductProvider product={product}>
       <div className="pb-24">
-        {' '}
         <script
           type="application/ld+json"
           dangerouslySetInnerHTML={{
             __html: JSON.stringify(productJsonLd)
           }}
         />
-        <Suspense
-          fallback={
-            <div className="relative aspect-square h-full max-h-[550px] w-full overflow-hidden" />
-          }
-        >
-          <Gallery
-            images={product.images.map((image: Image) => ({
-              src: image.url,
-              altText: image.altText
-            }))}
-          />
-        </Suspense>
+        <div className="lg:grid lg:grid-cols-2 lg:gap-8">
+          <div className="lg:col-start-1">
+            <Suspense
+              fallback={
+                <div className="relative aspect-square h-full max-h-[550px] w-full overflow-hidden" />
+              }
+            >
+              <Gallery
+                images={product.images.map((image: Image) => ({
+                  src: image.url,
+                  altText: image.altText
+                }))}
+              />
+            </Suspense>
+          </div>
 
-        <hr className="border-t border-gray-200" />
-
-        <div className="p-4">
-          <ProductDescription product={product} />
+          <div className="mt-8 lg:col-start-2 lg:mt-0">
+            <div className="p-4">
+              <ProductDescription product={product} />
+            </div>
+          </div>
         </div>
-
+        <hr className="my-8 border-t border-gray-200" />
         <div className="px-4">
           <Suspense>
             <RelatedProducts id={product.id} />
@@ -112,7 +117,7 @@ export default async function ProductPage({ params }: { params: { handle: string
 
       <div className="fixed bottom-0 left-0 z-10 w-full border-t border-gray-200 bg-white p-4 shadow-[0_-2px_10px_rgba(0,0,0,0.05)]">
         <div className="mx-auto max-w-lg">
-          <AddToCart product={product} />
+          <AddToCart variants={product.variants} availableForSale={product.availableForSale} />
         </div>
       </div>
     </ProductProvider>

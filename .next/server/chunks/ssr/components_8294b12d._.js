@@ -18,6 +18,7 @@ var addItem = /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$
 
 var { g: global, __dirname } = __turbopack_context__;
 {
+// components/product/product-context.tsx
 __turbopack_context__.s({
     "ProductProvider": (()=>ProductProvider),
     "useProduct": (()=>useProduct),
@@ -31,12 +32,26 @@ var __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist
 ;
 ;
 const ProductContext = /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["createContext"])(undefined);
-function ProductProvider({ children }) {
+function ProductProvider({ children, product }) {
     const searchParams = (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$navigation$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["useSearchParams"])();
+    // FIX: This function now correctly sets a default state if URL params are missing
     const getInitialState = ()=>{
         const params = {};
+        const firstVariant = product.variants[0];
+        // First, read any existing params from the URL
         for (const [key, value] of searchParams.entries()){
             params[key] = value;
+        }
+        // If any options are missing from the URL params, set them from the first available variant.
+        // This prevents the page from crashing on first load.
+        for (const option of product.options){
+            const optionName = option.name.toLowerCase();
+            if (!params[optionName] && firstVariant) {
+                const firstVariantOption = firstVariant.selectedOptions.find((o)=>o.name.toLowerCase() === optionName);
+                if (firstVariantOption) {
+                    params[optionName] = firstVariantOption.value;
+                }
+            }
         }
         return params;
     };
@@ -46,7 +61,7 @@ function ProductProvider({ children }) {
         }));
     const updateOption = (name, value)=>{
         const newState = {
-            [name]: value
+            [name.toLowerCase()]: value
         };
         setOptimisticState(newState);
         return {
@@ -76,7 +91,7 @@ function ProductProvider({ children }) {
         children: children
     }, void 0, false, {
         fileName: "[project]/components/product/product-context.tsx",
-        lineNumber: 60,
+        lineNumber: 88,
         columnNumber: 10
     }, this);
 }
@@ -92,9 +107,12 @@ function useUpdateURL() {
     return (state)=>{
         const newParams = new URLSearchParams(window.location.search);
         Object.entries(state).forEach(([key, value])=>{
-            newParams.set(key, value);
+            if (value) {
+                newParams.set(key, value);
+            }
         });
-        router.push(`?${newParams.toString()}`, {
+        // Using replace to avoid polluting browser history on variant selection
+        router.replace(`?${newParams.toString()}`, {
             scroll: false
         });
     };
@@ -670,14 +688,14 @@ var __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist
 ;
 function ProductDescription({ product }) {
     const { state } = (0, __TURBOPACK__imported__module__$5b$project$5d2f$components$2f$product$2f$product$2d$context$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["useProduct"])();
-    // This logic correctly finds the full variant object based on the selected options.
     const selectedVariant = (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["useMemo"])(()=>{
+        // This logic now works because the context provides a default state
         return product.variants.find((variant)=>variant.selectedOptions.every((option)=>state[option.name.toLowerCase()] === option.value));
     }, [
         product.variants,
         state
     ]);
-    // We determine the correct price to display.
+    // The price will now always be valid on first load
     const price = selectedVariant?.price || product.priceRange.maxVariantPrice;
     return /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["Fragment"], {
         children: [
@@ -717,7 +735,7 @@ function ProductDescription({ product }) {
                 options: product.options
             }, void 0, false, {
                 fileName: "[project]/components/product/product-description.tsx",
-                lineNumber: 39,
+                lineNumber: 38,
                 columnNumber: 7
             }, this)
         ]

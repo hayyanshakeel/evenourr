@@ -11,8 +11,8 @@ import { useMemo } from 'react';
 export function ProductDescription({ product }: { product: Product }) {
   const { state } = useProduct();
 
-  // This logic correctly finds the full variant object based on the selected options.
   const selectedVariant = useMemo(() => {
+    // This logic now works because the context provides a default state
     return product.variants.find((variant) =>
       variant.selectedOptions.every(
         (option) => state[option.name.toLowerCase()] === option.value
@@ -20,7 +20,7 @@ export function ProductDescription({ product }: { product: Product }) {
     );
   }, [product.variants, state]);
 
-  // We determine the correct price to display.
+  // The price will now always be valid on first load
   const price = selectedVariant?.price || product.priceRange.maxVariantPrice;
 
   return (
@@ -35,7 +35,6 @@ export function ProductDescription({ product }: { product: Product }) {
         </div>
       </div>
 
-      {/* The variant selector will appear here if the product has options. */}
       <VariantSelector options={product.options} />
     </>
   );
