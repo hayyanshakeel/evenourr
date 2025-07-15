@@ -1,87 +1,144 @@
 'use client';
 
+import { Dialog, Transition } from '@headlessui/react';
 import clsx from 'clsx';
 import { useProduct, useUpdateURL } from 'components/product/product-context';
-import { ProductOption, ProductVariant } from 'lib/shopify/types';
+import { ProductOption } from 'lib/shopify/types';
+import { Fragment, useState } from 'react';
 
-type Combination = {
-  id: string;
-  availableForSale: boolean;
-  [key: string]: string | boolean;
+const colorNameToClass: { [key: string]: string } = {
+  black: 'bg-black',
+  white: 'bg-white',
+  beige: 'bg-beige-200',
 };
 
-export function VariantSelector({
-  options,
-  variants
-}: {
-  options: ProductOption[];
-  variants: ProductVariant[];
-}) {
+export function VariantSelector({ options }: { options: ProductOption[] }) {
   const { state, updateOption } = useProduct();
   const updateURL = useUpdateURL();
-  const hasNoOptionsOrJustOneOption =
-    !options.length || (options.length === 1 && options[0]?.values.length === 1);
+  const [isSizeSelectorOpen, setIsSizeSelectorOpen] = useState(false);
 
-  if (hasNoOptionsOrJustOneOption) {
-    return null;
-  }
+  return (
+    <div className="space-y-4">
+      {options.map((option) => {
+        const optionNameLowerCase = option.name.toLowerCase();
 
-  const combinations: Combination[] = variants.map((variant) => ({
-    id: variant.id,
-    availableForSale: variant.availableForSale,
-    ...variant.selectedOptions.reduce(
-      (accumulator, option) => ({ ...accumulator, [option.name.toLowerCase()]: option.value }),
-      {}
-    )
-  }));
+        if (optionNameLowerCase === 'color') {
+          return (
+            <div key={option.id}>
+              <p className="mb-2 text-sm font-semibold">
+                {option.name}: <span className="font-normal">{state.color}</span>
+              </p>
+              <div className="flex flex-wrap gap-3">
+                {option.values.map((value) => {
+                  const isActive = state.color === value;
+                  const colorClass = colorNameToClass[value.toLowerCase()] || 'bg-gray-400';
 
-  return options.map((option) => (
-    <form key={option.id}>
-      <dl className="mb-8">
-        <dt className="mb-4 text-sm uppercase tracking-wide">{option.name}</dt>
-        <dd className="flex flex-wrap gap-3">
-          {option.values.map((value) => {
-            const optionNameLowerCase = option.name.toLowerCase();
-            const optionParams = { ...state, [optionNameLowerCase]: value };
-            const filtered = Object.entries(optionParams).filter(([key, value]) =>
-              options.find(
-                (option) => option.name.toLowerCase() === key && option.values.includes(value)
-              )
-            );
-            const isAvailableForSale = combinations.find((combination) =>
-              filtered.every(
-                ([key, value]) => combination[key] === value && combination.availableForSale
-              )
-            );
-            const isActive = state[optionNameLowerCase] === value;
+                  return (
+                    <button
+                      key={value}
+                      onClick={() => {
+                        const newState = updateOption(optionNameLowerCase, value);
+                        updateURL(newState);
+                      }}
+                      title={value}
+                      className={clsx(
+                        'h-8 w-8 rounded-full border border-gray-200',
+                        colorClass,
+                        { 'ring-2 ring-black ring-offset-2': isActive }
+                      )}
+                    />
+                  );
+                })}
+              </div>
+            </div>
+          );
+        }
 
-            return (
+        if (optionNameLowerCase === 'size') {
+          return (
+            <div key={option.id}>
+              {/* Size Title and Guide Link */}
+              <div className="flex items-center justify-between mb-2">
+                <p className="text-sm font-semibold">SIZE</p>
+                <a href="#" className="text-xs font-medium text-gray-500 hover:underline">
+                  Size Guide
+                </a>
+              </div>
               <button
-                formAction={() => {
-                  const newState = updateOption(optionNameLowerCase, value);
-                  updateURL(newState);
-                }}
-                key={value}
-                aria-disabled={!isAvailableForSale}
-                disabled={!isAvailableForSale}
-                title={`${option.name} ${value}${!isAvailableForSale ? ' (Out of Stock)' : ''}`}
-                className={clsx(
-                  'flex min-w-[48px] items-center justify-center rounded-md border-2 bg-transparent px-3 py-2 text-sm',
-                  {
-                    'border-white text-white': isActive,
-                    'border-neutral-700 text-neutral-400 transition duration-300 ease-in-out hover:border-white hover:text-white':
-                      !isActive && isAvailableForSale,
-                    'relative z-10 cursor-not-allowed overflow-hidden border-neutral-800 text-neutral-600 ring-neutral-700 before:absolute before:inset-x-0 before:-z-10 before:h-px before:-rotate-45 before:bg-neutral-700 before:transition-transform':
-                      !isAvailableForSale
-                  }
-                )}
+                onClick={() => setIsSizeSelectorOpen(true)}
+                className="flex w-full items-center justify-between rounded-md border border-gray-300 p-3 text-sm"
               >
-                {value}
+                <span>{state.size || 'Select Size'}</span>
+                <svg
+                  className="h-5 w-5 text-gray-400"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                >
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7-7" />
+                </svg>
               </button>
-            );
-          })}
-        </dd>
-      </dl>
-    </form>
-  ));
+
+              <Transition show={isSizeSelectorOpen} as={Fragment}>
+                <Dialog onClose={() => setIsSizeSelectorOpen(false)} className="relative z-50">
+                  <Transition.Child
+                    as={Fragment}
+                    enter="ease-out duration-300"
+                    enterFrom="opacity-0"
+                    enterTo="opacity-100"
+                    leave="ease-in duration-200"
+                    leaveFrom="opacity-100"
+                    leaveTo="opacity-0"
+                  >
+                    <div className="fixed inset-0 bg-black/30" aria-hidden="true" />
+                  </Transition.Child>
+
+                  <Transition.Child
+                    as={Fragment}
+                    enter="ease-out duration-300"
+                    enterFrom="opacity-0 translate-y-full"
+                    enterTo="opacity-100 translate-y-0"
+                    leave="ease-in duration-200"
+                    leaveFrom="opacity-100 translate-y-0"
+                    leaveTo="opacity-0 translate-y-full"
+                  >
+                    <div className="fixed inset-x-0 bottom-0">
+                      <Dialog.Panel className="w-full rounded-t-lg bg-white p-4">
+                        <div className="flex items-center justify-between pb-4">
+                          <Dialog.Title className="text-lg font-semibold">Select Size</Dialog.Title>
+                          <button onClick={() => setIsSizeSelectorOpen(false)}>
+                            <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                            </svg>
+                          </button>
+                        </div>
+
+                        <div className="grid grid-cols-4 gap-2">
+                          {option.values.map((value) => (
+                            <button
+                              key={value}
+                              onClick={() => {
+                                const newState = updateOption(optionNameLowerCase, value);
+                                updateURL(newState);
+                                setIsSizeSelectorOpen(false);
+                              }}
+                              className="rounded-md border border-gray-300 p-3 text-center text-sm"
+                            >
+                              {value}
+                            </button>
+                          ))}
+                        </div>
+                      </Dialog.Panel>
+                    </div>
+                  </Transition.Child>
+                </Dialog>
+              </Transition>
+            </div>
+          );
+        }
+
+        return null;
+      })}
+    </div>
+  );
 }

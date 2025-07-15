@@ -1,7 +1,6 @@
 import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 
-import { GridTileImage } from 'components/grid/tile';
 import Footer from 'components/layout/footer';
 import { Gallery } from 'components/product/gallery';
 import { ProductProvider } from 'components/product/product-context';
@@ -11,11 +10,10 @@ import { getProduct, getProductRecommendations } from 'lib/shopify';
 import { Image } from 'lib/shopify/types';
 import Link from 'next/link';
 import { Suspense } from 'react';
+import { GridTileImage } from 'components/grid/tile';
 
-export async function generateMetadata(props: {
-  params: Promise<{ handle: string }>;
-}): Promise<Metadata> {
-  const params = await props.params;
+
+export async function generateMetadata({ params }: { params: { handle: string } }): Promise<Metadata> {
   const product = await getProduct(params.handle);
 
   if (!product) return notFound();
@@ -49,8 +47,7 @@ export async function generateMetadata(props: {
   };
 }
 
-export default async function ProductPage(props: { params: Promise<{ handle: string }> }) {
-  const params = await props.params;
+export default async function ProductPage({ params }: { params: { handle: string } }) {
   const product = await getProduct(params.handle);
 
   if (!product) return notFound();
@@ -80,41 +77,24 @@ export default async function ProductPage(props: { params: Promise<{ handle: str
           __html: JSON.stringify(productJsonLd)
         }}
       />
-      <div className="mx-auto max-w-screen-2xl px-4">
-        {/* BREADCRUMB ADDED HERE */}
-        <div className="mb-4 flex items-center gap-2 text-sm text-neutral-500 dark:text-neutral-400">
-          <span>HOME</span>
-          <span>›</span>
-          <span>ALL PRODUCTS</span>
-          <span>›</span>
-          <span className="font-semibold text-white">{product.title.toUpperCase()}</span>
-        </div>
+      <Suspense
+        fallback={
+          <div className="relative aspect-square h-full max-h-[550px] w-full overflow-hidden" />
+        }
+      >
+        <Gallery
+          images={product.images.map((image: Image) => ({
+            src: image.url,
+            altText: image.altText
+          }))}
+        />
+      </Suspense>
 
-        <div className="flex flex-col rounded-lg lg:flex-row lg:gap-8">
-          <div className="h-full w-full basis-full lg:basis-4/6">
-            <Suspense
-              fallback={
-                <div className="relative aspect-square h-full max-h-[550px] w-full overflow-hidden" />
-              }
-            >
-              <Gallery
-                images={product.images.map((image: Image) => ({
-                  src: image.url,
-                  altText: image.altText
-                }))}
-              />
-            </Suspense>
-          </div>
+      {/* Black separator line */}
+      <hr className="border-t border-gray-200" />
 
-          <div className="basis-full lg:basis-2/6">
-            <Suspense fallback={null}>
-              <ProductDescription product={product} />
-            </Suspense>
-          </div>
-        </div>
-        <Suspense>
-          <RelatedProducts id={product.id} />
-        </Suspense>
+      <div className="p-4">
+        <ProductDescription product={product} />
       </div>
       <Footer />
     </ProductProvider>
