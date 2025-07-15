@@ -1,159 +1,190 @@
-import type { Metadata } from 'next';
-import { notFound } from 'next/navigation';
+// Use this directive at the top because we use React Hooks like useState
+'use client';
 
-import { GridTileImage } from 'components/grid/tile';
-import Footer from 'components/layout/footer';
-import { Gallery } from 'components/product/gallery';
-import { ProductProvider } from 'components/product/product-context';
-import { ProductDescription } from 'components/product/product-description';
-import { HIDDEN_PRODUCT_TAG } from 'lib/constants';
-import { getProduct, getProductRecommendations } from 'lib/shopify';
-import { Image } from 'lib/shopify/types';
-import Link from 'next/link';
-import { Suspense } from 'react';
+import React, { useState, useEffect } from 'react';
 
-export async function generateMetadata(props: {
-  params: Promise<{ handle: string }>;
-}): Promise<Metadata> {
-  const params = await props.params;
-  const product = await getProduct(params.handle);
+// --- 1. TYPE DEFINITIONS ---
+// We are defining the data shapes directly in this file to avoid any import errors.
 
-  if (!product) return notFound();
-
-  const { url, width, height, altText: alt } = product.featuredImage || {};
-  const indexable = !product.tags.includes(HIDDEN_PRODUCT_TAG);
-
-  return {
-    title: product.seo.title || product.title,
-    description: product.seo.description || product.description,
-    robots: {
-      index: indexable,
-      follow: indexable,
-      googleBot: {
-        index: indexable,
-        follow: indexable
-      }
-    },
-    openGraph: url
-      ? {
-          images: [
-            {
-              url,
-              width,
-              height,
-              alt
-            }
-          ]
-        }
-      : null
+interface ProductVariant {
+  id: string;
+  title: string;
+  price: {
+    amount: string;
+    currencyCode: string;
   };
 }
 
-export default async function ProductPage(props: { params: Promise<{ handle: string }> }) {
-  const params = await props.params;
-  const product = await getProduct(params.handle);
-
-  if (!product) return notFound();
-
-  const productJsonLd = {
-    '@context': 'https://schema.org',
-    '@type': 'Product',
-    name: product.title,
-    description: product.description,
-    image: product.featuredImage.url,
-    offers: {
-      '@type': 'AggregateOffer',
-      availability: product.availableForSale
-        ? 'https://schema.org/InStock'
-        : 'https://schema.org/OutOfStock',
-      priceCurrency: product.priceRange.minVariantPrice.currencyCode,
-      highPrice: product.priceRange.maxVariantPrice.amount,
-      lowPrice: product.priceRange.minVariantPrice.amount
-    }
+interface Product {
+  id: string;
+  handle: string;
+  title: string;
+  description: string;
+  availableForSale: boolean;
+  featuredImage: {
+    url: string;
+    altText: string;
   };
+  variants: ProductVariant[];
+  priceRange: {
+    minVariantPrice: {
+      amount: string;
+      currencyCode: string;
+    };
+  };
+}
+
+// --- 2. MOCK DATA ---
+// In a real app, this data would come from the Shopify Storefront API.
+// We define it here to make sure our component has something to display.
+const mockProducts: Product[] = [
+  {
+    id: 'gid://shopify/Product/1',
+    handle: 'classic-t-shirt',
+    title: 'Classic T-Shirt',
+    description: 'A comfortable and stylish t-shirt for everyday wear.',
+    availableForSale: true,
+    featuredImage: { url: 'https://placehold.co/600x600/f0f0f0/333?text=T-Shirt', altText: 'A classic white t-shirt.' },
+    variants: [{ id: '1a', title: 'Small', price: { amount: '25.00', currencyCode: 'USD' } }],
+    priceRange: { minVariantPrice: { amount: '25.00', currencyCode: 'USD' } }
+  },
+  {
+    id: 'gid://shopify/Product/2',
+    handle: 'leather-boots',
+    title: 'Leather Boots',
+    description: 'Durable and fashionable leather boots.',
+    availableForSale: true,
+    featuredImage: { url: 'https://placehold.co/600x600/e0e0e0/333?text=Boots', altText: 'A pair of brown leather boots.' },
+    variants: [{ id: '2a', title: 'Size 10', price: { amount: '150.00', currencyCode: 'USD' } }],
+    priceRange: { minVariantPrice: { amount: '150.00', currencyCode: 'USD' } }
+  },
+  {
+    id: 'gid://shopify/Product/3',
+    handle: 'denim-jacket',
+    title: 'Denim Jacket',
+    description: 'A timeless denim jacket.',
+    availableForSale: false, // This item is sold out
+    featuredImage: { url: 'https://placehold.co/600x600/d0d0d0/333?text=Jacket', altText: 'A blue denim jacket.' },
+    variants: [{ id: '3a', title: 'Medium', price: { amount: '85.00', currencyCode: 'USD' } }],
+    priceRange: { minVariantPrice: { amount: '85.00', currencyCode: 'USD' } }
+  },
+  {
+    id: 'gid://shopify/Product/4',
+    handle: 'sunglasses',
+    title: 'Aviator Sunglasses',
+    description: 'Stylish aviator sunglasses to protect your eyes.',
+    availableForSale: true,
+    featuredImage: { url: 'https://placehold.co/600x600/c0c0c0/333?text=Sunglasses', altText: 'A pair of aviator sunglasses.' },
+    variants: [{ id: '4a', title: 'One Size', price: { amount: '75.00', currencyCode: 'USD' } }],
+    priceRange: { minVariantPrice: { amount: '75.00', currencyCode: 'USD' } }
+  },
+];
+
+
+// --- 3. THE `GridTileImage` COMPONENT ---
+// This component displays a single product tile.
+
+interface GridTileImageProps {
+  product: Product;
+  active: boolean;
+}
+
+const GridTileImage: React.FC<GridTileImageProps> = ({ product, active }) => {
+  const imageUrl = product.featuredImage?.url || 'https://placehold.co/600x600/eee/ccc?text=No+Image';
+  const imageAlt = product.featuredImage?.altText || 'Product Image';
 
   return (
-    <ProductProvider>
-      <script
-        type="application/ld+json"
-        dangerouslySetInnerHTML={{
-          __html: JSON.stringify(productJsonLd)
-        }}
+    <div className="group relative h-full w-full overflow-hidden rounded-lg border border-gray-200">
+      <img
+        src={imageUrl}
+        alt={imageAlt}
+        className={`h-full w-full object-cover transition-transform duration-300 ease-in-out ${active ? 'scale-110' : 'scale-100'}`}
       />
-      <div className="mx-auto max-w-screen-2xl px-4">
-        <div className="mb-4 flex items-center gap-2 text-sm text-neutral-500 dark:text-neutral-400">
-          <span>HOME</span>
-          <span>›</span>
-          <span>ALL PRODUCTS</span>
-          <span>›</span>
-          <span className="font-semibold text-white">{product.title.toUpperCase()}</span>
-        </div>
-
-        <div className="flex flex-col rounded-lg lg:flex-row lg:gap-8">
-          <div className="h-full w-full basis-full lg:basis-4/6">
-            <Suspense
-              fallback={
-                <div className="relative aspect-square h-full max-h-[550px] w-full overflow-hidden" />
-              }
-            >
-              <Gallery
-                images={product.images.map((image: Image) => ({
-                  src: image.url,
-                  altText: image.altText
-                }))}
-              />
-            </Suspense>
-          </div>
-
-          <div className="basis-full lg:basis-2/6">
-            <Suspense fallback={null}>
-              <ProductDescription product={product} />
-            </Suspense>
-          </div>
-        </div>
-        <Suspense>
-          <RelatedProducts id={product.id} />
-        </Suspense>
+      <div className="absolute bottom-0 left-0 w-full bg-black bg-opacity-60 p-4 text-white backdrop-blur-sm transition-opacity duration-300 group-hover:opacity-100 md:opacity-0">
+        <h3 className="font-bold text-lg truncate">{product.title}</h3>
+        <p className="text-sm">
+          {product.priceRange.minVariantPrice.amount} {product.priceRange.minVariantPrice.currencyCode}
+        </p>
       </div>
-      <Footer />
-    </ProductProvider>
+      {!product.availableForSale && (
+        <div className="absolute top-3 left-3 bg-gray-800 text-white text-xs font-bold px-3 py-1 rounded-full shadow-lg">
+          Sold Out
+        </div>
+      )}
+    </div>
   );
+};
+
+// --- 4. THE `ProductGridItems` COMPONENT ---
+// This component creates the grid and maps over the products.
+
+interface ProductGridItemsProps {
+  products: Product[];
 }
 
-async function RelatedProducts({ id }: { id: string }) {
-  const relatedProducts = await getProductRecommendations(id);
-
-  if (!relatedProducts.length) return null;
+const ProductGridItems: React.FC<ProductGridItemsProps> = ({ products }) => {
+  const [activeProductId, setActiveProductId] = useState<string | null>(null);
 
   return (
-    <div className="py-8">
-      <h2 className="mb-4 text-2xl font-bold">Related Products</h2>
-      <ul className="flex w-full gap-4 overflow-x-auto pt-1">
-        {relatedProducts.map((product) => (
-          <li
-            key={product.handle}
-            className="aspect-square w-full flex-none min-[475px]:w-1/2 sm:w-1/3 md:w-1/4 lg:w-1/5"
-          >
-            <Link
-              className="relative h-full w-full"
-              href={`/product/${product.handle}`}
-              prefetch={true}
-            >
-              <GridTileImage
-                alt={product.title}
-                label={{
-                  title: product.title,
-                  amount: product.priceRange.maxVariantPrice.amount,
-                  currencyCode: product.priceRange.maxVariantPrice.currencyCode
-                }}
-                src={product.featuredImage?.url}
-                fill
-                sizes="(min-width: 1024px) 20vw, (min-width: 768px) 25vw, (min-width: 640px) 33vw, (min-width: 475px) 50vw, 100vw"
-              />
-            </Link>
-          </li>
-        ))}
-      </ul>
+    <div className="grid grid-cols-2 gap-4 sm:gap-6 md:grid-cols-3 lg:grid-cols-4">
+      {products.map((product) => (
+        <div
+          key={product.handle}
+          className="aspect-square cursor-pointer"
+          onMouseEnter={() => setActiveProductId(product.id)}
+          onMouseLeave={() => setActiveProductId(null)}
+        >
+          {/* This correctly passes the 'product' prop to the GridTileImage component */}
+          <GridTileImage product={product} active={activeProductId === product.id} />
+        </div>
+      ))}
+    </div>
+  );
+};
+
+
+// --- 5. THE MAIN PAGE COMPONENT ---
+// This is the final component that Next.js will render for the page.
+
+export default function HomePage() {
+  const [products, setProducts] = useState<Product[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  // This simulates fetching data from an API when the component first loads.
+  useEffect(() => {
+    // In your real application, you will replace this with your Shopify API call.
+    const fetchProducts = () => {
+      setTimeout(() => {
+        setProducts(mockProducts);
+        setLoading(false);
+      }, 500); // Simulate a 0.5 second network delay
+    };
+
+    fetchProducts();
+  }, []); // The empty array [] means this effect runs only once after the component mounts.
+
+  return (
+    <div className="bg-gray-50 min-h-screen font-sans">
+      <div className="container mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
+        <header className="mb-8 text-center sm:mb-12">
+          <h1 className="text-4xl font-extrabold tracking-tight text-gray-900 sm:text-5xl">
+            Our Collection
+          </h1>
+          <p className="mt-4 text-lg text-gray-600">
+            Find the perfect style for any occasion.
+          </p>
+        </header>
+
+        <main>
+          {loading ? (
+            <div className="text-center text-gray-500">
+              <p>Loading products...</p>
+            </div>
+          ) : (
+            <ProductGridItems products={products} />
+          )}
+        </main>
+      </div>
     </div>
   );
 }

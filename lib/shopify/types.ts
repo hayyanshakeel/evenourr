@@ -114,6 +114,7 @@ export type ShopifyCart = {
 };
 
 export type ShopifyCollection = {
+  id: string; // Added this line to resolve the error
   handle: string;
   title: string;
   description: string;
