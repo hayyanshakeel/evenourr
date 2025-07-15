@@ -40,8 +40,6 @@ export function ShareModal({
     onClose();
   };
 
-  // The 'saveImage' function has been removed.
-
   const socialLinks = {
     whatsapp: `https://api.whatsapp.com/send?text=${encodeURIComponent(
       `${productTitle} - ${productUrl}`
@@ -83,12 +81,13 @@ export function ShareModal({
             <Dialog.Panel className="w-full rounded-t-lg bg-white p-4">
               <Dialog.Title className="text-center font-semibold">Share to</Dialog.Title>
               <div className="my-4 grid grid-cols-4 gap-4">
+                {/* Corrected WhatsApp Icon */}
                 <ShareIcon
                   label="WhatsApp"
                   onClick={() => window.open(socialLinks.whatsapp, '_blank')}
                   icon={
                     <svg className="h-8 w-8 text-green-500" fill="currentColor" viewBox="0 0 24 24">
-                      <path d="M12.04 2C6.58 2 2.13 6.45 2.13 11.91c0 1.79.46 3.58 1.34 5.14L2 22l5.05-1.32c1.52.81 3.24 1.24 4.99 1.24h.01c5.46 0 9.91-4.45 9.91-9.91 0-5.46-4.45-9.91-9.91-9.91zM17.2 15.25c-.22-.12-1.32-.65-1.52-.73s-.35-.12-.5.12c-.15.23-.58.73-.71.87-.13.15-.26.17-.48.05-.22-.12-1.02-.38-1.94-1.2s-1.4-1.83-1.56-2.13c-.16-.3-.01-.46.11-.58.1-.1.22-.26.33-.39.11-.12.15-.2.22-.33.07-.12.04-.23-.02-.35-.06-.12-.5-1.2-.68-1.64-.18-.44-.37-.38-.5-.38h-.4c-.15 0-.39.06-.59.3.2.23-.75.72-.75 1.78s.77 2.07.88 2.22c.11.15 1.51 2.31 3.66 3.24.5.22.9.35 1.2.45.6.19 1.14.16 1.56.1.48-.07 1.32-.54 1.5-1.04.19-.5.19-.92.13-1.04s-.15-.18-.37-.3z" />
+                      <path d="M16.75 13.96c-.25-.12-1.47-.72-1.7-.81-.23-.08-.39-.12-.56.12-.17.23-.64.81-.78.97-.14.17-.28.18-.53.06-.25-.12-1.05-.39-1.99-1.23-.74-.66-1.23-1.47-1.4-1.72-.17-.25-.02-.38.11-.5.12-.12.25-.3.38-.45.12-.15.17-.25.25-.41.08-.17.04-.31-.02-.43s-.56-1.35-.77-1.84c-.2-.48-.41-.42-.56-.42-.14 0-.3-.01-.47-.01s-.39.06-.6.3c-.2.25-.79.76-.79 1.85S10.25 15 10.37 15.17c.12.17 1.54 2.45 3.75 3.3.55.22.99.35 1.32.45.49.14 1.24.12 1.7-.05.51-.17 1.47-.6 1.68-1.18.21-.58.21-1.08.15-1.18-.07-.1-.17-.16-.37-.28zM12 2a10 10 0 1 0 10 10A10 10 0 0 0 12 2z" />
                     </svg>
                   }
                 />
@@ -101,6 +100,7 @@ export function ShareModal({
                     </svg>
                   }
                 />
+                {/* Corrected Pinterest Icon */}
                 <ShareIcon
                   label="Pinterest"
                   onClick={() => window.open(socialLinks.pinterest, '_blank')}
@@ -120,9 +120,6 @@ export function ShareModal({
                   }
                 />
                 <ShareIcon label="Copy Link" onClick={copyLink} icon={<svg className="h-7 w-7 text-gray-600" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1" /></svg>} />
-                
-                {/* The "Save Image" ShareIcon has been removed */}
-
               </div>
               <button
                 onClick={onClose}

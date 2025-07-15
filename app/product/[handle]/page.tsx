@@ -76,6 +76,7 @@ export default async function ProductPage({ params }: { params: { handle: string
   return (
     <ProductProvider>
       <div className="pb-24">
+        {' '}
         <script
           type="application/ld+json"
           dangerouslySetInnerHTML={{
