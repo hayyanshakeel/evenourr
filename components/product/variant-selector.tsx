@@ -6,7 +6,7 @@ import { Dialog, Transition } from '@headlessui/react';
 import clsx from 'clsx';
 import { useProduct, useUpdateURL } from 'components/product/product-context';
 import type { ProductOption } from 'lib/shopify/types';
-import React, { Fragment, useState } from 'react';
+import React, { Fragment, useState, useTransition } from 'react'; // Import useTransition
 
 const colorNameToClass: { [key: string]: string } = {
   black: 'bg-black',
@@ -18,6 +18,7 @@ export function VariantSelector({ options }: { options: ProductOption[] }) {
   const { state, updateOption } = useProduct();
   const updateURL = useUpdateURL();
   const [isSizeSelectorOpen, setIsSizeSelectorOpen] = useState(false);
+  const [isPending, startTransition] = useTransition(); // Initialize useTransition
 
   const colorOption = options.find((opt) => opt.name.toLowerCase() === 'color');
   const sizeOption = options.find((opt) => opt.name.toLowerCase() === 'size');
@@ -37,8 +38,10 @@ export function VariantSelector({ options }: { options: ProductOption[] }) {
                 <button
                   key={value}
                   onClick={() => {
-                    const newState = updateOption('color', value);
-                    updateURL(newState);
+                    startTransition(() => { // Wrap the state updates in startTransition
+                      const newState = updateOption('color', value);
+                      updateURL(newState);
+                    });
                   }}
                   title={value}
                   className={clsx(
@@ -46,6 +49,7 @@ export function VariantSelector({ options }: { options: ProductOption[] }) {
                     colorClass,
                     { 'ring-2 ring-blue-600 ring-offset-2': isActive }
                   )}
+                  disabled={isPending} // Optionally disable button during transition
                 />
               );
             })}
@@ -92,11 +96,14 @@ export function VariantSelector({ options }: { options: ProductOption[] }) {
                         <button
                           key={value}
                           onClick={() => {
-                            const newState = updateOption('size', value);
-                            updateURL(newState);
-                            setIsSizeSelectorOpen(false);
+                            startTransition(() => { // Wrap the state updates in startTransition
+                              const newState = updateOption('size', value);
+                              updateURL(newState);
+                              setIsSizeSelectorOpen(false); // Close modal within transition
+                            });
                           }}
                           className="rounded-md border border-gray-300 p-3 text-center text-sm"
+                          disabled={isPending} // Optionally disable button during transition
                         >
                           {value}
                         </button>

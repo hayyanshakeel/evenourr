@@ -1,0 +1,49 @@
+{
+  "node": {
+    "0075605cccd50dfd520692261bb2f2dedac55ddfde": {
+      "workers": {
+        "app/search/page": {
+          "moduleId": "[project]/.next-internal/server/app/search/page/actions.js { ACTIONS_MODULE0 => \"[project]/components/cart/actions.ts [app-rsc] (ecmascript)\" } [app-rsc] (server actions loader, ecmascript)",
+          "async": false
+        }
+      },
+      "layer": {
+        "app/search/page": "action-browser"
+      }
+    },
+    "00cb0b53b430e0a8d67964bf06878062ff64c5db04": {
+      "workers": {
+        "app/search/page": {
+          "moduleId": "[project]/.next-internal/server/app/search/page/actions.js { ACTIONS_MODULE0 => \"[project]/components/cart/actions.ts [app-rsc] (ecmascript)\" } [app-rsc] (server actions loader, ecmascript)",
+          "async": false
+        }
+      },
+      "layer": {
+        "app/search/page": "action-browser"
+      }
+    },
+    "60d4e9631abb1ed4b9fa21eebc9468e3f8e3f2b46b": {
+      "workers": {
+        "app/search/page": {
+          "moduleId": "[project]/.next-internal/server/app/search/page/actions.js { ACTIONS_MODULE0 => \"[project]/components/cart/actions.ts [app-rsc] (ecmascript)\" } [app-rsc] (server actions loader, ecmascript)",
+          "async": false
+        }
+      },
+      "layer": {
+        "app/search/page": "action-browser"
+      }
+    },
+    "604483c218e14cde0b5c4b2795dd0469fba84dcb1f": {
+      "workers": {
+        "app/search/page": {
+          "moduleId": "[project]/.next-internal/server/app/search/page/actions.js { ACTIONS_MODULE0 => \"[project]/components/cart/actions.ts [app-rsc] (ecmascript)\" } [app-rsc] (server actions loader, ecmascript)",
+          "async": false
+        }
+      },
+      "layer": {
+        "app/search/page": "action-browser"
+      }
+    }
+  },
+  "edge": {}
+}

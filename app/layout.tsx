@@ -6,7 +6,7 @@ import { GeistSans } from 'geist/font/sans';
 import { getCart, createCart } from 'lib/shopify';
 import { ReactNode } from 'react';
 import { Toaster } from 'sonner';
-import { cookies } from 'next/headers'; // Import cookies
+import { cookies } from 'next/headers';
 import { Suspense } from 'react';
 
 import { baseUrl } from 'lib/utils';
@@ -30,8 +30,7 @@ export default async function RootLayout({
 }: {
   children: ReactNode;
 }) {
-  // FIX: Add 'await' here to resolve the Promise
-  const cookieStore = await cookies(); // <--- Corrected line
+  const cookieStore = await cookies();
   let cartId = cookieStore.get('cartId')?.value;
 
   let cart;
@@ -75,18 +74,17 @@ export default async function RootLayout({
   return (
     <html lang="en" className={GeistSans.variable}>
       <body className="bg-white text-black selection:bg-teal-300">
-        <Suspense>
-          <Navbar />
-        </Suspense>
-        <main>
+        {/* FIX: Move Navbar inside CartProvider */}
+        <CartProvider cartPromise={cartPromise}>
           <Suspense>
-            <CartProvider cartPromise={cartPromise}>
-              {children}
-            </CartProvider>
+            <Navbar /> {/* Navbar is now inside CartProvider */}
           </Suspense>
-          <Toaster closeButton />
-          <WelcomeToast />
-        </main>
+          <main>
+            {children}
+            <Toaster closeButton />
+            <WelcomeToast />
+          </main>
+        </CartProvider>
       </body>
     </html>
   );
