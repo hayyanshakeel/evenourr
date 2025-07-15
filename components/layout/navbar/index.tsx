@@ -1,6 +1,6 @@
 import CartModal from 'components/cart/modal';
 import LogoSquare from 'components/logo-square';
-import { getMenu } from 'lib/shopify';
+// import { getMenu } from 'lib/shopify'; // Temporarily disabled
 import { Menu } from 'lib/shopify/types';
 import Link from 'next/link';
 import { Suspense } from 'react';
@@ -10,7 +10,9 @@ import Search, { SearchSkeleton } from './search';
 const { SITE_NAME } = process.env;
 
 export async function Navbar() {
-  const menu = await getMenu('next-js-frontend-header-menu');
+  // The line below is commented out to prevent the error.
+  // const menu = await getMenu('next-js-frontend-header-menu');
+  const menu: Menu[] = []; // We use an empty menu for now.
 
   return (
     <nav className="relative flex items-center justify-between p-4 lg:px-6">
@@ -31,7 +33,7 @@ export async function Navbar() {
               {SITE_NAME}
             </div>
           </Link>
-          {menu.length ? (
+          {menu.length > 0 ? (
             <ul className="hidden gap-6 text-sm md:flex md:items-center">
               {menu.map((item: Menu) => (
                 <li key={item.title}>

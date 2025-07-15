@@ -68,10 +68,10 @@ export function VariantSelector({
                 className={clsx(
                   'flex min-w-[48px] items-center justify-center rounded-md border-2 bg-transparent px-3 py-2 text-sm',
                   {
-                    'border-white': isActive,
-                    'border-neutral-700 transition duration-300 ease-in-out hover:border-white':
+                    'border-white text-white': isActive,
+                    'border-neutral-700 text-neutral-400 transition duration-300 ease-in-out hover:border-white hover:text-white':
                       !isActive && isAvailableForSale,
-                    'relative z-10 cursor-not-allowed overflow-hidden border-neutral-700 text-neutral-500 ring-neutral-700 before:absolute before:inset-x-0 before:-z-10 before:h-px before:-rotate-45 before:bg-neutral-700 before:transition-transform':
+                    'relative z-10 cursor-not-allowed overflow-hidden border-neutral-800 text-neutral-600 ring-neutral-700 before:absolute before:inset-x-0 before:-z-10 before:h-px before:-rotate-45 before:bg-neutral-700 before:transition-transform':
                       !isAvailableForSale
                   }
                 )}
