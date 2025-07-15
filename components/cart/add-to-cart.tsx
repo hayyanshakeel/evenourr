@@ -5,6 +5,7 @@ import { addItem } from 'components/cart/actions';
 import { useProduct } from 'components/product/product-context';
 import { Product, ProductVariant } from 'lib/shopify/types';
 import { useActionState } from 'react';
+import { toast } from 'sonner';
 import { useCart } from './cart-context';
 
 function SubmitButton({
@@ -15,7 +16,6 @@ function SubmitButton({
   selectedVariantId: string | undefined;
 }) {
   const buttonClasses =
-    // UPDATED STYLES HERE
     'relative flex w-full items-center justify-center rounded-md bg-white p-3 text-center text-sm font-medium text-black';
   const disabledClasses = 'cursor-not-allowed opacity-60 hover:opacity-60';
 
@@ -41,6 +41,9 @@ function SubmitButton({
 
   return (
     <button
+      onClick={(e: React.FormEvent<HTMLButtonElement>) => {
+        if (!availableForSale) e.preventDefault();
+      }}
       aria-label="Add to cart"
       className={clsx(buttonClasses, {
         'hover:opacity-90': true
@@ -52,36 +55,35 @@ function SubmitButton({
 }
 
 export function AddToCart({ product }: { product: Product }) {
-  const { variants } = product;
   const { addCartItem } = useCart();
   const { state } = useProduct();
   const [message, formAction] = useActionState(addItem, null);
 
-  const variant = variants.find((variant: ProductVariant) =>
+  const defaultVariant = product.variants.length === 1 ? product.variants[0] : undefined;
+  const selectedVariant = product.variants.find((variant: ProductVariant) =>
     variant.selectedOptions.every(
       (option) => option.value === state[option.name.toLowerCase()]
     )
   );
-  const defaultVariantId = variants.length === 1 ? variants[0]?.id : undefined;
-  const selectedVariantId = variant?.id || defaultVariantId;
-  const addItemAction = formAction.bind(null, selectedVariantId);
-  const finalVariant = variants.find(
-    (variant) => variant.id === selectedVariantId
-  )!;
+
+  const variantToUse = selectedVariant || defaultVariant;
+  const selectedVariantId = variantToUse?.id;
+  const isAvailableForSale = variantToUse?.availableForSale ?? false;
+
+  const actionWithVariant = formAction.bind(null, selectedVariantId);
 
   return (
     <form
       action={async () => {
-        // Optimistic UI update
-        if (finalVariant) {
-          addCartItem(finalVariant, product);
-        }
-        // Server action
-        await addItemAction();
+        if (!variantToUse) return;
+
+        addCartItem(variantToUse, product);
+        actionWithVariant();
+        toast.success('Item added to cart!');
       }}
     >
       <SubmitButton
-        availableForSale={product.availableForSale}
+        availableForSale={isAvailableForSale}
         selectedVariantId={selectedVariantId}
       />
       <p aria-live="polite" className="sr-only" role="status">
