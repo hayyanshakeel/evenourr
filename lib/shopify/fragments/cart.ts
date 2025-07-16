@@ -1,4 +1,3 @@
-import { imageFragment } from './image';
 import { productFragment } from './product';
 
 export const cartFragment = /* GraphQL */ `
@@ -49,5 +48,4 @@ export const cartFragment = /* GraphQL */ `
     totalQuantity
   }
   ${productFragment}
-  ${imageFragment}
 `;

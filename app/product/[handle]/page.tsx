@@ -14,11 +14,11 @@ import Link from 'next/link';
 import { GridTileImage } from 'components/grid/tile';
 
 export async function generateMetadata({
-  params: { handle }
+  params
 }: {
   params: { handle: string };
 }): Promise<Metadata> {
-  const product = await getProduct(handle);
+  const product = await getProduct(params.handle);
 
   if (!product) return notFound();
 
@@ -51,8 +51,8 @@ export async function generateMetadata({
   };
 }
 
-export default async function ProductPage({ params: { handle } }: { params: { handle: string } }) {
-  const product = await getProduct(handle);
+export default async function ProductPage({ params }: { params: { handle: string } }) {
+  const product = await getProduct(params.handle);
 
   if (!product) return notFound();
 
@@ -134,7 +134,7 @@ async function RelatedProducts({ id }: { id: string }) {
         {relatedProducts.map((product) => (
           <li
             key={product.handle}
-            className="aspect-square w-full flex-none min-[475px]:w-1/2 sm:w-1/3 md:w-1/4 lg:w-1/5"
+            className="aspect-square w-full flex-none min-[475px]:w-1/3 md:w-1/4 lg:w-1/5"
           >
             <Link className="relative h-full w-full" href={`/product/${product.handle}`}>
               <GridTileImage
