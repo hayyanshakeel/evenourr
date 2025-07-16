@@ -17,7 +17,7 @@ const Price = ({
   }).format(parseFloat(amount));
 
   return (
-    // The component now only applies the className passed from its parent
+    // This component now just applies the className passed from its parent
     <p className={clsx(className)}>
       {formattedPrice}
     </p>

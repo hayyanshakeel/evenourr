@@ -2,32 +2,31 @@ import Price from 'components/price';
 import { Product } from 'lib/shopify/types';
 import { ShareButton } from './share-button';
 import { VariantSelector } from './variant-selector';
-// We no longer need the ChevronDownIcon
-// import { ChevronDownIcon } from '@heroicons/react/24/outline';
 
 export function ProductDescription({ product }: { product: Product }) {
   return (
     <div className="flex flex-col">
       
       {/* Container for Title and Share Button */}
-      {/* Reduced bottom margin to make it closer to the price */}
-      <div className="mb-1 flex items-start justify-between">
+      {/* Changed items-start to items-center for perfect vertical alignment */}
+      <div className="mb-1 flex items-center justify-between">
         
-        {/* Title: Removed the wrapper div and the dropdown arrow */}
-        <h1 className="text-lg font-medium uppercase tracking-wide text-black">
+        <h1 className="text-lg font-medium uppercase leading-tight tracking-wide text-black">
           {product.title}
         </h1>
         
+        {/* The padding is handled inside the ShareButton component, 
+            but this container alignment will fix its position.
+        */}
         <ShareButton 
           productTitle={product.title} 
           productImage={product.featuredImage.url} 
         />
       </div>
 
-      {/* Price Component with reduced bottom margin to be closer to the variants */}
-      <div className="mb-5">
+      {/* Price Component */}
+      <div className="mb-4">
         <Price
-          // Matched font size to the title and removed bold for a cleaner look
           className="text-lg text-black"
           amount={product.priceRange.maxVariantPrice.amount}
           currencyCode={product.priceRange.maxVariantPrice.currencyCode}

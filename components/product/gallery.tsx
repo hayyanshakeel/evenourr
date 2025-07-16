@@ -5,7 +5,7 @@ import { useState } from 'react';
 
 export function Gallery({ images }: { images: { src: string; altText: string }[] }) {
   const [currentIndex, setCurrentIndex] = useState(0);
-  const [isWishlisted, setIsWishlisted] = useState(false); // State for the wishlist icon
+  const [isWishlisted, setIsWishlisted] = useState(false);
 
   return (
     <div className="relative h-full w-full">
@@ -31,15 +31,17 @@ export function Gallery({ images }: { images: { src: string; altText: string }[]
       </div>
 
       {/* Wishlist Button */}
-      <div className="absolute bottom-16 right-4">
+      <div className="absolute bottom-6 right-4">
+        {/* Updated styles for a black circle background */}
         <button
           onClick={() => setIsWishlisted(!isWishlisted)}
-          className="flex h-12 w-12 items-center justify-center rounded-full bg-white/90 shadow-md backdrop-blur-sm"
+          className="flex h-10 w-10 items-center justify-center rounded-full bg-black shadow-md backdrop-blur-sm"
         >
           <svg
             xmlns="http://www.w3.org/2000/svg"
-            className="h-6 w-6"
-            fill={isWishlisted ? 'currentColor' : 'none'} // Toggles fill color
+            // Heart icon is now white
+            className="h-5 w-5 text-white"
+            fill={isWishlisted ? 'currentColor' : 'none'}
             viewBox="0 0 24 24"
             stroke="currentColor"
           >

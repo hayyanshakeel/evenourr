@@ -82,33 +82,41 @@ export default async function ProductPage({ params }: { params: { handle: string
             __html: JSON.stringify(productJsonLd)
           }}
         />
-        <div className="lg:grid lg:grid-cols-2 lg:gap-8">
-          <div className="lg:col-start-1">
-            <Suspense
-              fallback={
-                <div className="relative aspect-square h-full max-h-[550px] w-full overflow-hidden" />
-              }
-            >
-              <Gallery
-                images={product.images.map((image: Image) => ({
-                  src: image.url,
-                  altText: image.altText
-                }))}
-              />
-            </Suspense>
-          </div>
+        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+          <div className="lg:grid lg:grid-cols-2 lg:gap-x-8">
+            <div className="lg:col-start-1">
+              <Suspense
+                fallback={
+                  <div className="relative aspect-square h-full max-h-[550px] w-full overflow-hidden" />
+                }
+              >
+                <Gallery
+                  images={product.images.map((image: Image) => ({
+                    src: image.url,
+                    altText: image.altText
+                  }))}
+                />
+              </Suspense>
+            </div>
 
-          <div className="mt-8 lg:col-start-2 lg:mt-0">
-            <div className="p-4">
-              <ProductDescription product={product} />
+            <div className="lg:col-start-2">
+              {/* This separator line now controls the spacing. 
+                  my-6 provides a smaller, clean gap on mobile.
+                  lg:hidden makes it disappear on large screens where columns are side-by-side.
+              */}
+              <hr className="my-6 border-neutral-200 lg:hidden" />
+              <div className="p-4 lg:p-0">
+                <ProductDescription product={product} />
+              </div>
             </div>
           </div>
         </div>
-        <hr className="my-8 border-t border-gray-200" />
-        <div className="px-4">
-          <Suspense>
-            <RelatedProducts id={product.id} />
-          </Suspense>
+        
+        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+            <hr className="my-8 border-neutral-200" />
+            <Suspense>
+                <RelatedProducts id={product.id} />
+            </Suspense>
         </div>
         <Footer />
       </div>
