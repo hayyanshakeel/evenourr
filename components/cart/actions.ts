@@ -5,6 +5,9 @@ import { addToCart, createCart, getCart, removeFromCart, updateCart } from 'lib/
 import { Cart, CartItem } from 'lib/shopify/types';
 import { revalidateTag } from 'next/cache';
 import { cookies } from 'next/headers';
+import { redirect } from 'next/navigation';
+
+// ... (Your other functions like addItem, removeItem, etc., go here)
 
 export async function addItem(prevState: any, selectedVariantId: string | undefined) {
   const cookieStore = await cookies();
@@ -80,4 +83,20 @@ export async function updateItemQuantity(
   } catch (e) {
     return 'Error updating item quantity';
   }
+}
+
+// Add this function back to the file
+export async function redirectToCheckout() {
+  const cartId = (await cookies()).get('cartId')?.value;
+  let cart;
+
+  if (cartId) {
+    cart = await getCart(cartId);
+  }
+
+  if (!cart?.checkoutUrl) {
+    return 'Missing checkout URL';
+  }
+
+  redirect(cart.checkoutUrl);
 }
