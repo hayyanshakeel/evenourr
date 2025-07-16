@@ -1,35 +1,32 @@
 import Price from 'components/price';
 import { Product } from 'lib/shopify/types';
-import { VariantSelector } from './variant-selector';
 import { ShareButton } from './share-button';
-import { ChevronDown } from 'lucide-react';
+import { VariantSelector } from './variant-selector';
 
 export function ProductDescription({ product }: { product: Product }) {
-  const compareAtPrice = product.compareAtPriceRange?.maxVariantPrice;
-
   return (
+    // Increased gap between elements for better spacing
     <div className="flex flex-col gap-y-6">
-      <div className="flex items-start justify-between">
-        <div className="flex items-center gap-x-2">
-          <h1 className="text-xl font-medium leading-tight text-gray-900">{product.title}</h1>
-          <ChevronDown size={18} className="text-gray-500" />
-        </div>
-        
-        {/* Pass the product title and image URL to the ShareButton */}
+      
+      {/* Container for Title and Share Button */}
+      <div className="flex items-center justify-between">
+        <h1 className="text-2xl font-black uppercase">{product.title}</h1>
         <ShareButton 
           productTitle={product.title} 
           productImage={product.featuredImage.url} 
         />
       </div>
 
+      {/* Price Component */}
       <Price
         amount={product.priceRange.maxVariantPrice.amount}
-        compareAtAmount={compareAtPrice?.amount}
         currencyCode={product.priceRange.maxVariantPrice.currencyCode}
       />
-
+      
+      {/* Variant Selector for Colors and Sizes */}
       <VariantSelector options={product.options} variants={product.variants} />
 
+      {/* Original Product Description */}
       {product.descriptionHtml ? (
         <div
           className="prose max-w-none text-sm text-gray-700"
