@@ -1,5 +1,3 @@
-// app/product/[handle]/page.tsx
-
 import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 import { Suspense } from 'react';
@@ -13,14 +11,14 @@ import { HIDDEN_PRODUCT_TAG } from 'lib/constants';
 import { getProduct, getProductRecommendations } from 'lib/shopify';
 import type { Image } from 'lib/shopify/types';
 import Link from 'next/link';
-import { GridTileImage } from 'components/grid/tile'; // Ensure this import is present if not already.
+import { GridTileImage } from 'components/grid/tile';
 
 export async function generateMetadata({
-  params
+  params: { handle }
 }: {
   params: { handle: string };
 }): Promise<Metadata> {
-  const product = await getProduct(params.handle);
+  const product = await getProduct(handle);
 
   if (!product) return notFound();
 
@@ -53,8 +51,8 @@ export async function generateMetadata({
   };
 }
 
-export default async function ProductPage({ params }: { params: { handle: string } }) {
-  const product = await getProduct(params.handle);
+export default async function ProductPage({ params: { handle } }: { params: { handle: string } }) {
+  const product = await getProduct(handle);
 
   if (!product) return notFound();
 
@@ -117,7 +115,6 @@ export default async function ProductPage({ params }: { params: { handle: string
 
       <div className="fixed bottom-0 left-0 z-10 w-full border-t border-gray-200 bg-white p-4 shadow-[0_-2px_10px_rgba(0,0,0,0.05)]">
         <div className="mx-auto max-w-lg">
-          {/* FIX: Pass the entire product object */}
           <AddToCart product={product} />
         </div>
       </div>

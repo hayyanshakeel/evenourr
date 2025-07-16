@@ -55,8 +55,7 @@ const key = process.env.SHOPIFY_STOREFRONT_ACCESS_TOKEN!;
 type ExtractVariables<T> = T extends { variables: object } ? T['variables'] : never;
 
 export async function shopifyFetch<T>({
-  // FIX: Changed cache to 'no-store' to always get fresh data
-  cache = 'no-store',
+  cache = 'no-store', // Changed to 'no-store' to always get fresh data
   headers,
   query,
   tags,
@@ -258,7 +257,6 @@ export async function getCart(cartId: string): Promise<Cart | undefined> {
     cache: 'no-store'
   });
 
-  // Old carts becomes `null` when you query them.
   if (!res.body.data.cart) {
     return undefined;
   }
@@ -310,7 +308,7 @@ export async function getCollections(): Promise<Collection[]> {
   const shopifyCollections = removeEdgesAndNodes(res.body.data.collections);
   const collections = [
     {
-      id: 'all-products', // Added 'id' property here
+      id: 'all-products', // Added 'id' property
       handle: '',
       title: 'All',
       description: 'All products',
@@ -321,8 +319,6 @@ export async function getCollections(): Promise<Collection[]> {
       path: '/search',
       updatedAt: new Date().toISOString()
     },
-    // Filter out the `hidden` collections.
-    // Collections that start with `hidden-*` need to be hidden on the search page.
     ...reshapeCollections(shopifyCollections).filter(
       (collection) => !collection.handle.startsWith('hidden')
     )
