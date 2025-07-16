@@ -1,121 +1,80 @@
-// components/product/variant-selector.tsx
-
 'use client';
 
-import { Dialog, Transition } from '@headlessui/react';
+import { ProductOption, ProductVariant } from 'lib/shopify/types';
+import { createUrl } from 'lib/utils';
+import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import clsx from 'clsx';
-import { useProduct, useUpdateURL } from 'components/product/product-context';
-import type { ProductOption } from 'lib/shopify/types';
-import React, { Fragment, useState, useTransition } from 'react'; // Import useTransition
 
-const colorNameToClass: { [key: string]: string } = {
-  black: 'bg-black',
-  white: 'bg-white',
-  beige: 'bg-beige-200'
+type Combination = {
+  id: string;
+  availableForSale: boolean;
+  [key: string]: string | boolean; // ie. { color: 'Red', size: 'Large', ... }
 };
 
-export function VariantSelector({ options }: { options: ProductOption[] }) {
-  const { state, updateOption } = useProduct();
-  const updateURL = useUpdateURL();
-  const [isSizeSelectorOpen, setIsSizeSelectorOpen] = useState(false);
-  const [isPending, startTransition] = useTransition(); // Initialize useTransition
+export function VariantSelector({ options, variants }: { options: ProductOption[]; variants: ProductVariant[] }) {
+  const router = useRouter();
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
 
-  const colorOption = options.find((opt) => opt.name.toLowerCase() === 'color');
-  const sizeOption = options.find((opt) => opt.name.toLowerCase() === 'size');
+  const combinations: Combination[] = variants.map((variant) => ({
+    id: variant.id,
+    availableForSale: variant.availableForSale,
+    ...variant.selectedOptions.reduce(
+      (accumulator, option) => ({ ...accumulator, [option.name.toLowerCase()]: option.value }),
+      {}
+    )
+  }));
 
-  return (
-    <div className="space-y-6">
-      {/* COLOR SWATCHES */}
-      {colorOption && (
-        <div>
-          <p className="font-semibold uppercase">{state.color || ''}</p>
-          <div className="mt-3 flex flex-wrap gap-3">
-            {colorOption.values.map((value) => {
-              const isActive = state.color === value;
-              const colorClass = colorNameToClass[value.toLowerCase()] || 'bg-gray-200';
+  return options.map((option) => (
+    <dl className="mb-4" key={option.id}>
+      <dt className="mb-2 text-sm font-semibold uppercase tracking-wide text-gray-800">{option.name}</dt>
+      <dd className="flex flex-wrap gap-3">
+        {option.values.map((value) => {
+          const optionNameLowerCase = option.name.toLowerCase();
+          const optionSearchParams = new URLSearchParams(searchParams.toString());
+          optionSearchParams.set(optionNameLowerCase, value);
+          const optionUrl = createUrl(pathname, optionSearchParams);
 
-              return (
-                <button
-                  key={value}
-                  onClick={() => {
-                    startTransition(() => { // Wrap the state updates in startTransition
-                      const newState = updateOption('color', value);
-                      updateURL(newState);
-                    });
-                  }}
-                  title={value}
-                  className={clsx(
-                    'h-8 w-8 rounded-full border border-neutral-300 transition-transform hover:scale-110',
-                    colorClass,
-                    { 'ring-2 ring-blue-600 ring-offset-2': isActive }
-                  )}
-                  disabled={isPending} // Optionally disable button during transition
-                />
-              );
-            })}
-          </div>
-        </div>
-      )}
+          const isAvailable = combinations.some(
+            (combination) =>
+              combination[optionNameLowerCase] === value && combination.availableForSale
+          );
 
-      {/* SIZE SELECTOR */}
-      {sizeOption && (
-        <div>
-          <button
-            onClick={() => setIsSizeSelectorOpen(true)}
-            className="flex w-full items-center justify-between rounded-lg border border-neutral-300 p-3 text-sm"
-          >
-            <span>Select Size</span>
-            <svg
-              className="h-5 w-5 rotate-90 text-gray-500"
-              fill="none"
-              viewBox="0 0 24 24"
-              stroke="currentColor"
+          const isActive = searchParams.get(optionNameLowerCase) === value;
+
+          return (
+            <button
+              key={value}
+              aria-disabled={!isAvailable}
+              disabled={!isAvailable}
+              onClick={() => {
+                router.replace(optionUrl, { scroll: false });
+              }}
+              title={`${option.name} ${value}${!isAvailable ? ' (Out of Stock)' : ''}`}
+              className={clsx(
+                'flex items-center justify-center rounded-md border text-sm transition-all duration-200',
+                {
+                  'cursor-default ring-2 ring-blue-600 ring-offset-2': isActive,
+                  'cursor-not-allowed bg-neutral-100 text-gray-400': !isAvailable,
+                  'hover:border-blue-600': isAvailable && !isActive,
+                  // Style for Size buttons
+                  'min-w-[48px] px-3 py-2': optionNameLowerCase !== 'color',
+                  // Style for Color swatches
+                  'h-9 w-9 p-0': optionNameLowerCase === 'color'
+                }
+              )}
+              // Apply background color for color swatches, if applicable
+              style={
+                optionNameLowerCase === 'color'
+                  ? { backgroundColor: value.toLowerCase() }
+                  : {}
+              }
             >
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7-7" />
-            </svg>
-          </button>
-
-          <Transition show={isSizeSelectorOpen} as={Fragment}>
-            <Dialog onClose={() => setIsSizeSelectorOpen(false)} className="relative z-50">
-              <Transition.Child as={Fragment} enter="ease-out duration-300" enterFrom="opacity-0" enterTo="opacity-100" leave="ease-in duration-200" leaveFrom="opacity-100" leaveTo="opacity-0">
-                <div className="fixed inset-0 bg-black/30" aria-hidden="true" />
-              </Transition.Child>
-              <Transition.Child as={Fragment} enter="ease-out duration-300" enterFrom="opacity-0 translate-y-full" enterTo="opacity-100 translate-y-0" leave="ease-in duration-200" leaveFrom="opacity-100 translate-y-0" leaveTo="opacity-0 translate-y-full">
-                <div className="fixed inset-x-0 bottom-0">
-                  <Dialog.Panel className="w-full rounded-t-lg bg-white p-4">
-                    <div className="flex items-center justify-between pb-4">
-                      <Dialog.Title className="text-lg font-semibold">Select Size</Dialog.Title>
-                      <button onClick={() => setIsSizeSelectorOpen(false)}>
-                        <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12"/>
-                        </svg>
-                      </button>
-                    </div>
-                    <div className="grid grid-cols-4 gap-2">
-                      {sizeOption.values.map((value) => (
-                        <button
-                          key={value}
-                          onClick={() => {
-                            startTransition(() => { // Wrap the state updates in startTransition
-                              const newState = updateOption('size', value);
-                              updateURL(newState);
-                              setIsSizeSelectorOpen(false); // Close modal within transition
-                            });
-                          }}
-                          className="rounded-md border border-gray-300 p-3 text-center text-sm"
-                          disabled={isPending} // Optionally disable button during transition
-                        >
-                          {value}
-                        </button>
-                      ))}
-                    </div>
-                  </Dialog.Panel>
-                </div>
-              </Transition.Child>
-            </Dialog>
-          </Transition>
-        </div>
-      )}
-    </div>
-  );
+              {optionNameLowerCase === 'color' ? '' : value}
+            </button>
+          );
+        })}
+      </dd>
+    </dl>
+  ));
 }

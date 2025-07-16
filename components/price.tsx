@@ -1,24 +1,27 @@
 import clsx from 'clsx';
 
 const Price = ({
-  amount,
   className,
-  currencyCode = 'USD',
-  currencyCodeClassName
+  amount,
+  currencyCode = 'USD'
 }: {
-  amount: string;
   className?: string;
+  amount: string;
   currencyCode: string;
-  currencyCodeClassName?: string;
-} & React.ComponentProps<'p'>) => (
-  <p suppressHydrationWarning={true} className={className}>
-    {`${new Intl.NumberFormat(undefined, {
-      style: 'currency',
-      currency: currencyCode,
-      currencyDisplay: 'narrowSymbol'
-    }).format(parseFloat(amount))}`}
-    <span className={clsx('ml-1 inline', currencyCodeClassName)}>{`${currencyCode}`}</span>
-  </p>
-);
+}) => {
+  // Use Intl.NumberFormat for proper currency formatting.
+  // We'll use 'en-IN' for Indian Rupee formatting (₹) with commas.
+  const formattedPrice = new Intl.NumberFormat('en-IN', {
+    style: 'currency',
+    currency: currencyCode,
+    minimumFractionDigits: 2
+  }).format(parseFloat(amount));
+
+  return (
+    <p suppressHydrationWarning={true} className={className}>
+      {formattedPrice}
+    </p>
+  );
+};
 
 export default Price;
