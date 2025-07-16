@@ -1,15 +1,45 @@
-'use client';
+'use server';
 
 import { TAGS } from 'lib/constants';
 import { addToCart, createCart, getCart, removeFromCart, updateCart } from 'lib/shopify';
-import { Cart, CartItem } from 'lib/shopify/types'; // Import CartItem type
+import { Cart, CartItem } from 'lib/shopify/types';
 import { revalidateTag } from 'next/cache';
 import { cookies } from 'next/headers';
-import { redirect } from 'next/navigation';
 
-// ... (addItem function remains the same)
+export async function addItem(prevState: any, selectedVariantId: string | undefined) {
+  const cookieStore = await cookies();
+  let cartId = cookieStore.get('cartId')?.value;
+  let cart;
 
-export async function removeItem(prevState: any, merchandiseId: string) {
+  if (cartId) {
+    cart = await getCart(cartId);
+  }
+
+  if (!cartId || !cart) {
+    cart = await createCart();
+    cartId = cart.id;
+    if (cartId) {
+      cookieStore.set('cartId', cartId);
+    }
+  }
+
+  if (!selectedVariantId) {
+    return 'Missing product variant ID';
+  }
+
+  if (!cartId) {
+    return 'Error: Cart ID not found.';
+  }
+
+  try {
+    await addToCart(cartId, [{ merchandiseId: selectedVariantId, quantity: 1 }]);
+    revalidateTag(TAGS.cart);
+  } catch (e) {
+    return 'Error adding item to cart';
+  }
+}
+
+export async function removeItem(prevState: any, lineId: string) {
   const cartId = (await cookies()).get('cartId')?.value;
 
   if (!cartId) {
@@ -17,21 +47,8 @@ export async function removeItem(prevState: any, merchandiseId: string) {
   }
 
   try {
-    const cart = (await getCart(cartId)) as Cart;
-
-    if (!cart) {
-      return 'Error fetching cart';
-    }
-    
-    // Add type for 'line' parameter
-    const lineItem = cart.lines.find((line: CartItem) => line.merchandise.id === merchandiseId);
-
-    if (lineItem?.id) {
-      await removeFromCart(cartId, [lineItem.id]);
-      revalidateTag(TAGS.cart);
-    } else {
-      return 'Item not found in cart';
-    }
+    await removeFromCart(cartId, [lineId]);
+    revalidateTag(TAGS.cart);
   } catch (e) {
     return 'Error removing item from cart';
   }
@@ -40,48 +57,27 @@ export async function removeItem(prevState: any, merchandiseId: string) {
 export async function updateItemQuantity(
   prevState: any,
   payload: {
-    merchandiseId: string;
+    lineId: string;
+    variantId: string;
     quantity: number;
   }
 ) {
   const cartId = (await cookies()).get('cartId')?.value;
-  const { merchandiseId, quantity } = payload;
 
   if (!cartId) {
     return 'Missing cart ID';
   }
 
+  const { lineId, variantId, quantity } = payload;
+
   try {
-    const cart = (await getCart(cartId)) as Cart;
-
-    if (!cart) {
-      return 'Error fetching cart';
+    if (quantity === 0) {
+      await removeFromCart(cartId, [lineId]);
+    } else {
+      await updateCart(cartId, [{ id: lineId, merchandiseId: variantId, quantity }]);
     }
-
-    // Add type for 'line' parameter
-    const lineItem = cart.lines.find((line: CartItem) => line.merchandise.id === merchandiseId);
-
-    if (lineItem?.id) {
-      if (quantity === 0) {
-        await removeFromCart(cartId, [lineItem.id]);
-      } else {
-        await updateCart(cartId, [
-          {
-            id: lineItem.id,
-            merchandiseId,
-            quantity
-          }
-        ]);
-      }
-    } else if (quantity > 0) {
-      await addToCart(cartId, [{ merchandiseId, quantity }]);
-    }
-
     revalidateTag(TAGS.cart);
   } catch (e) {
-    console.error(e);
     return 'Error updating item quantity';
   }
 }
-
-// ... (other functions remain the same)
