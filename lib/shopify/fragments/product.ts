@@ -1,7 +1,7 @@
-import imageFragment from './image';
-import seoFragment from './seo';
+import { imageFragment } from './image';
+import { seoFragment } from './seo';
 
-const productFragment = /* GraphQL */ `
+export const productFragment = /* GraphQL */ `
   fragment product on Product {
     id
     handle
@@ -15,6 +15,16 @@ const productFragment = /* GraphQL */ `
       values
     }
     priceRange {
+      maxVariantPrice {
+        amount
+        currencyCode
+      }
+      minVariantPrice {
+        amount
+        currencyCode
+      }
+    }
+    compareAtPriceRange {
       maxVariantPrice {
         amount
         currencyCode
@@ -56,15 +66,7 @@ const productFragment = /* GraphQL */ `
     }
     tags
     updatedAt
-    details: metafield(namespace: "custom", key: "details") {
-      value
-    }
-    shipping: metafield(namespace: "custom", key: "shipping") {
-      value
-    }
   }
   ${imageFragment}
   ${seoFragment}
 `;
-
-export default productFragment;

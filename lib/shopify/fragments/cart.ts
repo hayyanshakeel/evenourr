@@ -1,6 +1,7 @@
-import productFragment from './product';
+import { imageFragment } from './image';
+import { productFragment } from './product';
 
-const cartFragment = /* GraphQL */ `
+export const cartFragment = /* GraphQL */ `
   fragment cart on Cart {
     id
     checkoutUrl
@@ -48,6 +49,5 @@ const cartFragment = /* GraphQL */ `
     totalQuantity
   }
   ${productFragment}
+  ${imageFragment}
 `;
-
-export default cartFragment;
