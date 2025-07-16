@@ -5,11 +5,11 @@ import { VariantSelector } from './variant-selector';
 
 export function ProductDescription({ product }: { product: Product }) {
   return (
-    // Increased gap between elements for better spacing
-    <div className="flex flex-col gap-y-6">
+    // Reduced the gap from gap-y-6 to gap-y-4 for a tighter layout
+    <div className="flex flex-col gap-y-4">
       
       {/* Container for Title and Share Button */}
-      <div className="flex items-center justify-between">
+      <div className="flex items-start justify-between">
         <h1 className="text-2xl font-black uppercase">{product.title}</h1>
         <ShareButton 
           productTitle={product.title} 
@@ -24,12 +24,14 @@ export function ProductDescription({ product }: { product: Product }) {
       />
       
       {/* Variant Selector for Colors and Sizes */}
-      <VariantSelector options={product.options} variants={product.variants} />
+      <div className="mt-2">
+        <VariantSelector options={product.options} variants={product.variants} />
+      </div>
 
       {/* Original Product Description */}
       {product.descriptionHtml ? (
         <div
-          className="prose max-w-none text-sm text-gray-700"
+          className="prose max-w-none pt-4 text-sm text-gray-700"
           dangerouslySetInnerHTML={{ __html: product.descriptionHtml }}
         />
       ) : null}
