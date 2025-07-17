@@ -77,41 +77,57 @@ export default async function ProductPage({ params: paramsPromise }: { params: {
     }
   };
 
+  const backgroundStyle = {
+    backgroundColor: '#f9f8f8',
+  };
+
   return (
-    <>
+    <ProductProvider product={product}>
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{
           __html: JSON.stringify(productJsonLd)
         }}
       />
-      <div className="mx-auto max-w-screen-2xl px-4">
-        <div className="flex flex-col rounded-lg border border-neutral-200 bg-white p-8 dark:border-neutral-800 dark:bg-black md:p-12 lg:flex-row lg:gap-8">
-          <div className="h-full w-full basis-full lg:basis-4/6">
-            <Gallery
-              images={product.images.map((image: Image) => ({
-                src: image.url,
-                altText: image.altText
-              }))}
-            />
-          </div>
+      <div style={backgroundStyle} className="text-black">
+        <div className="mx-auto max-w-screen-2xl px-4">
+          <div className="flex flex-col lg:flex-row">
+            {/* Gallery */}
+            <div className="w-full lg:w-3/5">
+              <Gallery
+                images={product.images.map((image: Image) => ({
+                  src: image.url,
+                  altText: image.altText
+                }))}
+              />
+            </div>
 
-          <div className="basis-full lg:basis-2/6">
-            <ProductProvider product={product}>
-              <ProductDescription product={product} />
-              <VariantSelector options={product.options} variants={product.variants} />
-              <AddToCart product={product} />
-            </ProductProvider>
+            {/* Product Info, Variants, and Add to Cart */}
+            <div className="w-full lg:w-2/5 lg:px-12">
+              <div className="py-6">
+                <ProductDescription product={product} />
+                <VariantSelector options={product.options} variants={product.variants} />
+                <div className="mt-8">
+                  <AddToCart product={product} />
+                </div>
+              </div>
+            </div>
           </div>
         </div>
+      </div>
+      
+      {/* These sections remain on a plain background */}
+      <div className="bg-white dark:bg-black">
+        <div className="mx-auto max-w-screen-2xl px-4">
+          <Suspense>
+            <RelatedProducts id={product.id} />
+          </Suspense>
+        </div>
         <Suspense>
-          <RelatedProducts id={product.id} />
+          <Footer />
         </Suspense>
       </div>
-      <Suspense>
-        <Footer />
-      </Suspense>
-    </>
+    </ProductProvider>
   );
 }
 

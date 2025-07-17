@@ -1,70 +1,85 @@
 'use client';
 
-import Image from 'next/image';
-import { useState } from 'react';
+import clsx from 'clsx';
+import { ProductOption, ProductVariant } from 'lib/shopify/types';
+import { createUrl } from 'lib/utils';
+import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 
-export function Gallery({ images }: { images: { src: string; altText: string }[] }) {
-  const [currentIndex, setCurrentIndex] = useState(0);
-  const [isWishlisted, setIsWishlisted] = useState(false);
+type Combination = {
+  id: string;
+  availableForSale: boolean;
+  [key: string]: string | boolean;
+};
+
+export function VariantSelector({ options, variants }: { options: ProductOption[]; variants: ProductVariant[] }) {
+  const router = useRouter();
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
+
+  const combinations: Combination[] = variants.map((variant) => ({
+    id: variant.id,
+    availableForSale: variant.availableForSale,
+    ...variant.selectedOptions.reduce(
+      (accumulator: { [key:string]: string }, option: { name: string; value: string }) => ({
+        ...accumulator,
+        [option.name.toLowerCase()]: option.value
+      }),
+      {}
+    )
+  }));
+
+  // Find the color option
+  const colorOption = options.find(option => option.name.toLowerCase() === 'color');
+
+  if (!colorOption) {
+    return null;
+  }
+  
+  const optionNameLowerCase = colorOption.name.toLowerCase();
+  const selectedColor = searchParams.get(optionNameLowerCase) || colorOption.values[0];
 
   return (
-    <div className="relative h-full w-full">
-      {/* Image Carousel */}
-      <div className="relative h-[60vh] w-full overflow-hidden">
-        {images.map((image, index) => (
-          <div
-            key={image.src}
-            className={`absolute inset-0 transition-opacity duration-300 ease-in-out ${
-              index === currentIndex ? 'opacity-100' : 'opacity-0'
-            }`}
-          >
-            <Image
-              className="h-full w-full object-cover"
-              fill
-              sizes="100vw"
-              // FIX: Provide a fallback for the alt text
-              alt={image.altText || 'Product image'}
-              src={image.src}
-              priority={index === 0}
-            />
-          </div>
-        ))}
-      </div>
+    <div className="mt-8">
+      <h3 className="mb-4 text-sm font-medium uppercase text-gray-800">
+        {colorOption.name}: <span className="font-semibold">{selectedColor}</span>
+      </h3>
+      <div className="flex flex-wrap gap-3">
+        {colorOption.values.map((value: string) => {
+          const optionSearchParams = new URLSearchParams(searchParams.toString());
+          optionSearchParams.set(optionNameLowerCase, value);
+          const optionUrl = createUrl(pathname, optionSearchParams);
 
-      {/* Wishlist Button */}
-      <div className="absolute bottom-6 right-4">
-        <button
-          onClick={() => setIsWishlisted(!isWishlisted)}
-          className="flex h-10 w-10 items-center justify-center rounded-full bg-black shadow-md backdrop-blur-sm"
-        >
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            className="h-5 w-5 text-white"
-            fill={isWishlisted ? 'currentColor' : 'none'}
-            viewBox="0 0 24 24"
-            stroke="currentColor"
-          >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth={1.5}
-              d="M4.318 6.318a4.5 4.5 0 016.364 0L12 7.636l1.318-1.318a4.5 4.5 0 116.364 6.364L12 20.364l-7.682-7.682a4.5 4.5 0 010-6.364z"
-            />
-          </svg>
-        </button>
-      </div>
+          const isAvailable = combinations.some(
+            (combination) =>
+              combination[optionNameLowerCase] === value && combination.availableForSale
+          );
 
-      {/* Navigation Dots */}
-      <div className="absolute bottom-4 left-0 flex w-full justify-center space-x-2">
-        {images.map((_, index) => (
-          <button
-            key={index}
-            onClick={() => setCurrentIndex(index)}
-            className={`h-2 w-2 rounded-full ${
-              index === currentIndex ? 'bg-black' : 'bg-gray-300'
-            }`}
-          />
-        ))}
+          const isActive = searchParams.get(optionNameLowerCase) === value;
+          const colorMap: { [key: string]: string } = {
+              black: '#000000', white: '#FFFFFF', brown: '#A52A2A', 
+              beige: '#F5F5DC', blue: '#ADD8E6', green: '#90EE90', red: '#FFC0CB',
+          };
+          const backgroundColor = colorMap[value.toLowerCase()] || value.toLowerCase();
+
+          return (
+            <button
+              key={value}
+              aria-disabled={!isAvailable}
+              disabled={!isAvailable}
+              onClick={() => router.replace(optionUrl, { scroll: false })}
+              title={`${colorOption.name} ${value}${!isAvailable ? ' (Out of Stock)' : ''}`}
+              className={clsx(
+                'h-10 w-10 rounded-full border-2 transition-all duration-200',
+                {
+                  'border-black': isActive,
+                  'border-gray-200': !isActive,
+                  'cursor-not-allowed opacity-50': !isAvailable,
+                }
+              )}
+              style={{ backgroundColor }}
+            />
+          );
+        })}
       </div>
     </div>
   );

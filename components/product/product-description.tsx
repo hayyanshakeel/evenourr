@@ -1,31 +1,25 @@
 import Price from 'components/price';
 import { Product } from 'lib/shopify/types';
 import { ShareButton } from './share-button';
-import { VariantSelector } from './variant-selector';
 
 export function ProductDescription({ product }: { product: Product }) {
   return (
-    <div className="flex flex-col">
-      
+    <>
       {/* Container for Title and Share Button */}
-      {/* Changed items-start to items-center for perfect vertical alignment */}
-      <div className="mb-1 flex items-center justify-between">
-        
-        <h1 className="text-lg font-medium uppercase leading-tight tracking-wide text-black">
+      <div className="mb-2 flex items-start justify-between">
+        <h1 className="text-2xl font-medium uppercase tracking-tight text-black">
           {product.title}
         </h1>
-        
-        {/* The padding is handled inside the ShareButton component, 
-            but this container alignment will fix its position.
-        */}
-        <ShareButton 
-          productTitle={product.title} 
-          productImage={product.featuredImage.url} 
-        />
+        <div className="flex items-center">
+          <ShareButton 
+            productTitle={product.title} 
+            productImage={product.featuredImage.url} 
+          />
+        </div>
       </div>
 
       {/* Price Component */}
-      <div className="mb-4">
+      <div className="mb-6">
         <Price
           className="text-lg text-black"
           amount={product.priceRange.maxVariantPrice.amount}
@@ -33,16 +27,13 @@ export function ProductDescription({ product }: { product: Product }) {
         />
       </div>
       
-      {/* Variant Selector */}
-      <VariantSelector options={product.options} variants={product.variants} />
-
-      {/* Product Description */}
+      {/* Product Description Text */}
       {product.descriptionHtml ? (
         <div
-          className="prose max-w-none pt-6 text-sm text-gray-700"
+          className="prose max-w-none text-sm text-gray-700"
           dangerouslySetInnerHTML={{ __html: product.descriptionHtml }}
         />
       ) : null}
-    </div>
+    </>
   );
 }
