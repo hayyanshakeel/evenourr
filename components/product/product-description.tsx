@@ -21,19 +21,13 @@ export function ProductDescription({ product }: { product: Product }) {
       {/* Price Component */}
       <div className="mb-6">
         <Price
-          className="text-lg text-black"
+          className="text-lg"
           amount={product.priceRange.maxVariantPrice.amount}
           currencyCode={product.priceRange.maxVariantPrice.currencyCode}
         />
       </div>
       
-      {/* Product Description Text */}
-      {product.descriptionHtml ? (
-        <div
-          className="prose max-w-none text-sm text-gray-700"
-          dangerouslySetInnerHTML={{ __html: product.descriptionHtml }}
-        />
-      ) : null}
+      {/* Description is now rendered in page.tsx */}
     </>
   );
 }

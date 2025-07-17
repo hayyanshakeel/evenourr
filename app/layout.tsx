@@ -43,14 +43,15 @@ export default async function RootLayout({ children }: { children: ReactNode }) 
 
   return (
     <html lang="en" className={inter.variable}>
-      <body className="bg-white text-black selection:bg-teal-300 dark:bg-black dark:text-white dark:selection:bg-pink-500 dark:selection:text-white">
+      {/* Removed dark mode classes and set the correct background color */}
+      <body className="bg-[#f9f8f8] text-black selection:bg-teal-300">
         <CartProvider>
           <Navbar menu={menu} />
           <Suspense>
             <main>{children}</main>
           </Suspense>
           <Suspense>
-            <Footer menu={menu} />
+            <Footer />
           </Suspense>
         </CartProvider>
       </body>
