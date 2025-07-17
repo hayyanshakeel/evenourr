@@ -1,4 +1,4 @@
-// app/policy/[slug]/client.tsx
+// FILE: app/policy/PolicyClient.tsx
 
 'use client';
 
@@ -6,10 +6,9 @@ import { Disclosure, Tab } from '@headlessui/react';
 import { ChevronDownIcon } from '@heroicons/react/24/outline';
 import LoadingDots from '@/components/loading-dots';
 import { getEstimatedDeliveryDate } from '@/lib/shiprocket/actions';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { useState, useTransition } from 'react';
 
-// A reusable accordion component for this page
 function PolicyAccordion({ title, children }: { title: string; children: React.ReactNode }) {
   return (
     <Disclosure as="div" className="border-b">
@@ -26,15 +25,14 @@ function PolicyAccordion({ title, children }: { title: string; children: React.R
   );
 }
 
-// The main client component for the policy page
-export function PolicyClient({ slug }: { slug: string }) {
+export function PolicyClient() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const [pincode, setPincode] = useState('');
   const [deliveryInfo, setDeliveryInfo] = useState({ message: '', date: '' });
   const [isPending, startTransition] = useTransition();
 
-  // Set the default active tab based on the URL slug
-  const defaultTabIndex = slug === 'refunds' ? 1 : 0;
+  const defaultTabIndex = searchParams.get('tab') === 'refunds' ? 1 : 0;
 
   const handleCheckDelivery = async (pincodeToCheck: string) => {
     startTransition(async () => {
@@ -45,7 +43,6 @@ export function PolicyClient({ slug }: { slug: string }) {
 
   return (
     <div className="mx-auto max-w-4xl px-4 py-8 sm:px-6 lg:px-8">
-      {/* Header with Back Button */}
       <div className="relative mb-8 flex items-center justify-center">
         <button onClick={() => router.back()} className="absolute left-0 text-2xl">
           &larr;
@@ -53,7 +50,6 @@ export function PolicyClient({ slug }: { slug: string }) {
         <h1 className="text-xl font-semibold uppercase tracking-wider">POLICY</h1>
       </div>
 
-      {/* Tab Interface with defaultIndex set */}
       <Tab.Group defaultIndex={defaultTabIndex}>
         <Tab.List className="flex space-x-1 rounded-xl bg-gray-200 p-1">
           {['Shipping Policy', 'Returns & Refunds'].map((category) => (
@@ -70,7 +66,6 @@ export function PolicyClient({ slug }: { slug: string }) {
         </Tab.List>
 
         <Tab.Panels className="mt-6">
-          {/* Shipping Policy Panel */}
           <Tab.Panel>
             <div className="mb-6">
               <h3 className="text-lg font-medium">Want to check your order status?</h3>
@@ -107,15 +102,7 @@ export function PolicyClient({ slug }: { slug: string }) {
             <PolicyAccordion title="Customs Duties">
               <p>For international orders, customs duties and taxes may apply and are the responsibility of the customer upon delivery.</p>
             </PolicyAccordion>
-            <PolicyAccordion title="Restrictions">
-              <p>We are unable to ship to certain remote areas or P.O. boxes. Please use the pincode checker to confirm serviceability to your location.</p>
-            </PolicyAccordion>
-             <PolicyAccordion title="Additional Information">
-              <p>Processing times may vary during promotional periods. We are not responsible for delays caused by carrier services.</p>
-            </PolicyAccordion>
           </Tab.Panel>
-
-          {/* Returns & Refunds Panel */}
           <Tab.Panel>
              <PolicyAccordion title="Instant Refund Service">
                 <p className="font-semibold">The Instant Refund Service is available to select customers and is non-transferable.</p>
@@ -124,9 +111,6 @@ export function PolicyClient({ slug }: { slug: string }) {
              <PolicyAccordion title="Fees and Eligibility">
                 <p className="font-semibold">Return Shipping Fee</p>
                 <p className="mt-2">Shipping is at your cost. Please pack and ship the returned item(s) to our warehouse. To find the warehouse address for your return, please contact customer support.</p>
-            </PolicyAccordion>
-             <PolicyAccordion title="How long do I have to make a return?">
-                <p className="mt-2">You have 30 days from the date of delivery to make a return.</p>
             </PolicyAccordion>
           </Tab.Panel>
         </Tab.Panels>

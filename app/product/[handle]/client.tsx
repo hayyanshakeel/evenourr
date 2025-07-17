@@ -1,4 +1,4 @@
-// app/product/[handle]/client.tsx
+// FILE: app/product/[handle]/client.tsx
 
 'use client';
 
@@ -9,9 +9,13 @@ import { ProductDescription } from '@/components/product/product-description';
 import { ProductProvider } from '@/components/product/product-context';
 import { YouMayAlsoLike } from '@/components/product/you-may-also-like';
 import { VariantSelector } from '@/components/product/variant-selector';
-import { Image, Product } from '@/lib/shopify/types';
+// FIX: Add necessary imports
+import { getAvailableShippingCountries } from '@/lib/shopify';
+import { Country, Image, Product } from '@/lib/shopify/types';
 import { ChevronRightIcon } from '@heroicons/react/24/outline';
 import Link from 'next/link';
+// FIX: Add necessary hooks
+import { useEffect, useState } from 'react';
 
 export function ProductPageClient({
   product,
@@ -20,6 +24,34 @@ export function ProductPageClient({
   product: Product;
   recommendations: Product[];
 }) {
+  // FIX: Add state to manage the selected country dynamically
+  const [selectedCountry, setSelectedCountry] = useState<Country | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+
+  // FIX: Add effect to load the selected country from local storage
+  useEffect(() => {
+    const initShipping = async () => {
+      setIsLoading(true);
+      try {
+        const countries = await getAvailableShippingCountries();
+        const storedCountryCode = localStorage.getItem('selectedCountry') || 'IN';
+        const currentCountry = countries.find((c) => c.isoCode === storedCountryCode);
+        const defaultCountry = countries.find((c) => c.isoCode === 'IN');
+        setSelectedCountry(currentCountry || defaultCountry || null);
+      } catch (error) {
+        console.error("Failed to fetch shipping countries, defaulting to India.", error);
+        setSelectedCountry({ name: 'India', isoCode: 'IN' } as Country);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    initShipping();
+    // Listen for changes in local storage from other tabs
+    window.addEventListener('storage', initShipping);
+    return () => window.removeEventListener('storage', initShipping);
+  }, []);
+
   const productJsonLd = {
     '@context': 'https://schema.org',
     '@type': 'Product',
@@ -55,12 +87,21 @@ export function ProductPageClient({
             <hr className="my-6 border-t border-black" />
             <div className="space-y-3 px-4 lg:px-12">
               <div>
-                {/* Main link to the policy page */}
-                <div className="flex items-center justify-between py-2 text-left">
-                  <h3 className="font-bold uppercase">SHIPPING TO INDIA</h3>
-                </div>
+                <Link href="/shipping" className="flex items-center justify-between py-2 text-left">
+                  <h3 className="font-bold uppercase">
+                    {/* FIX: Heading is now dynamic and underlined */}
+                    SHIPPING TO{' '}
+                    {isLoading ? (
+                      '...'
+                    ) : (
+                      <span className="underline decoration-2 underline-offset-4">
+                        {selectedCountry?.name || 'INDIA'}
+                      </span>
+                    )}
+                  </h3>
+                  <ChevronRightIcon className="h-5 w-5 text-gray-400" />
+                </Link>
 
-                {/* Delivery Info Link */}
                 <Link href="/policy" className="mt-2 block text-sm text-gray-600">
                   <div className="flex items-center gap-2">
                     <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2"><path strokeLinecap="round" strokeLinejoin="round" d="M14 10l-2 1m0 0l-2-1m2 1v2.5M20 7l-2 1m2-1l-2-1m2 1v2.5M14 4l-2 1m0 0l-2-1m2 1V2M8 7l2 1M8 7l2-1M8 7v2.5M12 22l-4-4m4 4l4-4M4 12l4-4m-4 4l4 4" /></svg>
@@ -70,15 +111,6 @@ export function ProductPageClient({
                   <div className="mt-2 ml-7 rounded-md bg-gray-50 p-3">
                     <p>Express shipping available</p>
                     <p>Standard Shipping: 5 - 7 business days</p>
-                  </div>
-                </Link>
-                
-                {/* FIX: Return policy link now points to /policy?tab=refunds */}
-                <Link href="/policy?tab=refunds" className="mt-4 block text-sm text-gray-600">
-                  <div className="flex items-center gap-2">
-                     <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2"><path strokeLinecap="round" strokeLinejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>
-                    <span>Return Policy</span>
-                    <ChevronRightIcon className="ml-auto h-4 w-4" />
                   </div>
                 </Link>
               </div>

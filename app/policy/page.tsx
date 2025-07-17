@@ -1,6 +1,6 @@
-// app/policy/page.tsx
+// FILE: app/policy/page.tsx
 
-import { PolicyClient } from './PolicyClient'; // Corrected import
+import { PolicyClient } from './PolicyClient'; // Note the capital 'P' and 'C'
 
 export const metadata = {
   title: 'Shipping & Returns',
@@ -8,6 +8,5 @@ export const metadata = {
 };
 
 export default function PolicyPage() {
-  // We'll let the client component handle the logic
   return <PolicyClient />;
 }
