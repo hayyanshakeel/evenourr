@@ -8,7 +8,7 @@ import clsx from 'clsx';
 import { ProductOption, ProductVariant } from 'lib/shopify/types';
 import { createUrl } from 'lib/utils';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
-import { Fragment, useEffect } from 'react';
+import { Fragment, useEffect, useState } from 'react';
 
 type Combination = {
   id: string;
@@ -20,6 +20,16 @@ export function VariantSelector({ options, variants }: { options: ProductOption[
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
+  
+  // FIX: Add state for an optimistic UI update on color selection
+  const [pendingColor, setPendingColor] = useState<string | null>(null);
+
+  // Clear the pending state once the router has finished updating the URL
+  useEffect(() => {
+    if (pendingColor && searchParams.get('color') === pendingColor) {
+      setPendingColor(null);
+    }
+  }, [searchParams, pendingColor]);
 
   const combinations: Combination[] = variants.map((variant) => ({
     id: variant.id,
@@ -33,7 +43,7 @@ export function VariantSelector({ options, variants }: { options: ProductOption[
     )
   }));
 
-  // Automatically select the first color if none is selected in the URL
+  // Automatically select the first color if none is selected
   useEffect(() => {
     const colorOption = options.find((option) => option.name.toLowerCase() === 'color');
     const hasColorParam = searchParams.has('color');
@@ -75,7 +85,9 @@ export function VariantSelector({ options, variants }: { options: ProductOption[
                     (combination) =>
                       combination[optionNameLowerCase] === value && combination.availableForSale
                   );
-                  const isActive = searchParams.get(optionNameLowerCase) === value;
+                  
+                  // FIX: The 'isActive' check now uses the pending state for instant feedback
+                  const isActive = (pendingColor || selectedColor) === value;
 
                   const colorMap: { [key: string]: string } = {
                     black: '#000000', white: '#FFFFFF', brown: '#8B4513', 
@@ -83,16 +95,21 @@ export function VariantSelector({ options, variants }: { options: ProductOption[
                   };
                   const backgroundColor = colorMap[value.toLowerCase()] || value.toLowerCase();
 
+                  // FIX: Click handler now sets the pending state before navigating
+                  const handleColorClick = () => {
+                    setPendingColor(value);
+                    router.replace(optionUrl, { scroll: false });
+                  };
+
                   return (
                     <button
                       key={value}
                       aria-disabled={!isAvailable}
                       disabled={!isAvailable}
-                      onClick={() => router.replace(optionUrl, { scroll: false })}
+                      onClick={handleColorClick}
                       title={`${option.name} ${value}${!isAvailable ? ' (Out of Stock)' : ''}`}
-                      // FIX: Reduced the size of the color swatches
                       className={clsx(
-                        'h-6 w-6 rounded-full border border-neutral-200 transition-all duration-200',
+                        'h-6 w-6 rounded-full border border-neutral-200 transition-all duration-200 ease-in-out',
                         {
                           'ring-2 ring-black ring-offset-1': isActive,
                           'cursor-not-allowed opacity-50': !isAvailable,

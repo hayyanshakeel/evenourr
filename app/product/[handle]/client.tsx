@@ -7,6 +7,7 @@ import { Gallery } from '@/components/product/gallery';
 import { ProductAccordion } from '@/components/product/product-accordion';
 import { ProductDescription } from '@/components/product/product-description';
 import { ProductProvider } from '@/components/product/product-context';
+import { ShippingAccordion } from '@/components/product/shipping-accordion';
 import { YouMayAlsoLike } from '@/components/product/you-may-also-like';
 import { VariantSelector } from '@/components/product/variant-selector';
 import { Image, Product } from '@/lib/shopify/types';
@@ -55,30 +56,24 @@ export function ProductPageClient({
           </div>
           <div className="w-full lg:w-2/5">
             <hr className="border-t-2 border-black" />
-            {/* FIX: Removed bottom padding (pb-6) to reduce the gap */}
-            <div className="px-4 pt-6 lg:px-12">
+            <div className="px-4 pt-6 pb-6 lg:px-12">
               <ProductDescription product={product} />
               <VariantSelector options={product.options} variants={product.variants} />
             </div>
-            
-            {/* FIX: Reduced top margin (mt-6) to tighten the space */}
-            <hr className="mt-6 mb-4 border-t border-black" />
 
-            <div className="px-4 lg:px-12">
+            <hr className="my-6 border-t border-black" />
+
+            <div className="space-y-3 px-4 lg:px-12">
+              {/* FIX: Render the new self-contained ShippingAccordion */}
+              <ShippingAccordion />
               <ProductAccordion descriptionHtml={product.descriptionHtml} />
             </div>
           </div>
         </div>
 
-        {/* This section now includes the separator and the "You May Also Like" component */}
-        {recommendations.length > 0 && (
-          <div className="pt-8">
-            <hr className="mb-8 border-t-2 border-black" />
-            <div className="mx-auto max-w-screen-2xl px-4">
-              <YouMayAlsoLike products={recommendations} />
-            </div>
-          </div>
-        )}
+        <div className="mx-auto max-w-screen-2xl px-4 pt-8">
+          <YouMayAlsoLike products={recommendations} />
+        </div>
       </div>
 
       <div className="fixed bottom-0 left-0 z-20 w-full border-t border-neutral-200 bg-white p-4">
