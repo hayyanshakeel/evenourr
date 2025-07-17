@@ -33,16 +33,19 @@ export function VariantSelector({ options, variants }: { options: ProductOption[
     )
   }));
 
-  // Automatically select the first color if none is selected
+  // Automatically select the first color if none is selected in the URL
   useEffect(() => {
     const colorOption = options.find((option) => option.name.toLowerCase() === 'color');
     const hasColorParam = searchParams.has('color');
 
     if (colorOption && !hasColorParam && colorOption.values.length > 0) {
+      // FIX: Added a check to ensure firstColor is a string before using it
       const firstColor = colorOption.values[0];
-      const optionSearchParams = new URLSearchParams(searchParams.toString());
-      optionSearchParams.set('color', firstColor);
-      router.replace(createUrl(pathname, optionSearchParams), { scroll: false });
+      if (firstColor) {
+        const optionSearchParams = new URLSearchParams(searchParams.toString());
+        optionSearchParams.set('color', firstColor);
+        router.replace(createUrl(pathname, optionSearchParams), { scroll: false });
+      }
     }
   }, [options, searchParams, router, pathname]);
 
@@ -110,9 +113,8 @@ export function VariantSelector({ options, variants }: { options: ProductOption[
             <div key={option.id}>
               <Menu as="div" className="relative block text-left">
                 <div>
-                  {/* FIX: Changed border color to border-black */}
                   <Menu.Button className="flex w-full items-center justify-between rounded-lg border border-black px-4 py-2.5 text-sm font-medium text-black">
-                    {/* This correctly shows "Select Size" as a placeholder */}
+                    {/* This logic correctly shows "Select Size" as a placeholder */}
                     <span>{selectedSize || 'Select Size'}</span>
                     <ChevronRightIcon className="h-4 w-4 text-neutral-500" aria-hidden="true" />
                   </Menu.Button>

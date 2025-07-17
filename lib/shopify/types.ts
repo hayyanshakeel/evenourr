@@ -128,6 +128,11 @@ export type ShopifyProduct = {
     maxVariantPrice: Money;
     minVariantPrice: Money;
   };
+  // FIX: Added compareAtPriceRange to the type definition
+  compareAtPriceRange: {
+    maxVariantPrice: Money;
+    minVariantPrice: Money;
+  };
   variants: Connection<ProductVariant>;
   featuredImage: Image;
   images: Connection<Image>;

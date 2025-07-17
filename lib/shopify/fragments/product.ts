@@ -26,6 +26,17 @@ export const productFragment = /* GraphQL */ `
         currencyCode
       }
     }
+    # FIX: Added compareAtPriceRange to the query
+    compareAtPriceRange {
+      maxVariantPrice {
+        amount
+        currencyCode
+      }
+      minVariantPrice {
+        amount
+        currencyCode
+      }
+    }
     variants(first: 250) {
       edges {
         node {
