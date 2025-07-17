@@ -9,16 +9,10 @@ import { ProductDescription } from '@/components/product/product-description';
 import { ProductProvider } from '@/components/product/product-context';
 import { YouMayAlsoLike } from '@/components/product/you-may-also-like';
 import { VariantSelector } from '@/components/product/variant-selector';
-import { getAvailableShippingCountries } from '@/lib/shopify';
-import { Country, Image, Product } from '@/lib/shopify/types';
+import { Image, Product } from '@/lib/shopify/types';
 import { ChevronRightIcon } from '@heroicons/react/24/outline';
 import Link from 'next/link';
-import { useEffect, useState, useTransition } from 'react';
-// FIX: Import the new server action
-import { getEstimatedDeliveryDate } from '@/lib/shiprocket/actions'; 
-import LoadingDots from '@/components/loading-dots';
 
-// This component receives all the data fetched on the server
 export function ProductPageClient({
   product,
   recommendations
@@ -26,60 +20,6 @@ export function ProductPageClient({
   product: Product;
   recommendations: Product[];
 }) {
-  const [availableCountries, setAvailableCountries] = useState<Country[]>([]);
-  const [selectedCountry, setSelectedCountry] = useState<Country | null>(null);
-  const [showPopup, setShowPopup] = useState(false);
-  const [isLoading, setIsLoading] = useState(true);
-
-  // FIX: Add state for pincode and delivery date
-  const [pincode, setPincode] = useState('');
-  const [deliveryInfo, setDeliveryInfo] = useState({ message: '', date: '' });
-  const [isPending, startTransition] = useTransition();
-
-
-  const handleCheckDelivery = async () => {
-    startTransition(async () => {
-      const result = await getEstimatedDeliveryDate(pincode);
-      if (result.success) {
-        setDeliveryInfo({ message: result.message, date: result.date });
-      } else {
-        setDeliveryInfo({ message: result.message, date: '' });
-      }
-    });
-  };
-
-  useEffect(() => {
-    const initShipping = async () => {
-      setIsLoading(true);
-      try {
-        const countries = await getAvailableShippingCountries();
-        setAvailableCountries(countries);
-        const storedCountryCode = localStorage.getItem('selectedCountry') || 'IN';
-        const currentCountry = countries.find((c) => c.isoCode === storedCountryCode);
-        if (currentCountry) {
-          setSelectedCountry(currentCountry);
-        } else {
-          const defaultCountry = countries.find((c) => c.isoCode === 'IN');
-          setSelectedCountry(defaultCountry || countries[0] || null);
-          if (localStorage.getItem('selectedCountry')) {
-            setShowPopup(true);
-          }
-        }
-      } catch (error) {
-        console.error("Failed to fetch shipping countries. This might be a Shopify permission issue.", error);
-        const fallbackCountry = { name: 'India', isoCode: 'IN' } as Country;
-        setAvailableCountries([fallbackCountry]);
-        setSelectedCountry(fallbackCountry);
-      } finally {
-        setIsLoading(false);
-      }
-    };
-    initShipping();
-    const handleStorageChange = () => initShipping();
-    window.addEventListener('storage', handleStorageChange);
-    return () => window.removeEventListener('storage', handleStorageChange);
-  }, []);
-
   const productJsonLd = {
     '@context': 'https://schema.org',
     '@type': 'Product',
@@ -101,20 +41,6 @@ export function ProductPageClient({
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(productJsonLd) }}
       />
-      {showPopup && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4">
-          <div className="bg-white p-6 rounded-lg shadow-xl text-center w-full max-w-sm">
-            <h3 className="text-xl font-bold mb-3">Sorry!</h3>
-            <p className="text-neutral-600 mb-4">We don't deliver to this location yet.</p>
-            <Link href="/shipping" className="text-blue-600 font-semibold underline block w-full py-2">
-              Change your country
-            </Link>
-            <button onClick={() => setShowPopup(false)} className="block w-full bg-gray-800 text-white mt-2 py-2 rounded-md font-semibold">
-              OK
-            </button>
-          </div>
-        </div>
-      )}
       <div className="pb-28">
         <div className="lg:flex">
           <div className="w-full lg:w-3/5">
@@ -128,52 +54,35 @@ export function ProductPageClient({
             </div>
             <hr className="my-6 border-t border-black" />
             <div className="space-y-3 px-4 lg:px-12">
-              <div className="border border-neutral-300 p-4">
-                <Link href="/shipping" className="flex w-full items-center justify-between text-left">
-                  <h3 className="font-bold uppercase">
-                    SHIPPING TO{' '}
-                    {isLoading ? ('...') : selectedCountry?.name ? (<span className="underline decoration-2 underline-offset-4">{selectedCountry.name}</span>) : ('SELECT COUNTRY')}
-                  </h3>
-                  <ChevronRightIcon className="h-5 w-5 text-gray-400 flex-shrink-0" />
-                </Link>
-
-                {/* FIX: Add Pincode checker and delivery date display */}
-                <div className="mt-4 pt-4 border-t border-neutral-200">
-                  <label htmlFor="pincode" className="block text-sm font-medium text-gray-700">Check Delivery Date</label>
-                  <div className="mt-1 flex gap-2">
-                    <input
-                      type="text"
-                      name="pincode"
-                      id="pincode"
-                      value={pincode}
-                      onChange={(e) => setPincode(e.target.value)}
-                      placeholder="Enter Pincode"
-                      className="block w-full rounded-md border-gray-300 shadow-sm focus:border-black focus:ring-black sm:text-sm px-3 py-2"
-                      maxLength={6}
-                    />
-                    <button
-                      onClick={handleCheckDelivery}
-                      disabled={isPending || pincode.length !== 6}
-                      className="rounded-md bg-gray-800 px-4 py-2 text-sm font-semibold text-white disabled:opacity-50"
-                    >
-                      Check
-                    </button>
-                  </div>
-                  <div className="mt-2 h-5 text-sm">
-                    {isPending ? (
-                      <LoadingDots className="bg-black" />
-                    ) : (
-                      deliveryInfo.message && (
-                        <p className={deliveryInfo.date ? 'text-green-600' : 'text-red-600'}>
-                          {deliveryInfo.message}{' '}
-                          {deliveryInfo.date && <span className="font-bold">{deliveryInfo.date}</span>}
-                        </p>
-                      )
-                    )}
-                  </div>
+              <div>
+                {/* Main link to the policy page */}
+                <div className="flex items-center justify-between py-2 text-left">
+                  <h3 className="font-bold uppercase">SHIPPING TO INDIA</h3>
                 </div>
 
+                {/* Delivery Info Link */}
+                <Link href="/policy" className="mt-2 block text-sm text-gray-600">
+                  <div className="flex items-center gap-2">
+                    <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2"><path strokeLinecap="round" strokeLinejoin="round" d="M14 10l-2 1m0 0l-2-1m2 1v2.5M20 7l-2 1m2-1l-2-1m2 1v2.5M14 4l-2 1m0 0l-2-1m2 1V2M8 7l2 1M8 7l2-1M8 7v2.5M12 22l-4-4m4 4l4-4M4 12l4-4m-4 4l4 4" /></svg>
+                    <span>Delivery</span>
+                    <ChevronRightIcon className="ml-auto h-4 w-4" />
+                  </div>
+                  <div className="mt-2 ml-7 rounded-md bg-gray-50 p-3">
+                    <p>Express shipping available</p>
+                    <p>Standard Shipping: 5 - 7 business days</p>
+                  </div>
+                </Link>
+                
+                {/* FIX: Return policy link now points to /policy?tab=refunds */}
+                <Link href="/policy?tab=refunds" className="mt-4 block text-sm text-gray-600">
+                  <div className="flex items-center gap-2">
+                     <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2"><path strokeLinecap="round" strokeLinejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>
+                    <span>Return Policy</span>
+                    <ChevronRightIcon className="ml-auto h-4 w-4" />
+                  </div>
+                </Link>
               </div>
+
               <ProductAccordion descriptionHtml={product.descriptionHtml} />
             </div>
           </div>
