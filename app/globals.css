@@ -1,7 +1,7 @@
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+/* Use a single import for all Tailwind styles */
+@import 'tailwindcss';
 
+/* The rest of your custom styles */
 @layer base {
   *,
   ::after,
@@ -21,5 +21,6 @@
 a,
 input,
 button {
+  /* This @apply directive should now be processed correctly */
   @apply focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-neutral-400 focus-visible:ring-offset-2 focus-visible:ring-offset-neutral-50;
 }
