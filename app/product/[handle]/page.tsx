@@ -11,7 +11,7 @@ import { HIDDEN_PRODUCT_TAG } from '@/lib/constants';
 import { getProduct, getProductRecommendations } from '@/lib/shopify';
 import { Image, Product } from '@/lib/shopify/types';
 import { notFound } from 'next/navigation';
-import { Suspense } from 'react';
+import { Fragment, Suspense } from 'react';
 
 // FIX: Update function signature and await params
 export async function generateMetadata({ params: paramsPromise }: { params: { handle: string } }) {
@@ -83,50 +83,53 @@ export default async function ProductPage({ params: paramsPromise }: { params: {
 
   return (
     <ProductProvider product={product}>
-      <script
-        type="application/ld+json"
-        dangerouslySetInnerHTML={{
-          __html: JSON.stringify(productJsonLd)
-        }}
-      />
-      <div style={backgroundStyle} className="text-black">
-        <div className="mx-auto max-w-screen-2xl px-4">
-          <div className="flex flex-col lg:flex-row">
-            {/* Gallery */}
-            <div className="w-full lg:w-3/5">
-              <Gallery
-                images={product.images.map((image: Image) => ({
-                  src: image.url,
-                  altText: image.altText
-                }))}
-              />
-            </div>
+      {/* Wrap multiple elements in a single Fragment */}
+      <Fragment>
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{
+            __html: JSON.stringify(productJsonLd)
+          }}
+        />
+        <div style={backgroundStyle} className="text-black">
+          <div className="mx-auto max-w-screen-2xl px-4">
+            <div className="flex flex-col lg:flex-row">
+              {/* Gallery */}
+              <div className="w-full lg:w-3/5">
+                <Gallery
+                  images={product.images.map((image: Image) => ({
+                    src: image.url,
+                    altText: image.altText
+                  }))}
+                />
+              </div>
 
-            {/* Product Info, Variants, and Add to Cart */}
-            <div className="w-full lg:w-2/5 lg:px-12">
-              <div className="py-6">
-                <ProductDescription product={product} />
-                <VariantSelector options={product.options} variants={product.variants} />
-                <div className="mt-8">
-                  <AddToCart product={product} />
+              {/* Product Info, Variants, and Add to Cart */}
+              <div className="w-full lg:w-2/5 lg:px-12">
+                <div className="py-6">
+                  <ProductDescription product={product} />
+                  <VariantSelector options={product.options} variants={product.variants} />
+                  <div className="mt-8">
+                    <AddToCart product={product} />
+                  </div>
                 </div>
               </div>
             </div>
           </div>
         </div>
-      </div>
-      
-      {/* These sections remain on a plain background */}
-      <div className="bg-white dark:bg-black">
-        <div className="mx-auto max-w-screen-2xl px-4">
+        
+        {/* These sections remain on a plain background */}
+        <div className="bg-white dark:bg-black">
+          <div className="mx-auto max-w-screen-2xl px-4">
+            <Suspense>
+              <RelatedProducts id={product.id} />
+            </Suspense>
+          </div>
           <Suspense>
-            <RelatedProducts id={product.id} />
+            <Footer />
           </Suspense>
         </div>
-        <Suspense>
-          <Footer />
-        </Suspense>
-      </div>
+      </Fragment>
     </ProductProvider>
   );
 }
