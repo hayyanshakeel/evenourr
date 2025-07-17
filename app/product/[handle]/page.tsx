@@ -1,6 +1,6 @@
 // app/product/[handle]/page.tsx
 
-'use client'; // This is essential for using hooks like useState and useEffect
+'use client'; // This is crucial for a page that uses hooks like useState and useEffect
 
 import { AddToCart } from '@/components/cart/add-to-cart';
 import Footer from '@/components/layout/footer';
@@ -33,11 +33,14 @@ function parseDescription(html: string): AccordionItem[] {
     for (let i = 1; i < parts.length; i++) {
       const sectionContent = parts[i];
       if (sectionContent) {
+        // FIX: Added a null check to prevent the "Object is possibly 'undefined'" error
         const titleMatch = sectionContent.match(/([^<]+)<\/h2>/i);
-        const title = titleMatch ? titleMatch[1].trim() : `Section ${i}`;
-        const content = sectionContent.substring(sectionContent.indexOf('</h2>') + 5).trim();
-        if (content) {
-          sections.push({ title, content });
+        if (titleMatch && titleMatch[1]) {
+          const title = titleMatch[1].trim();
+          const content = sectionContent.substring(sectionContent.indexOf('</h2>') + 5).trim();
+          if (content) {
+            sections.push({ title, content });
+          }
         }
       }
     }
@@ -106,23 +109,35 @@ function ProductAccordion({ descriptionHtml }: { descriptionHtml: string }) {
 export default function ProductPage({ params }: { params: { handle: string } }) {
   const [product, setProduct] = useState<Product | null>(null);
   const [recommendations, setRecommendations] = useState<Product[]>([]);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const fetchData = async () => {
-      const p = await getProduct(params.handle);
-      if (p) {
-        setProduct(p);
-        const recs = await getProductRecommendations(p.id);
-        setRecommendations(recs);
-      } else {
-        notFound();
+      try {
+        setLoading(true);
+        const p = await getProduct(params.handle);
+        if (p) {
+          setProduct(p);
+          const recs = await getProductRecommendations(p.id);
+          setRecommendations(recs);
+        } else {
+          notFound();
+        }
+      } catch (error) {
+        console.error("Failed to fetch product data:", error);
+      } finally {
+        setLoading(false);
       }
     };
     fetchData();
   }, [params.handle]);
 
-  if (!product) {
+  if (loading) {
     return <div className="flex h-screen items-center justify-center">Loading...</div>;
+  }
+
+  if (!product) {
+    return notFound();
   }
 
   const productJsonLd = {
@@ -152,6 +167,7 @@ export default function ProductPage({ params }: { params: { handle: string } }) 
       <div className="pb-28">
         <div className="lg:flex">
           <div className="w-full lg:w-3/5">
+            {/* FIX: Correctly map the image data for the Gallery component */}
             <Gallery
               images={product.images.map((image: Image) => ({
                 src: image.url,
@@ -172,14 +188,14 @@ export default function ProductPage({ params }: { params: { handle: string } }) 
           <ProductAccordion descriptionHtml={product.descriptionHtml} />
         </div>
 
-        <div className="mx-auto max-w-screen-2xl px-4 pt-8">
-          {recommendations.length > 0 && (
+        {recommendations.length > 0 && (
+          <div className="mx-auto max-w-screen-2xl px-4 pt-8">
             <div className="py-8">
               <h2 className="mb-4 text-2xl font-bold">Related Products</h2>
               <ProductGridItems products={recommendations} />
             </div>
-          )}
-        </div>
+          </div>
+        )}
       </div>
 
       <div className="fixed bottom-0 left-0 z-20 w-full border-t border-neutral-200 bg-white p-4">

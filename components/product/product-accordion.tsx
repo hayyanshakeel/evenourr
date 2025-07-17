@@ -14,19 +14,21 @@ type AccordionItem = {
 // This utility function safely parses your HTML string into sections
 function parseDescription(html: string): AccordionItem[] {
   const sections: AccordionItem[] = [];
-  // Use a more robust regex to handle various h2 tags
   const parts = html.split(/<h2[^>]*>/i);
 
   if (parts.length > 1) {
     for (let i = 1; i < parts.length; i++) {
       const sectionContent = parts[i];
       if (sectionContent) {
-        // Ensure titleMatch is not null before accessing its properties
+        // FIX: Added a null check to prevent the "Object is possibly 'undefined'" error
         const titleMatch = sectionContent.match(/([^<]+)<\/h2>/i);
-        const title = titleMatch ? titleMatch[1].trim() : `Section ${i}`;
-        const content = sectionContent.substring(sectionContent.indexOf('</h2>') + 5).trim();
-        if (content) {
-          sections.push({ title, content });
+        // This 'if' statement ensures we only proceed if a title was found
+        if (titleMatch && titleMatch[1]) {
+          const title = titleMatch[1].trim();
+          const content = sectionContent.substring(sectionContent.indexOf('</h2>') + 5).trim();
+          if (content) {
+            sections.push({ title, content });
+          }
         }
       }
     }
