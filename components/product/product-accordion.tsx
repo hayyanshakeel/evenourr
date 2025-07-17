@@ -53,14 +53,12 @@ export function ProductAccordion({ descriptionHtml }: { descriptionHtml: string 
   }
 
   return (
-    // FIX: Added a vertical space between each box
     <div className="w-full space-y-3">
       {items.map((item, i) => (
-        // FIX: Changed styling to create a distinct box for each item
-        <Disclosure as="div" key={i} className="rounded-lg border border-neutral-300">
+        // FIX: Removed rounded-lg to make the boxes rectangular
+        <Disclosure as="div" key={i} className="border border-neutral-300">
           {({ open }) => (
             <>
-              {/* FIX: Added padding to the button */}
               <Disclosure.Button className="flex w-full justify-between p-4 text-left text-sm font-medium">
                 <span className="font-semibold uppercase">{item.title}</span>
                 <ChevronDownIcon
@@ -76,7 +74,6 @@ export function ProductAccordion({ descriptionHtml }: { descriptionHtml: string 
                 leaveFrom="opacity-100 translate-y-0"
                 leaveTo="opacity-0 -translate-y-2"
               >
-                {/* FIX: Added padding to the panel for better spacing */}
                 <Disclosure.Panel className="prose max-w-none px-4 pb-4 pt-0 text-sm text-gray-600">
                   <div dangerouslySetInnerHTML={{ __html: item.content }} />
                 </Disclosure.Panel>
