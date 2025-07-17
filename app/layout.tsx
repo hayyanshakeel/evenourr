@@ -3,7 +3,7 @@ import { CartProvider } from 'components/cart/cart-context';
 import { Navbar } from 'components/layout/navbar';
 import { WelcomeToast } from 'components/welcome-toast';
 import { GeistSans } from 'geist/font/sans';
-import { createCart, getCart } from 'lib/shopify';
+import { getCart } from 'lib/shopify';
 import { ReactNode, Suspense } from 'react';
 import { Toaster } from 'sonner';
 import { cookies } from 'next/headers';
@@ -32,14 +32,14 @@ export default async function RootLayout({
   let cartId = cookieStore.get('cartId')?.value;
   let cart;
 
+  // We will only try to fetch a cart if the cartId cookie already exists.
   if (cartId) {
     cart = await getCart(cartId);
-  } else {
-    cart = await createCart();
-    if (cart?.id) {
-      cookieStore.set('cartId', cart.id);
-    }
   }
+
+  // The logic to CREATE a cart and SET the cookie has been removed from this file.
+  // It now correctly lives inside the `addItem` Server Action, which is the proper
+  // place for it. This resolves the error.
 
   const cartPromise = Promise.resolve(cart);
 
