@@ -1,3 +1,5 @@
+// components/product/variant-selector.tsx
+
 'use client';
 
 import { Menu, Transition } from '@headlessui/react';
@@ -6,7 +8,7 @@ import clsx from 'clsx';
 import { ProductOption, ProductVariant } from 'lib/shopify/types';
 import { createUrl } from 'lib/utils';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
-import { Fragment } from 'react';
+import { Fragment, useEffect } from 'react';
 
 type Combination = {
   id: string;
@@ -31,26 +33,36 @@ export function VariantSelector({ options, variants }: { options: ProductOption[
     )
   }));
 
+  // Automatically select the first color if none is selected
+  useEffect(() => {
+    const colorOption = options.find((option) => option.name.toLowerCase() === 'color');
+    const hasColorParam = searchParams.has('color');
+
+    if (colorOption && !hasColorParam && colorOption.values.length > 0) {
+      const firstColor = colorOption.values[0];
+      const optionSearchParams = new URLSearchParams(searchParams.toString());
+      optionSearchParams.set('color', firstColor);
+      router.replace(createUrl(pathname, optionSearchParams), { scroll: false });
+    }
+  }, [options, searchParams, router, pathname]);
+
   const sortedOptions = [...options].sort((a, b) => {
     if (a.name.toLowerCase() === 'color') return -1;
     if (b.name.toLowerCase() === 'color') return 1;
-    if (a.name.toLowerCase() === 'size') return -1;
-    if (b.name.toLowerCase() === 'size') return 1;
     return 0;
   });
 
   return (
-    // UPDATED: Reduced margin-top from mt-8 to mt-4
-    <div className="mt-4 flex flex-col gap-y-4"> 
+    <div className="flex flex-col gap-y-4">
       {sortedOptions.map((option) => {
         const optionNameLowerCase = option.name.toLowerCase();
 
         if (optionNameLowerCase === 'color') {
-          const selectedColor = searchParams.get('color') || options.find(o => o.name.toLowerCase() === 'color')?.values[0];
+          const selectedColor = searchParams.get('color');
           return (
             <div key={option.id}>
               <h3 className="mb-2 text-sm font-semibold uppercase tracking-wide text-neutral-500">
-                {selectedColor}
+                {selectedColor || option.name}
               </h3>
               <div className="flex flex-wrap gap-3">
                 {option.values.map((value: string) => {
@@ -98,7 +110,9 @@ export function VariantSelector({ options, variants }: { options: ProductOption[
             <div key={option.id}>
               <Menu as="div" className="relative block text-left">
                 <div>
-                  <Menu.Button className="flex w-full items-center justify-between rounded-lg border border-neutral-300 px-4 py-2.5 text-sm font-medium text-black hover:border-black">
+                  {/* FIX: Changed border color to border-black */}
+                  <Menu.Button className="flex w-full items-center justify-between rounded-lg border border-black px-4 py-2.5 text-sm font-medium text-black">
+                    {/* This correctly shows "Select Size" as a placeholder */}
                     <span>{selectedSize || 'Select Size'}</span>
                     <ChevronRightIcon className="h-4 w-4 text-neutral-500" aria-hidden="true" />
                   </Menu.Button>

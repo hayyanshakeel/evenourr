@@ -8,6 +8,8 @@ import ChildrenWrapper from './children-wrapper';
 
 export default function SearchLayout({ children }: { children: React.ReactNode }) {
   return (
+    // The <Footer /> has been removed from this file.
+    // The global footer in app/layout.tsx will be used instead.
     <div className="mx-auto flex max-w-(--breakpoint-2xl) flex-col gap-8 px-4 pb-4 text-black md:flex-row dark:text-white">
       <div className="order-first w-full flex-none md:max-w-[125px]">
         <Collections />
@@ -20,8 +22,6 @@ export default function SearchLayout({ children }: { children: React.ReactNode }
       <div className="order-none flex-none md:order-last md:w-[125px]">
         <FilterList list={sorting} title="Sort by" />
       </div>
-      {/* FIX: The Footer component has been removed from this layout. 
-          It is now handled globally by app/layout.tsx */}
     </div>
   );
 }

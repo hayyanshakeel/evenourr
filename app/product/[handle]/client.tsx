@@ -55,13 +55,16 @@ export function ProductPageClient({
           </div>
           <div className="w-full lg:w-2/5">
             <hr className="border-t-2 border-black" />
-            <div className="px-4 pt-6 pb-6 lg:px-12">
+            {/* FIX: Removed bottom padding from this container */}
+            <div className="px-4 pt-6 lg:px-12">
               <ProductDescription product={product} />
               <VariantSelector options={product.options} variants={product.variants} />
-              
-              {/* FIX: Increased vertical margin and ensured it's a visible top border */}
-              <hr className="my-8 border-t border-black" />
+            </div>
+            
+            {/* FIX: Adjusted margins to control the spacing */}
+            <hr className="mt-6 mb-4 border-t border-black" />
 
+            <div className="px-4 lg:px-12">
               <ProductAccordion descriptionHtml={product.descriptionHtml} />
             </div>
           </div>
