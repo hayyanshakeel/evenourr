@@ -1,0 +1,88 @@
+// components/product/product-accordion.tsx
+
+'use client';
+
+import { Disclosure, Transition } from '@headlessui/react';
+import { ChevronDownIcon } from '@heroicons/react/24/outline';
+import { Fragment, useEffect, useState } from 'react';
+
+type AccordionItem = {
+  title: string;
+  content: string;
+};
+
+// This utility function safely parses your HTML string into sections
+function parseDescription(html: string): AccordionItem[] {
+  const sections: AccordionItem[] = [];
+  // Use a more robust regex to handle various h2 tags
+  const parts = html.split(/<h2[^>]*>/i);
+
+  if (parts.length > 1) {
+    for (let i = 1; i < parts.length; i++) {
+      const sectionContent = parts[i];
+      if (sectionContent) {
+        // Ensure titleMatch is not null before accessing its properties
+        const titleMatch = sectionContent.match(/([^<]+)<\/h2>/i);
+        const title = titleMatch ? titleMatch[1].trim() : `Section ${i}`;
+        const content = sectionContent.substring(sectionContent.indexOf('</h2>') + 5).trim();
+        if (content) {
+          sections.push({ title, content });
+        }
+      }
+    }
+  }
+
+  if (sections.length === 0 && html.trim()) {
+    sections.push({ title: 'Product Details', content: html });
+  }
+
+  // Add static sections that will always appear
+  sections.push({ title: 'Size & Fit', content: 'This item fits true to size.' });
+  sections.push({ title: 'Free Shipping, Free Returns', content: 'Enjoy free shipping and returns on all orders.' });
+
+  return sections;
+}
+
+export function ProductAccordion({ descriptionHtml }: { descriptionHtml: string }) {
+  const [items, setItems] = useState<AccordionItem[]>([]);
+
+  useEffect(() => {
+    setItems(parseDescription(descriptionHtml));
+  }, [descriptionHtml]);
+
+  if (!items.length) {
+    return null;
+  }
+
+  return (
+    <div className="w-full">
+      {items.map((item, i) => (
+        <Disclosure as="div" key={i} className="border-b border-gray-300">
+          {({ open }) => (
+            <>
+              <Disclosure.Button className="flex w-full justify-between py-4 text-left text-sm font-medium">
+                <span className="font-semibold uppercase">{item.title}</span>
+                <ChevronDownIcon
+                  className={`${open ? 'rotate-180' : ''} h-5 w-5 text-gray-500 transition-transform`}
+                />
+              </Disclosure.Button>
+              <Transition
+                as={Fragment}
+                enter="transition duration-150 ease-out"
+                enterFrom="opacity-0 -translate-y-2"
+                enterTo="opacity-100 translate-y-0"
+                leave="transition duration-100 ease-out"
+                leaveFrom="opacity-100 translate-y-0"
+                leaveTo="opacity-0 -translate-y-2"
+              >
+                <Disclosure.Panel className="prose max-w-none px-2 pb-4 pt-2 text-sm text-gray-600">
+                  <div dangerouslySetInnerHTML={{ __html: item.content }} />
+                </Disclosure.Panel>
+              </Transition>
+            </>
+          )}
+        </Disclosure>
+      ))}
+    </div>
+  );
+}
