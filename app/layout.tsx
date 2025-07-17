@@ -1,3 +1,5 @@
+// app/layout.tsx
+
 import { Inter } from 'next/font/google';
 import { ReactNode, Suspense } from 'react';
 
@@ -39,19 +41,23 @@ const inter = Inter({
 });
 
 export default async function RootLayout({ children }: { children: ReactNode }) {
-  const menu = await getMenu('next-js-frontend-header-menu');
+  // Fetch both the header and footer menus in parallel on the server
+  const [headerMenu, footerMenu] = await Promise.all([
+    getMenu('next-js-frontend-header-menu'),
+    getMenu('next-js-frontend-footer-menu') // Ensure you have a menu with this handle in Shopify
+  ]);
 
   return (
     <html lang="en" className={inter.variable}>
-      {/* Removed dark mode classes and set the correct background color */}
       <body className="bg-[#f9f8f8] text-black selection:bg-teal-300">
         <CartProvider>
-          <Navbar menu={menu} />
+          <Navbar menu={headerMenu} />
           <Suspense>
             <main>{children}</main>
           </Suspense>
           <Suspense>
-            <Footer />
+            {/* FIX: Pass the fetched footerMenu data to the Footer component */}
+            <Footer menu={footerMenu} />
           </Suspense>
         </CartProvider>
       </body>

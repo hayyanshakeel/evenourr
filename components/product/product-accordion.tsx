@@ -11,7 +11,6 @@ type AccordionItem = {
   content: string;
 };
 
-// This utility function safely parses your HTML string into sections
 function parseDescription(html: string): AccordionItem[] {
   const sections: AccordionItem[] = [];
   const parts = html.split(/<h2[^>]*>/i);
@@ -20,9 +19,8 @@ function parseDescription(html: string): AccordionItem[] {
     for (let i = 1; i < parts.length; i++) {
       const sectionContent = parts[i];
       if (sectionContent) {
-        // FIX: Added a null check to prevent the "Object is possibly 'undefined'" error
+        // FIX: This 'if' statement is the crucial safety check
         const titleMatch = sectionContent.match(/([^<]+)<\/h2>/i);
-        // This 'if' statement ensures we only proceed if a title was found
         if (titleMatch && titleMatch[1]) {
           const title = titleMatch[1].trim();
           const content = sectionContent.substring(sectionContent.indexOf('</h2>') + 5).trim();
@@ -38,7 +36,6 @@ function parseDescription(html: string): AccordionItem[] {
     sections.push({ title: 'Product Details', content: html });
   }
 
-  // Add static sections that will always appear
   sections.push({ title: 'Size & Fit', content: 'This item fits true to size.' });
   sections.push({ title: 'Free Shipping, Free Returns', content: 'Enjoy free shipping and returns on all orders.' });
 
@@ -52,9 +49,7 @@ export function ProductAccordion({ descriptionHtml }: { descriptionHtml: string 
     setItems(parseDescription(descriptionHtml));
   }, [descriptionHtml]);
 
-  if (!items.length) {
-    return null;
-  }
+  if (!items.length) return null;
 
   return (
     <div className="w-full">

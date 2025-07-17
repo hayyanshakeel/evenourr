@@ -1,19 +1,16 @@
 // app/product/[handle]/client.tsx
 
-'use client'; // This directive is crucial
+'use client';
 
 import { AddToCart } from '@/components/cart/add-to-cart';
-import Footer from '@/components/layout/footer';
 import ProductGridItems from '@/components/layout/product-grid-items';
 import { Gallery } from '@/components/product/gallery';
 import { ProductAccordion } from '@/components/product/product-accordion';
 import { ProductDescription } from '@/components/product/product-description';
 import { ProductProvider } from '@/components/product/product-context';
 import { VariantSelector } from '@/components/product/variant-selector';
-import { Product } from '@/lib/shopify/types';
-import { Suspense } from 'react';
+import { Image, Product } from '@/lib/shopify/types';
 
-// This component receives the data fetched on the server
 export function ProductPageClient({
   product,
   recommendations
@@ -44,11 +41,16 @@ export function ProductPageClient({
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(productJsonLd) }}
       />
-      
+
       <div className="pb-28">
         <div className="lg:flex">
           <div className="w-full lg:w-3/5">
-            <Gallery images={product.images} />
+            <Gallery
+              images={product.images.map((image: Image) => ({
+                src: image.url,
+                altText: image.altText
+              }))}
+            />
           </div>
           <div className="w-full lg:w-2/5">
             <hr className="border-t-2 border-black" />
@@ -58,7 +60,7 @@ export function ProductPageClient({
             </div>
           </div>
         </div>
-        
+
         <div className="mx-auto max-w-screen-2xl px-4 pt-8">
           <ProductAccordion descriptionHtml={product.descriptionHtml} />
         </div>
@@ -79,9 +81,7 @@ export function ProductPageClient({
         </div>
       </div>
       
-      <Suspense>
-        <Footer />
-      </Suspense>
+      {/* FIX: The Footer is no longer rendered here. It is handled by the root layout. */}
     </ProductProvider>
   );
 }

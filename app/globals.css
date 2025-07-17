@@ -1,7 +1,6 @@
-@import 'tailwindcss';
-
-@plugin "@tailwindcss/container-queries";
-@plugin "@tailwindcss/typography";
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
 
 @layer base {
   *,
@@ -12,8 +11,6 @@
     border-color: var(--color-gray-200, currentColor);
   }
 }
-
-/* Removed the dark mode media query */
 
 @supports (font: -apple-system-body) and (-webkit-appearance: none) {
   img[loading='lazy'] {
