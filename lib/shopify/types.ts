@@ -124,7 +124,6 @@ export type ShopifyProduct = {
     maxVariantPrice: Money;
     minVariantPrice: Money;
   };
-  // FIX: Added compareAtPriceRange to the type definition
   compareAtPriceRange: {
     maxVariantPrice: Money;
     minVariantPrice: Money;
@@ -138,7 +137,23 @@ export type ShopifyProduct = {
   updatedAt: string;
 };
 
-// ... (The rest of the types remain the same)
+// FIX: Added Country and Localization types
+export type Country = {
+  isoCode: string;
+  name: string;
+  currency: {
+    isoCode: string;
+  };
+};
+
+export type ShopifyLocalizationOperation = {
+  data: {
+    localization: {
+      availableCountries: Country[];
+    };
+  };
+};
+
 
 export type ShopifyCartOperation = {
   data: {

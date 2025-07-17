@@ -1,3 +1,5 @@
+// lib/shopify/index.ts
+
 'use server';
 
 import { HIDDEN_PRODUCT_TAG, SHOPIFY_GRAPHQL_API_ENDPOINT, TAGS } from '@/lib/constants';
@@ -14,6 +16,7 @@ import {
   getCollectionQuery,
   getCollectionsQuery
 } from './queries/collection';
+import { getLocalizationQuery } from './queries/localization'; // New import
 import { getMenuQuery } from './queries/menu';
 import { getPageQuery, getPagesQuery } from './queries/page';
 import {
@@ -25,6 +28,7 @@ import {
   Cart,
   Collection,
   Connection,
+  Country, // New import
   Menu,
   Page,
   Product,
@@ -36,6 +40,7 @@ import {
   ShopifyCollectionProductsOperation,
   ShopifyCollectionsOperation,
   ShopifyCreateCartOperation,
+  ShopifyLocalizationOperation, // New import
   ShopifyMenuOperation,
   ShopifyPageOperation,
   ShopifyPagesOperation,
@@ -130,22 +135,33 @@ const reshapeCollection = (collection: ShopifyCollection): Collection | undefine
 };
 
 const reshapeProducts = (products: ShopifyProduct[]) => {
-  return products.map((product) => reshapeProduct(product)).filter(Boolean) as Product[];
+  const reshapedProducts = [];
+  for (const product of products) {
+    if (product) {
+      const reshapedProduct = reshapeProduct(product);
+      if (reshapedProduct) {
+        reshapedProducts.push(reshapedProduct);
+      }
+    }
+  }
+  return reshapedProducts;
 };
 
 const reshapeProduct = (product: ShopifyProduct): Product | undefined => {
-  if (!product) {
+  if (!product || product.tags.includes(HIDDEN_PRODUCT_TAG)) {
     return undefined;
   }
-  const { images, variants, ...rest } = product;
+
+  const { images, variants, collections, ...rest } = product;
+
   return {
     ...rest,
     images: removeEdgesAndNodes(images),
-    variants: removeEdgesAndNodes(variants)
+    variants: removeEdgesAndNodes(variants),
+    collections: removeEdgesAndNodes(collections)
   };
 };
 
-// All cart actions are now here and exported
 export async function createCart(): Promise<Cart> {
   const res = await shopifyFetch<ShopifyCreateCartOperation>({
     query: createCartMutation,
@@ -208,7 +224,6 @@ export async function redirectToCheckout(cartId: string): Promise<void> {
   }
 }
 
-// All other product/collection functions are also here and exported
 export async function getProduct(handle: string): Promise<Product | undefined> {
   const res = await shopifyFetch<ShopifyProductOperation>({
     query: getProductQuery,
@@ -292,4 +307,14 @@ export async function getMenu(handle: string): Promise<Menu[]> {
     title: item.title,
     path: item.url.replace(process.env.SHOPIFY_STORE_DOMAIN!, '').replace('/collections', '/search').replace('/pages', '')
   })) || [];
+}
+
+// FIX: Added new function to fetch available shipping countries
+export async function getAvailableShippingCountries(): Promise<Country[]> {
+  const res = await shopifyFetch<ShopifyLocalizationOperation>({
+    query: getLocalizationQuery,
+    tags: [TAGS.collections]
+  });
+
+  return res.body.data.localization.availableCountries.sort((a, b) => a.name.localeCompare(b.name));
 }
