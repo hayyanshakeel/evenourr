@@ -51,7 +51,7 @@ export async function generateMetadata({
   };
 }
 
-export default async function ProductPage({ params }: { params: { handle:string } }) {
+export default async function ProductPage({ params }: { params: { handle: string } }) {
   const product = await getProduct(params.handle);
 
   if (!product) return notFound();
@@ -99,11 +99,7 @@ export default async function ProductPage({ params }: { params: { handle:string 
           </div>
 
           <div className="lg:col-start-2">
-            {/* This separator now controls the spacing. 
-                my-4 gives a small gap on mobile (stacked view).
-                lg:hidden makes it disappear on desktop where it's not needed.
-            */}
-            <hr className="my-4 border-neutral-300 lg:hidden" />
+            <hr className="my-6 border-neutral-200 lg:hidden" />
             <div className="p-4 lg:p-0">
               <ProductDescription product={product} />
             </div>

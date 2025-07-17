@@ -32,14 +32,9 @@ export default async function RootLayout({
   let cartId = cookieStore.get('cartId')?.value;
   let cart;
 
-  // We will only try to fetch a cart if the cartId cookie already exists.
   if (cartId) {
     cart = await getCart(cartId);
   }
-
-  // The logic to CREATE a cart and SET the cookie has been removed from this file.
-  // It now correctly lives inside the `addItem` Server Action, which is the proper
-  // place for it. This resolves the error.
 
   const cartPromise = Promise.resolve(cart);
 
