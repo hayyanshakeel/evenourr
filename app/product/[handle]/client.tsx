@@ -11,6 +11,7 @@ import { ProductProvider } from '@/components/product/product-context';
 import { VariantSelector } from '@/components/product/variant-selector';
 import { Image, Product } from '@/lib/shopify/types';
 
+// This component receives all the data fetched on the server
 export function ProductPageClient({
   product,
   recommendations
@@ -57,12 +58,13 @@ export function ProductPageClient({
             <div className="px-4 pt-6 pb-6 lg:px-12">
               <ProductDescription product={product} />
               <VariantSelector options={product.options} variants={product.variants} />
+              
+              {/* FIX: Increased vertical margin and ensured it's a visible top border */}
+              <hr className="my-8 border-t border-black" />
+
+              <ProductAccordion descriptionHtml={product.descriptionHtml} />
             </div>
           </div>
-        </div>
-
-        <div className="mx-auto max-w-screen-2xl px-4 pt-8">
-          <ProductAccordion descriptionHtml={product.descriptionHtml} />
         </div>
 
         {recommendations.length > 0 && (
@@ -80,8 +82,6 @@ export function ProductPageClient({
           <AddToCart product={product} />
         </div>
       </div>
-      
-      {/* FIX: The Footer is no longer rendered here. It is handled by the root layout. */}
     </ProductProvider>
   );
 }
