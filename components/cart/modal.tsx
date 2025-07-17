@@ -1,42 +1,56 @@
-// components/cart/modal.tsx
-
 'use client';
 
 import { Dialog, Transition } from '@headlessui/react';
 import { ShoppingCartIcon } from '@heroicons/react/24/outline';
-import Price from 'components/price';
-import { DEFAULT_OPTION } from 'lib/constants';
-import type { Cart } from 'lib/shopify/types';
+import Price from '@/components/price'; // Corrected import path
+import { DEFAULT_OPTION } from '@/lib/constants'; // Corrected import path
+import type { CartItem } from '@/lib/shopify/types'; // Corrected import path
 import Image from 'next/image';
 import Link from 'next/link';
 import { Fragment, useEffect, useRef, useState } from 'react';
 import { useFormStatus } from 'react-dom';
-import { redirectToCheckout } from './actions';
+import { redirectToCheckout } from '@/lib/shopify';
 import { useCart } from './cart-context';
-import CloseCart from './close-cart'; // This import will now work!
+import CloseCart from './close-cart';
 import { DeleteItemButton } from './delete-item-button';
 import { EditItemQuantityButton } from './edit-item-quantity-button';
 import OpenCart from './open-cart';
 
-type MerchandiseSearchParams = {
-  [key: string]: string;
-};
+function CheckoutButton() {
+  const { pending } = useFormStatus();
+  return (
+    <button
+      type="submit"
+      disabled={pending}
+      className="w-full rounded-md bg-black p-3 text-center text-sm font-medium text-white opacity-90 hover:opacity-100"
+    >
+      {pending ? 'Processing...' : 'Proceed to Checkout'}
+    </button>
+  );
+}
 
 export default function CartModal() {
-  const { cart } = useCart();
+  const { cart, optimisticUpdate } = useCart();
   const [isOpen, setIsOpen] = useState(false);
   const quantityRef = useRef(cart?.totalQuantity);
   const openCart = () => setIsOpen(true);
   const closeCart = () => setIsOpen(false);
 
   useEffect(() => {
+    // Open cart modal when quantity changes.
     if (cart?.totalQuantity !== quantityRef.current) {
-      if (!isOpen) {
+      // But only if it's not already open (quantity also changes when editing items in cart).
+      if (!isOpen && cart?.totalQuantity !== 0) {
         setIsOpen(true);
       }
+
+      // Always update the quantity reference
       quantityRef.current = cart?.totalQuantity;
     }
   }, [isOpen, cart?.totalQuantity, quantityRef]);
+
+  // Create a server action that's pre-filled with the cart ID
+  const checkoutAction = cart ? redirectToCheckout.bind(null, cart.id) : null;
 
   return (
     <>
@@ -81,75 +95,71 @@ export default function CartModal() {
               ) : (
                 <div className="flex h-full flex-col justify-between overflow-hidden p-1">
                   <ul className="flex-grow overflow-auto py-4">
-                    {cart.lines.map((item, i) => {
-                      const merchandiseSearchParams = {} as MerchandiseSearchParams;
-
-                      item.merchandise.selectedOptions.forEach(({ name, value }) => {
-                        if (value !== DEFAULT_OPTION) {
-                          merchandiseSearchParams[name.toLowerCase()] = value;
-                        }
-                      });
-
-                      const merchandiseUrl = `${item.merchandise.product.handle}?${new URLSearchParams(
-                        merchandiseSearchParams
-                      ).toString()}`;
-
-                      return (
-                        <li
-                          key={i}
-                          className="flex w-full flex-col border-b border-neutral-300 dark:border-neutral-700"
-                        >
-                          <div className="relative flex w-full flex-row justify-between px-1 py-4">
-                            <div className="absolute z-40 -mt-2 ml-[55px]">
-                              <DeleteItemButton item={item} />
-                            </div>
-                            <Link
-                              href={merchandiseUrl}
-                              onClick={closeCart}
-                              className="z-30 flex flex-row space-x-4"
-                            >
-                              <div className="relative h-16 w-16 cursor-pointer overflow-hidden rounded-md border border-neutral-300 bg-neutral-300 dark:border-neutral-700 dark:bg-neutral-900 dark:hover:bg-neutral-800">
-                                <Image
-                                  className="h-full w-full object-cover"
-                                  width={64}
-                                  height={64}
-                                  alt={
-                                    item.merchandise.product.featuredImage.altText ||
-                                    item.merchandise.product.title
-                                  }
-                                  src={item.merchandise.product.featuredImage.url}
-                                />
-                              </div>
-
-                              <div className="flex flex-1 flex-col text-base">
-                                <span className="leading-tight">
-                                  {item.merchandise.product.title}
-                                </span>
-                                {item.merchandise.title !== DEFAULT_OPTION ? (
-                                  <p className="text-sm text-neutral-500 dark:text-neutral-400">
-                                    {item.merchandise.title}
-                                  </p>
-                                ) : null}
-                              </div>
-                            </Link>
-                            <div className="flex h-16 flex-col justify-between">
-                              <Price
-                                className="flex justify-end space-y-2 text-right text-sm"
-                                amount={item.cost.totalAmount.amount}
-                                currencyCode={item.cost.totalAmount.currencyCode}
+                    {cart.lines.map((item: CartItem) => (
+                      <li
+                        key={item.id}
+                        className="flex w-full flex-col border-b border-neutral-300 dark:border-neutral-700"
+                      >
+                        <div className="relative flex w-full flex-row justify-between px-1 py-4">
+                          <div className="absolute z-40 -mt-2 ml-[55px]">
+                            {/* Correctly pass the optimisticUpdate prop */}
+                            <DeleteItemButton item={item} optimisticUpdate={optimisticUpdate} />
+                          </div>
+                          <Link
+                            href={`/product/${item.merchandise.product.handle}`}
+                            onClick={closeCart}
+                            className="z-30 flex flex-row space-x-4"
+                          >
+                            <div className="relative h-16 w-16 cursor-pointer overflow-hidden rounded-md border border-neutral-300 bg-neutral-300 dark:border-neutral-700 dark:bg-neutral-900 dark:hover:bg-neutral-800">
+                              <Image
+                                className="h-full w-full object-cover"
+                                width={64}
+                                height={64}
+                                alt={
+                                  item.merchandise.product.featuredImage?.altText ||
+                                  item.merchandise.product.title
+                                }
+                                src={item.merchandise.product.featuredImage?.url || ''}
                               />
-                              <div className="ml-auto flex h-9 flex-row items-center rounded-full border border-neutral-200 dark:border-neutral-700">
-                                <EditItemQuantityButton item={item} type="minus" />
-                                <p className="w-6 text-center">
-                                  <span className="w-full text-sm">{item.quantity}</span>
+                            </div>
+                            <div className="flex flex-1 flex-col text-base">
+                              <span className="leading-tight">
+                                {item.merchandise.product.title}
+                              </span>
+                              {item.merchandise.title !== DEFAULT_OPTION && (
+                                <p className="text-sm text-neutral-500 dark:text-neutral-400">
+                                  {item.merchandise.title}
                                 </p>
-                                <EditItemQuantityButton item={item} type="plus" />
-                              </div>
+                              )}
+                            </div>
+                          </Link>
+                          <div className="flex h-16 flex-col justify-between">
+                            <Price
+                              className="flex justify-end space-y-2 text-right text-sm"
+                              amount={item.cost.totalAmount.amount}
+                              currencyCode={item.cost.totalAmount.currencyCode}
+                            />
+                            <div className="ml-auto flex h-9 flex-row items-center rounded-full border border-neutral-200 dark:border-neutral-700">
+                              {/* Correctly pass the optimisticUpdate prop */}
+                              <EditItemQuantityButton
+                                item={item}
+                                type="minus"
+                                ={optimisticUpdate}
+                              />
+                              <p className="w-6 text-center">
+                                <span className="w-full text-sm">{item.quantity}</span>
+                              </p>
+                              {/* Correctly pass the optimisticUpdate prop */}
+                              <EditItemQuantityButton
+                                item={item}
+                                type="plus"
+                                optimisticUpdate={optimisticUpdate}
+                              />
                             </div>
                           </div>
-                        </li>
-                      );
-                    })}
+                        </div>
+                      </li>
+                    ))}
                   </ul>
                   <div className="py-4 text-sm text-neutral-500 dark:text-neutral-400">
                     <div className="mb-3 flex items-center justify-between border-b border-neutral-200 pb-1 dark:border-neutral-700">
@@ -173,9 +183,12 @@ export default function CartModal() {
                       />
                     </div>
                   </div>
-                  <form action={() => redirectToCheckout(cart.id)}>
-                    <CheckoutButton />
-                  </form>
+                  {/* Correctly use the bound server action in the form */}
+                  {checkoutAction && (
+                    <form action={checkoutAction}>
+                      <CheckoutButton />
+                    </form>
+                  )}
                 </div>
               )}
             </Dialog.Panel>
@@ -183,19 +196,5 @@ export default function CartModal() {
         </Dialog>
       </Transition>
     </>
-  );
-}
-
-function CheckoutButton() {
-  const { pending } = useFormStatus();
-
-  return (
-    <button
-      className="w-full rounded-md bg-black p-3 text-center text-sm font-medium text-white opacity-90 hover:opacity-100"
-      type="submit"
-      disabled={pending}
-    >
-      {pending ? 'Processing...' : 'Proceed to Checkout'}
-    </button>
   );
 }

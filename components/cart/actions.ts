@@ -1,5 +1,3 @@
-// components/cart/actions.ts
-
 'use server';
 
 import { shopifyFetch } from 'lib/shopify';
@@ -21,15 +19,14 @@ import {
   ShopifyUpdateCartOperation
 } from 'lib/shopify/types';
 import { revalidateTag } from 'next/cache';
-import { redirect } from 'next/navigation'; // Import redirect
 
 // Helper function to extract nodes from edges
 function removeEdgesAndNodes(array: Connection<any>) {
   return array.edges.map((edge) => edge?.node);
 }
 
-// Helper function to transform Shopify's cart data into our app's format
-function reshapeCart(cart: ShopifyCart): Cart {
+// Export this helper so it can be used elsewhere if needed
+export function reshapeCart(cart: ShopifyCart): Cart {
   if (!cart.cost?.totalTaxAmount) {
     cart.cost.totalTaxAmount = {
       amount: '0.0',
@@ -42,18 +39,6 @@ function reshapeCart(cart: ShopifyCart): Cart {
     lines: removeEdgesAndNodes(cart.lines)
   };
 }
-
-// This is the new function to handle redirection
-export async function redirectToCheckout(cartId: string) {
-  const cart = await getCart(cartId);
-
-  if (!cart?.checkoutUrl) {
-    throw new Error('Could not retrieve checkout URL.');
-  }
-
-  redirect(cart.checkoutUrl);
-}
-
 
 export async function createCart(): Promise<Cart> {
   const res = await shopifyFetch<ShopifyCreateCartOperation>({
@@ -70,10 +55,7 @@ export async function getCart(cartId: string): Promise<Cart | null> {
     cache: 'no-store'
   });
 
-  if (!res.body.data.cart) {
-    return null;
-  }
-  return reshapeCart(res.body.data.cart);
+  return res.body.data.cart ? reshapeCart(res.body.data.cart) : null;
 }
 
 export async function addItem(
@@ -119,4 +101,13 @@ export async function updateItemQuantity(
   });
   revalidateTag('cart');
   return reshapeCart(res.body.data.cartLinesUpdate.cart);
+}
+
+// This function was missing
+export async function redirectToCheckout(cartId: string): Promise<string> {
+  const cart = await getCart(cartId);
+  if (!cart?.checkoutUrl) {
+    throw new Error('Could not retrieve checkout URL.');
+  }
+  return cart.checkoutUrl;
 }
