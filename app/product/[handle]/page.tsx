@@ -1,44 +1,127 @@
+// app/product/[handle]/page.tsx
+
+import { AddToCart } from '@/components/cart/add-to-cart';
+import { Carousel } from '@/components/carousel';
+import Footer from '@/components/layout/footer';
+import ProductGridItems from '@/components/layout/product-grid-items';
+import { Gallery } from '@/components/product/gallery';
+import { ProductDescription } from '@/components/product/product-description';
+import { VariantSelector } from '@/components/product/variant-selector';
+import { HIDDEN_PRODUCT_TAG } from '@/lib/constants';
+import { getMenu, getProduct, getProductRecommendations } from '@/lib/shopify';
+import { Image, Product } from '@/lib/shopify/types';
 import { notFound } from 'next/navigation';
-import { getProduct } from '@/lib/shopify';
-import { ProductDetails } from '@/components/layout/product/product-details';
-import type { Metadata } from 'next';
+import { Suspense } from 'react';
 
-interface PageProps {
-  params: {
-    handle: string;
-  };
-}
-
-export default async function ProductPage({ params }: PageProps) {
+// ... (metadata function remains the same)
+export async function generateMetadata({ params }: { params: { handle: string } }) {
   const product = await getProduct(params.handle);
 
   if (!product) {
     notFound();
   }
 
+  const { url, width, height, altText: alt } = product.featuredImage || {};
+  const indexable = !product.tags.includes(HIDDEN_PRODUCT_TAG);
+
+  return {
+    title: product.seo.title || product.title,
+    description: product.seo.description || product.description,
+    robots: {
+      index: indexable,
+      follow: indexable,
+      googleBot: {
+        index: indexable,
+        follow: indexable
+      }
+    },
+    openGraph: url
+      ? {
+          images: [
+            {
+              url,
+              width,
+              height,
+              alt
+            }
+          ]
+        }
+      : null
+  };
+}
+
+
+export default async function ProductPage({ params }: { params: { handle: string } }) {
+  const product = await getProduct(params.handle);
+  const menu = await getMenu('next-js-frontend-header-menu');
+
+  if (!product) {
+    notFound();
+  }
+
+  const productJsonLd = {
+    '@context': 'https://schema.org',
+    '@type': 'Product',
+    name: product.title,
+    description: product.description,
+    image: product.featuredImage?.url,
+    offers: {
+      '@type': 'AggregateOffer',
+      availability: product.availableForSale
+        ? 'https://schema.org/InStock'
+        : 'https://schema.org/OutOfStock',
+      priceCurrency: product.priceRange.minVariantPrice.currencyCode,
+      highPrice: product.priceRange.maxVariantPrice.amount,
+      lowPrice: product.priceRange.minVariantPrice.amount
+    }
+  };
+
   return (
-    <section className="pt-8">
-      <ProductDetails product={product} />
-    </section>
+    <>
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{
+          __html: JSON.stringify(productJsonLd)
+        }}
+      />
+      <div className="mx-auto max-w-screen-2xl px-4">
+        <div className="flex flex-col rounded-lg border border-neutral-200 bg-white p-8 dark:border-neutral-800 dark:bg-black md:p-12 lg:flex-row lg:gap-8">
+          <div className="h-full w-full basis-full lg:basis-4/6">
+            <Gallery
+              images={product.images.map((image: Image) => ({
+                src: image.url,
+                altText: image.altText
+              }))}
+            />
+          </div>
+
+          <div className="basis-full lg:basis-2/6">
+            <ProductDescription product={product} />
+            <VariantSelector options={product.options} variants={product.variants} />
+            {/* Correctly pass the entire product object */}
+            <AddToCart product={product} />
+          </div>
+        </div>
+        <Suspense>
+          <RelatedProducts id={product.id} />
+        </Suspense>
+      </div>
+      <Suspense>
+        <Footer menu={menu} />
+      </Suspense>
+    </>
   );
 }
 
-export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
-  const product = await getProduct(params.handle);
+async function RelatedProducts({ id }: { id: string }) {
+  const relatedProducts = await getProductRecommendations(id);
 
-  if (!product) {
-    return {
-      title: 'Product Not Found',
-    };
-  }
+  if (!relatedProducts.length) return null;
 
-  return {
-    title: product.title,
-    description: product.description,
-    openGraph: {
-      title: product.title,
-      description: product.description,
-      images: product.featuredImage ? [{ url: product.featuredImage.url }] : [],
-    },
-  };
+  return (
+    <div className="py-8">
+      <h2 className="mb-4 text-2xl font-bold">Related Products</h2>
+      <ProductGridItems products={relatedProducts} />
+    </div>
+  );
 }

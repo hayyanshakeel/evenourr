@@ -1,15 +1,16 @@
-import 'app/globals.css';
-import { CartProvider } from 'components/cart/cart-context';
-import { Navbar } from 'components/layout/navbar';
-import { WelcomeToast } from 'components/welcome-toast';
-import { GeistSans } from 'geist/font/sans';
-import { getCart } from 'lib/shopify';
+import { Inter } from 'next/font/google';
 import { ReactNode, Suspense } from 'react';
-import { Toaster } from 'sonner';
-import { cookies } from 'next/headers';
-import { baseUrl } from 'lib/utils';
 
-const { SITE_NAME } = process.env;
+import { CartProvider } from '@/components/cart/cart-context';
+import Footer from '@/components/layout/footer';
+import { Navbar } from '@/components/layout/navbar';
+import { getMenu } from '@/lib/shopify';
+import './globals.css';
+
+const { TWITTER_CREATOR, TWITTER_SITE, SITE_NAME } = process.env;
+const baseUrl = process.env.NEXT_PUBLIC_VERCEL_URL
+  ? `https://` + process.env.NEXT_PUBLIC_VERCEL_URL
+  : 'http://localhost:3000';
 
 export const metadata = {
   metadataBase: new URL(baseUrl),
@@ -20,38 +21,37 @@ export const metadata = {
   robots: {
     follow: true,
     index: true
-  }
+  },
+  ...(TWITTER_CREATOR &&
+    TWITTER_SITE && {
+      twitter: {
+        card: 'summary_large_image',
+        creator: TWITTER_CREATOR,
+        site: TWITTER_SITE
+      }
+    })
 };
 
-export default async function RootLayout({
-  children
-}: {
-  children: ReactNode;
-}) {
-  const cookieStore = await cookies();
-  let cartId = cookieStore.get('cartId')?.value;
-  let cart;
+const inter = Inter({
+  subsets: ['latin'],
+  display: 'swap',
+  variable: '--font-inter'
+});
 
-  if (cartId) {
-    cart = await getCart(cartId);
-  }
-
-  const cartPromise = Promise.resolve(cart);
+export default async function RootLayout({ children }: { children: ReactNode }) {
+  const menu = await getMenu('next-js-frontend-header-menu');
 
   return (
-    <html lang="en" className={GeistSans.variable}>
-      <body className="bg-white text-black selection:bg-teal-300">
-        <CartProvider cartPromise={cartPromise}>
+    <html lang="en" className={inter.variable}>
+      <body className="bg-white text-black selection:bg-teal-300 dark:bg-black dark:text-white dark:selection:bg-pink-500 dark:selection:text-white">
+        <CartProvider>
+          <Navbar menu={menu} />
           <Suspense>
-            <Navbar />
+            <main>{children}</main>
           </Suspense>
-          <main>
-            <Suspense>
-              {children}
-            </Suspense>
-            <Toaster closeButton />
-            <WelcomeToast />
-          </main>
+          <Suspense>
+            <Footer menu={menu} />
+          </Suspense>
         </CartProvider>
       </body>
     </html>

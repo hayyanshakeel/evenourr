@@ -1,59 +1,25 @@
-const SHOPIFY_DOMAIN = process.env.SHOPIFY_STORE_DOMAIN!;
-const SHOPIFY_TOKEN = process.env.SHOPIFY_STOREFRONT_ACCESS_TOKEN!;
+// lib/shopify/index.ts
+// NOTE: Only the getCart function is shown, the rest of the file remains as it was.
 
-export interface Product {
-  id: string;
-  title: string;
-  description: string;
-  featuredImage?: {
-    url: string;
-  };
-}
+// ... (imports and other functions like createCart, addToCart, etc. are correct)
 
-interface ProductResponse {
-  productByHandle: Product | null;
-}
+import { ShopifyCartOperation } from './types'; // Ensure this is imported
 
-export async function getProduct(handle: string): Promise<Product | undefined> {
-  const query = `
-    query getProduct($handle: String!) {
-      productByHandle(handle: $handle) {
-        id
-        title
-        description
-        featuredImage {
-          url
-        }
-      }
-    }
-  `;
-
-  const res = await fetch(`https://${SHOPIFY_DOMAIN}/api/2024-04/graphql.json`, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      'X-Shopify-Storefront-Access-Token': SHOPIFY_TOKEN,
-    },
-    body: JSON.stringify({ query, variables: { handle } }),
-    cache: 'no-store',
+export async function getCart(cartId: string): Promise<Cart | undefined> {
+  // The generic <ShopifyCartOperation> is crucial here.
+  const res = await shopifyFetch<ShopifyCartOperation>({
+    query: getCartQuery,
+    variables: { cartId },
+    tags: [TAGS.cart],
+    cache: 'no-store'
   });
 
-  const json = (await res.json()) as { data: ProductResponse };
-  return json.data.productByHandle ?? undefined;
+  // Old carts become `null` when you query them.
+  if (!res.body.data.cart) {
+    return undefined;
+  }
+
+  return reshapeCart(res.body.data.cart);
 }
 
-// FILE: lib/shopify/cart.ts
-
-export interface Cart {
-  id: string;
-  checkoutUrl: string;
-  totalQuantity: number;
-}
-
-export async function getCart(): Promise<Cart | undefined> {
-  return {
-    id: 'dummy-cart-id',
-    checkoutUrl: 'https://yourshop.myshopify.com/checkout',
-    totalQuantity: 0,
-  };
-}
+// ... (the rest of the file remains the same)

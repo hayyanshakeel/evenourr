@@ -1,41 +1,31 @@
 'use client';
 
 import { XMarkIcon } from '@heroicons/react/24/outline';
-import { removeItem } from 'components/cart/actions';
+import { useCart } from '@/components/cart/cart-context';
 import type { CartItem } from 'lib/shopify/types';
-import { useActionState } from 'react';
+import { useFormStatus } from 'react-dom';
 
-export function DeleteItemButton({
-  item,
-  optimisticUpdate
-}: {
-  item: CartItem;
-  optimisticUpdate: (
-    merchandiseId: string,
-    updateType: 'plus' | 'minus' | 'delete'
-  ) => void;
-}) {
-  const [message, formAction] = useActionState(removeItem, null);
-  const merchandiseId = item.merchandise.id;
-  const removeItemAction = formAction.bind(null, merchandiseId);
+export function DeleteItemButton({ item }: { item: CartItem }) {
+  const { removeFromCart } = useCart();
+  const { pending } = useFormStatus();
+
+  const handleRemove = () => {
+    removeFromCart(item.id);
+  };
 
   return (
-    <form
-      action={async () => {
-        optimisticUpdate(merchandiseId, 'delete');
-        removeItemAction();
-      }}
+    <button
+      type="button"
+      onClick={handleRemove}
+      disabled={pending}
+      aria-label="Remove cart item"
+      className="flex h-[17px] w-[17px] items-center justify-center rounded-full bg-neutral-500 text-white transition-all duration-200"
     >
-      <button
-        type="submit"
-        aria-label="Remove cart item"
-        className="flex h-[24px] w-[24px] items-center justify-center rounded-full bg-neutral-500"
-      >
-        <XMarkIcon className="mx-[1px] h-4 w-4 text-white dark:text-black" />
-      </button>
-      <p aria-live="polite" className="sr-only" role="status">
-        {message}
-      </p>
-    </form>
+      {pending ? (
+        <div className="h-4 w-4 rounded-full border-2 border-t-transparent border-white animate-spin"></div>
+      ) : (
+        <XMarkIcon className="h-4 w-4" />
+      )}
+    </button>
   );
 }

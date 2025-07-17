@@ -1,3 +1,5 @@
+// lib/shopify/fragments/product.ts
+
 import { imageFragment } from './image';
 import { seoFragment } from './seo';
 
@@ -15,16 +17,6 @@ export const productFragment = /* GraphQL */ `
       values
     }
     priceRange {
-      maxVariantPrice {
-        amount
-        currencyCode
-      }
-      minVariantPrice {
-        amount
-        currencyCode
-      }
-    }
-    compareAtPriceRange {
       maxVariantPrice {
         amount
         currencyCode
@@ -65,7 +57,6 @@ export const productFragment = /* GraphQL */ `
       ...seo
     }
     tags
-    updatedAt
   }
   ${imageFragment}
   ${seoFragment}
