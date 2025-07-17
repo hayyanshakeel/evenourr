@@ -1,20 +1,21 @@
 // app/product/[handle]/page.tsx
 
 import { AddToCart } from '@/components/cart/add-to-cart';
-import { Carousel } from '@/components/carousel';
 import Footer from '@/components/layout/footer';
 import ProductGridItems from '@/components/layout/product-grid-items';
 import { Gallery } from '@/components/product/gallery';
 import { ProductDescription } from '@/components/product/product-description';
+import { ProductProvider } from '@/components/product/product-context';
 import { VariantSelector } from '@/components/product/variant-selector';
 import { HIDDEN_PRODUCT_TAG } from '@/lib/constants';
-import { getMenu, getProduct, getProductRecommendations } from '@/lib/shopify';
+import { getProduct, getProductRecommendations } from '@/lib/shopify';
 import { Image, Product } from '@/lib/shopify/types';
 import { notFound } from 'next/navigation';
 import { Suspense } from 'react';
 
-// ... (metadata function remains the same)
-export async function generateMetadata({ params }: { params: { handle: string } }) {
+// FIX: Update function signature and await params
+export async function generateMetadata({ params: paramsPromise }: { params: { handle: string } }) {
+  const params = await paramsPromise;
   const product = await getProduct(params.handle);
 
   if (!product) {
@@ -50,10 +51,10 @@ export async function generateMetadata({ params }: { params: { handle: string } 
   };
 }
 
-
-export default async function ProductPage({ params }: { params: { handle: string } }) {
+// FIX: Update function signature and await params
+export default async function ProductPage({ params: paramsPromise }: { params: { handle:string } }) {
+  const params = await paramsPromise;
   const product = await getProduct(params.handle);
-  const menu = await getMenu('next-js-frontend-header-menu');
 
   if (!product) {
     notFound();
@@ -96,10 +97,11 @@ export default async function ProductPage({ params }: { params: { handle: string
           </div>
 
           <div className="basis-full lg:basis-2/6">
-            <ProductDescription product={product} />
-            <VariantSelector options={product.options} variants={product.variants} />
-            {/* Correctly pass the entire product object */}
-            <AddToCart product={product} />
+            <ProductProvider product={product}>
+              <ProductDescription product={product} />
+              <VariantSelector options={product.options} variants={product.variants} />
+              <AddToCart product={product} />
+            </ProductProvider>
           </div>
         </div>
         <Suspense>
@@ -107,7 +109,7 @@ export default async function ProductPage({ params }: { params: { handle: string
         </Suspense>
       </div>
       <Suspense>
-        <Footer menu={menu} />
+        <Footer />
       </Suspense>
     </>
   );

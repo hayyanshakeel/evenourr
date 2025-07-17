@@ -22,7 +22,8 @@ export function Gallery({ images }: { images: { src: string; altText: string }[]
               className="h-full w-full object-cover"
               fill
               sizes="100vw"
-              alt={image.altText}
+              // FIX: Provide a fallback for the alt text
+              alt={image.altText || 'Product image'}
               src={image.src}
               priority={index === 0}
             />
@@ -32,14 +33,12 @@ export function Gallery({ images }: { images: { src: string; altText: string }[]
 
       {/* Wishlist Button */}
       <div className="absolute bottom-6 right-4">
-        {/* Updated styles for a black circle background */}
         <button
           onClick={() => setIsWishlisted(!isWishlisted)}
           className="flex h-10 w-10 items-center justify-center rounded-full bg-black shadow-md backdrop-blur-sm"
         >
           <svg
             xmlns="http://www.w3.org/2000/svg"
-            // Heart icon is now white
             className="h-5 w-5 text-white"
             fill={isWishlisted ? 'currentColor' : 'none'}
             viewBox="0 0 24 24"

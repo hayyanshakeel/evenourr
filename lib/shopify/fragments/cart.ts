@@ -26,6 +26,12 @@ export const cartFragment = /* GraphQL */ `
         node {
           id
           quantity
+          cost {
+            totalAmount {
+              amount
+              currencyCode
+            }
+          }
           merchandise {
             ... on ProductVariant {
               id
