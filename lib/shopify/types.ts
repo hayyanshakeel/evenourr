@@ -10,7 +10,6 @@ export type Edge<T> = {
   node: T;
 };
 
-// This is the item structure within the cart
 export type CartItem = {
   id: string;
   quantity: number;
@@ -28,7 +27,6 @@ export type CartItem = {
   };
 };
 
-// This is the type for the cart as it comes from Shopify's API
 export type ShopifyCart = {
   id: string;
   checkoutUrl: string;
@@ -37,17 +35,14 @@ export type ShopifyCart = {
     totalAmount: Money;
     totalTaxAmount: Money;
   };
-  lines: Connection<CartItem>; // The complex 'Connection' type
+  lines: Connection<CartItem>;
   totalQuantity: number;
 };
 
-// This is the type for the cart as we want to use it in our app
-// We Omit the original 'lines' and replace it with a simple array
 export type Cart = Omit<ShopifyCart, 'lines'> & {
-  lines: CartItem[]; // The simple array type
+  lines: CartItem[];
 };
 
-// ... (the rest of your types like Collection, Image, Menu, Money, Page, Product, etc.)
 export type Collection = ShopifyCollection & {
   path: string;
 };
@@ -80,9 +75,10 @@ export type Page = {
   updatedAt: string;
 };
 
-export type Product = Omit<ShopifyProduct, 'variants' | 'images'> & {
+export type Product = Omit<ShopifyProduct, 'variants' | 'images' | 'collections'> & {
   variants: ProductVariant[];
   images: Image[];
+  collections: Collection[];
 };
 
 export type ProductOption = {
@@ -136,11 +132,13 @@ export type ShopifyProduct = {
   variants: Connection<ProductVariant>;
   featuredImage: Image;
   images: Connection<Image>;
+  collections: Connection<{ handle: string }>;
   seo: SEO;
   tags: string[];
   updatedAt: string;
 };
 
+// ... (The rest of the types remain the same)
 
 export type ShopifyCartOperation = {
   data: {
@@ -162,7 +160,6 @@ export type ShopifyRemoveFromCartOperation = {
     lineIds: string[];
   };
 };
-
 
 export type ShopifyCreateCartOperation = {
   data: {

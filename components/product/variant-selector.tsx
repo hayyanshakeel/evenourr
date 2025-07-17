@@ -39,7 +39,6 @@ export function VariantSelector({ options, variants }: { options: ProductOption[
     const hasColorParam = searchParams.has('color');
 
     if (colorOption && !hasColorParam && colorOption.values.length > 0) {
-      // FIX: Added a check to ensure firstColor is a string before using it
       const firstColor = colorOption.values[0];
       if (firstColor) {
         const optionSearchParams = new URLSearchParams(searchParams.toString());
@@ -91,8 +90,9 @@ export function VariantSelector({ options, variants }: { options: ProductOption[
                       disabled={!isAvailable}
                       onClick={() => router.replace(optionUrl, { scroll: false })}
                       title={`${option.name} ${value}${!isAvailable ? ' (Out of Stock)' : ''}`}
+                      // FIX: Reduced the size of the color swatches
                       className={clsx(
-                        'h-8 w-8 rounded-full border border-neutral-200 transition-all duration-200',
+                        'h-6 w-6 rounded-full border border-neutral-200 transition-all duration-200',
                         {
                           'ring-2 ring-black ring-offset-1': isActive,
                           'cursor-not-allowed opacity-50': !isAvailable,
@@ -113,8 +113,7 @@ export function VariantSelector({ options, variants }: { options: ProductOption[
             <div key={option.id}>
               <Menu as="div" className="relative block text-left">
                 <div>
-                  <Menu.Button className="flex w-full items-center justify-between rounded-lg border border-black px-4 py-2.5 text-sm font-medium text-black">
-                    {/* This logic correctly shows "Select Size" as a placeholder */}
+                  <Menu.Button className="flex w-full items-center justify-between border border-black px-4 py-2.5 text-sm font-medium text-black">
                     <span>{selectedSize || 'Select Size'}</span>
                     <ChevronRightIcon className="h-4 w-4 text-neutral-500" aria-hidden="true" />
                   </Menu.Button>

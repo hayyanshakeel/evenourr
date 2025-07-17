@@ -1,3 +1,5 @@
+// components/product/product-description.tsx
+
 import Price from 'components/price';
 import { Product } from 'lib/shopify/types';
 import { ShareButton } from './share-button';
@@ -5,8 +7,8 @@ import { ShareButton } from './share-button';
 export function ProductDescription({ product }: { product: Product }) {
   return (
     <>
-      {/* UPDATED: Reduced bottom margin from mb-2 to mb-1 */}
-      <div className="mb-1 flex items-start justify-between">
+      {/* FIX: Changed items-start to items-center for better alignment */}
+      <div className="mb-1 flex items-center justify-between">
         <h1 className="text-base font-normal uppercase tracking-wide text-black">
           {product.title}
         </h1>

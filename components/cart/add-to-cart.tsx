@@ -1,3 +1,5 @@
+// components/cart/add-to-cart.tsx
+
 'use client';
 
 import { useCart } from '@/components/cart/cart-context';
@@ -23,8 +25,9 @@ export function AddToCart({ product }: { product: Product }) {
       onClick={handleAddToCart}
       disabled={isDisabled}
       aria-label="Add to cart"
+      // FIX: Removed rounded-lg class
       className={clsx(
-        'flex w-full items-center justify-center rounded-md bg-black px-5 py-4 text-sm font-semibold uppercase text-white transition-colors duration-200 ease-in-out hover:bg-black/80 disabled:cursor-not-allowed disabled:bg-neutral-500'
+        'flex w-full items-center justify-center gap-x-2 bg-black px-5 py-4 text-sm font-semibold uppercase text-white transition-colors duration-200 ease-in-out hover:bg-black/80 disabled:cursor-not-allowed disabled:bg-neutral-500'
       )}
     >
       <span>{product.availableForSale ? 'Add to Bag' : 'Out Of Stock'}</span>
