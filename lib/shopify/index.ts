@@ -16,7 +16,7 @@ import {
   getCollectionQuery,
   getCollectionsQuery
 } from './queries/collection';
-import { getLocalizationQuery } from './queries/localization'; // New import
+import { getLocalizationQuery } from './queries/localization';
 import { getMenuQuery } from './queries/menu';
 import { getPageQuery, getPagesQuery } from './queries/page';
 import {
@@ -28,7 +28,7 @@ import {
   Cart,
   Collection,
   Connection,
-  Country, // New import
+  Country,
   Menu,
   Page,
   Product,
@@ -40,7 +40,7 @@ import {
   ShopifyCollectionProductsOperation,
   ShopifyCollectionsOperation,
   ShopifyCreateCartOperation,
-  ShopifyLocalizationOperation, // New import
+  ShopifyLocalizationOperation,
   ShopifyMenuOperation,
   ShopifyPageOperation,
   ShopifyPagesOperation,
@@ -260,9 +260,10 @@ export async function getCollections(): Promise<Collection[]> {
     query: getCollectionsQuery,
     tags: [TAGS.collections]
   });
-  return res.body.data.collections.edges.map((edge: { node: ShopifyCollection }) =>
-    reshapeCollection(edge.node)
-  ).filter(Boolean) as Collection[];
+  const shopifyCollections = removeEdgesAndNodes(res.body.data.collections);
+  const collections = shopifyCollections.map((collection) => reshapeCollection(collection));
+  
+  return collections.filter((collection): collection is Collection => collection !== undefined);
 }
 
 export async function getCollection(handle: string): Promise<Collection | undefined> {
@@ -309,7 +310,27 @@ export async function getMenu(handle: string): Promise<Menu[]> {
   })) || [];
 }
 
-// FIX: Added new function to fetch available shipping countries
+export async function getPage(handle: string): Promise<Page> {
+  const res = await shopifyFetch<ShopifyPageOperation>({
+    query: getPageQuery,
+    variables: {
+      handle
+    },
+    tags: [TAGS.pages]
+  });
+  
+  return res.body.data.pageByHandle;
+}
+
+export async function getPages(): Promise<Page[]> {
+  const res = await shopifyFetch<ShopifyPagesOperation>({
+    query: getPagesQuery,
+    tags: [TAGS.pages]
+  });
+
+  return removeEdgesAndNodes(res.body.data.pages);
+}
+
 export async function getAvailableShippingCountries(): Promise<Country[]> {
   const res = await shopifyFetch<ShopifyLocalizationOperation>({
     query: getLocalizationQuery,
