@@ -8,28 +8,49 @@ import Price from '../price';
 
 // A helper to calculate the discount percentage
 const getDiscountPercentage = (original: number, discounted: number) => {
-  if (original <= discounted) return 0;
+  if (original <= discounted || original === 0) return 0;
   return Math.round(((original - discounted) / original) * 100);
 };
 
 export function SuggestionCard({ product }: { product: Product }) {
-  // Check for a compare-at price to determine if the product is on sale
-  const originalPrice = parseFloat(product.priceRange.maxVariantPrice.amount);
-  const compareAtPrice = parseFloat(product.compareAtPriceRange?.maxVariantPrice.amount || '0');
+  // Ensure compareAtPriceRange exists and has a valid amount
+  const compareAtPriceString = product.compareAtPriceRange?.maxVariantPrice?.amount;
+  const originalPriceString = product.priceRange.maxVariantPrice.amount;
+
+  const compareAtPrice = compareAtPriceString ? parseFloat(compareAtPriceString) : 0;
+  const originalPrice = parseFloat(originalPriceString);
+
   const isOnSale = compareAtPrice > originalPrice;
   const discount = getDiscountPercentage(compareAtPrice, originalPrice);
+
+  // FIX: Get a list of unique color values from all product variants
+  const uniqueColors = Array.from(
+    new Set(
+      product.variants
+        .map((variant) =>
+          variant.selectedOptions.find((opt) => opt.name.toLowerCase() === 'color')
+        )
+        .filter((opt): opt is { name: string; value: string } => !!opt) // Ensure option exists
+        .map((opt) => opt.value) // Get the color value
+    )
+  );
 
   return (
     <Link href={`/product/${product.handle}`} className="group block">
       {/* Image Container */}
-      <div className="relative mb-3 overflow-hidden rounded-lg bg-gray-100">
-        <Image
-          src={product.featuredImage.url}
-          alt={product.featuredImage.altText || product.title}
-          width={400}
-          height={500}
-          className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
-        />
+      <div className="relative mb-3 overflow-hidden rounded-lg bg-gray-100 aspect-[3/4]">
+        {/* FIX: Added a check to prevent errors if a featured image is missing */}
+        {product.featuredImage?.url ? (
+          <Image
+            src={product.featuredImage.url}
+            alt={product.featuredImage.altText || product.title}
+            fill
+            sizes="(min-width: 768px) 25vw, 50vw"
+            className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
+          />
+        ) : (
+          <div className="h-full w-full bg-gray-200" /> // Render a placeholder if no image
+        )}
         {/* Discount Badge */}
         {isOnSale && discount > 0 && (
           <div className="absolute top-3 left-3 rounded-full bg-blue-600 px-2 py-1 text-xs font-semibold text-white">
@@ -51,7 +72,7 @@ export function SuggestionCard({ product }: { product: Product }) {
             amount={product.priceRange.maxVariantPrice.amount}
             currencyCode={product.priceRange.maxVariantPrice.currencyCode}
           />
-          {isOnSale && (
+          {isOnSale && product.compareAtPriceRange && (
             <Price
               className="text-sm text-gray-500 line-through"
               amount={product.compareAtPriceRange.maxVariantPrice.amount}
@@ -61,12 +82,8 @@ export function SuggestionCard({ product }: { product: Product }) {
         </div>
         {/* Color Swatches */}
         <div className="mt-2 flex space-x-1">
-          {product.variants.slice(0, 4).map((variant) => {
-            const color = variant.selectedOptions.find(
-              (opt) => opt.name.toLowerCase() === 'color'
-            )?.value;
-            if (!color) return null;
-
+          {/* FIX: Map over the unique colors to prevent duplicates */}
+          {uniqueColors.slice(0, 4).map((color) => {
             const colorMap: { [key: string]: string } = {
               black: '#000000', white: '#FFFFFF', brown: '#8B4513', 
               beige: '#E8DFCF', blue: '#3b82f6', green: '#22c55e', red: '#ef4444',
@@ -75,7 +92,7 @@ export function SuggestionCard({ product }: { product: Product }) {
 
             return (
               <div
-                key={variant.id}
+                key={color}
                 className="h-4 w-4 rounded-full border border-gray-300"
                 style={{ backgroundColor }}
                 title={color}
@@ -83,10 +100,7 @@ export function SuggestionCard({ product }: { product: Product }) {
             );
           })}
         </div>
-        {/* Promotional Banner */}
-        <div className="mt-3">
-          <p className="text-xs font-bold text-blue-600">2 FOR 20% OFF, 3 FOR 30% OFF ›</p>
-        </div>
+        {/* FIX: Promotional Banner has been removed */}
       </div>
     </Link>
   );

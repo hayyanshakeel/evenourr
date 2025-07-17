@@ -3,11 +3,11 @@
 'use client';
 
 import { AddToCart } from '@/components/cart/add-to-cart';
-import ProductGridItems from '@/components/layout/product-grid-items';
 import { Gallery } from '@/components/product/gallery';
 import { ProductAccordion } from '@/components/product/product-accordion';
 import { ProductDescription } from '@/components/product/product-description';
 import { ProductProvider } from '@/components/product/product-context';
+import { YouMayAlsoLike } from '@/components/product/you-may-also-like';
 import { VariantSelector } from '@/components/product/variant-selector';
 import { Image, Product } from '@/lib/shopify/types';
 
@@ -55,14 +55,12 @@ export function ProductPageClient({
           </div>
           <div className="w-full lg:w-2/5">
             <hr className="border-t-2 border-black" />
-            {/* FIX: Removed bottom padding from this container */}
-            <div className="px-4 pt-6 lg:px-12">
+            <div className="px-4 pt-6 pb-6 lg:px-12">
               <ProductDescription product={product} />
               <VariantSelector options={product.options} variants={product.variants} />
             </div>
             
-            {/* FIX: Adjusted margins to control the spacing */}
-            <hr className="mt-6 mb-4 border-t border-black" />
+            <hr className="my-6 border-t border-black" />
 
             <div className="px-4 lg:px-12">
               <ProductAccordion descriptionHtml={product.descriptionHtml} />
@@ -70,11 +68,12 @@ export function ProductPageClient({
           </div>
         </div>
 
+        {/* FIX: Added a full-width separator and adjusted spacing */}
         {recommendations.length > 0 && (
-          <div className="mx-auto max-w-screen-2xl px-4 pt-8">
-            <div className="py-8">
-              <h2 className="mb-4 text-2xl font-bold">Related Products</h2>
-              <ProductGridItems products={recommendations} />
+          <div className="pt-8">
+            <hr className="mb-8 border-t-2 border-black" />
+            <div className="mx-auto max-w-screen-2xl px-4">
+              <YouMayAlsoLike products={recommendations} />
             </div>
           </div>
         )}

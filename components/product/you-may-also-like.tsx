@@ -7,7 +7,8 @@ export function YouMayAlsoLike({ products }: { products: Product[] }) {
   if (!products.length) return null;
 
   return (
-    <div className="py-12">
+    // FIX: Removed top padding to allow parent to control spacing
+    <div className="pb-12">
       <h2 className="mb-8 text-center text-lg font-bold uppercase tracking-wider text-black">
         You May Also Like
       </h2>

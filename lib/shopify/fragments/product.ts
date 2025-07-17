@@ -26,7 +26,6 @@ export const productFragment = /* GraphQL */ `
         currencyCode
       }
     }
-    # FIX: Added compareAtPriceRange to the query
     compareAtPriceRange {
       maxVariantPrice {
         amount
@@ -61,6 +60,14 @@ export const productFragment = /* GraphQL */ `
       edges {
         node {
           ...image
+        }
+      }
+    }
+    # FIX: Added collections to fetch for the fallback
+    collections(first: 1) {
+      edges {
+        node {
+          handle
         }
       }
     }
