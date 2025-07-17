@@ -31,22 +31,33 @@ export function ProductPageClient({
   useEffect(() => {
     const initShipping = async () => {
       setIsLoading(true);
-      const countries = await getAvailableShippingCountries();
-      setAvailableCountries(countries);
+      try {
+        // --- Try to fetch countries ---
+        const countries = await getAvailableShippingCountries();
+        setAvailableCountries(countries);
 
-      const storedCountryCode = localStorage.getItem('selectedCountry') || 'IN';
-      const currentCountry = countries.find(c => c.isoCode === storedCountryCode);
+        const storedCountryCode = localStorage.getItem('selectedCountry') || 'IN';
+        const currentCountry = countries.find(c => c.isoCode === storedCountryCode);
 
-      if (currentCountry) {
-        setSelectedCountry(currentCountry);
-      } else {
-        const defaultCountry = countries.find(c => c.isoCode === 'IN');
-        setSelectedCountry(defaultCountry || countries[0] || null);
-        if (localStorage.getItem('selectedCountry')) {
-          setShowPopup(true);
+        if (currentCountry) {
+          setSelectedCountry(currentCountry);
+        } else {
+          const defaultCountry = countries.find(c => c.isoCode === 'IN');
+          setSelectedCountry(defaultCountry || (countries.length > 0 ? countries[0] : null));
+          if (localStorage.getItem('selectedCountry')) {
+            setShowPopup(true);
+          }
         }
+      } catch (error) {
+        // --- Fallback if the API call fails ---
+        console.error("Failed to fetch shipping countries. This might be a Shopify permission issue.", error);
+        // Set a default country to prevent the app from crashing.
+        const fallbackCountry = { name: 'India', isoCode: 'IN' } as Country;
+        setAvailableCountries([fallbackCountry]);
+        setSelectedCountry(fallbackCountry);
+      } finally {
+        setIsLoading(false);
       }
-      setIsLoading(false);
     };
 
     initShipping();
@@ -114,18 +125,40 @@ export function ProductPageClient({
             <hr className="my-6 border-t border-black" />
 
             <div className="space-y-3 px-4 lg:px-12">
-              {/* This is the new, corrected link to the shipping page */}
-              <div className="border border-neutral-300">
-                <div className="p-4">
+              <div className="border border-neutral-300 p-4">
                   <Link href="/shipping" className="flex w-full items-center justify-between text-left">
-                    <span className="font-semibold uppercase">
-                      {isLoading ? 'Loading Shipping...' : `SHIPPING TO ${selectedCountry?.name || 'SELECT COUNTRY'}`}
-                    </span>
-                    <ChevronRightIcon className="h-5 w-5 text-gray-500" />
+                      <h3 className="font-bold uppercase">
+                          SHIPPING TO{' '}
+                          {isLoading ? (
+                              '...'
+                          ) : selectedCountry?.name ? (
+                              <span className="underline decoration-2 underline-offset-4">{selectedCountry.name}</span>
+                          ) : (
+                              'SELECT COUNTRY'
+                          )}
+                      </h3>
+                      <ChevronRightIcon className="h-5 w-5 text-gray-400 flex-shrink-0" />
                   </Link>
-                </div>
+                  <div className="mt-4 space-y-4 text-sm">
+                      <div>
+                          <div className="flex items-center text-gray-800">
+                              <svg xmlns="http://www.w3.org/2000/svg" className="mr-2 h-5 w-5 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                              <span>Delivery</span>
+                              <ChevronRightIcon className="ml-auto h-4 w-4 text-gray-400 flex-shrink-0" />
+                          </div>
+                          <div className="mt-2 ml-7 rounded-md bg-gray-50 p-3 text-gray-600">
+                              <p>Express shipping available</p>
+                              <p>Shipping Time: 8 - 12 days</p>
+                          </div>
+                      </div>
+                      <div className="flex items-center text-gray-800">
+                          <svg xmlns="http://www.w3.org/2000/svg" className="mr-2 h-5 w-5 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 4v5h5V4H4zm0 9h5v5H4v-5zm9-9h5v5h-5V4zm0 9h5v5h-5v-5z" /></svg>
+                          <span>Return Policy</span>
+                          <ChevronRightIcon className="ml-auto h-4 w-4 text-gray-400 flex-shrink-0" />
+                      </div>
+                  </div>
               </div>
-              
+
               <ProductAccordion descriptionHtml={product.descriptionHtml} />
             </div>
           </div>
