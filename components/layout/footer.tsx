@@ -1,16 +1,21 @@
 // components/layout/footer.tsx
 
 import LogoSquare from '@/components/logo-square';
+import { getMenu } from '@/lib/shopify'; // Import getMenu
 import { Menu } from '@/lib/shopify/types';
 import Link from 'next/link';
-import { Suspense } from 'react'; // Added missing import
+import { Suspense } from 'react';
 import FooterMenu from './footer-menu';
 
 const { COMPANY_NAME, SITE_NAME } = process.env;
 
-export default function Footer({ menu }: { menu: Menu[] }) {
+// Make the component async to fetch data
+export default async function Footer() {
   const currentYear = new Date().getFullYear();
   const copyrightDate = 2023 + (currentYear > 2023 ? `-${currentYear}` : '');
+  
+  // Fetch the menu data inside the component
+  const menu = await getMenu('next-js-frontend-header-menu');
 
   return (
     <footer className="text-sm text-neutral-500 dark:text-neutral-400">

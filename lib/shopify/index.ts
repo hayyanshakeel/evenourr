@@ -1,5 +1,3 @@
-// lib/shopify/index.ts
-
 'use server';
 
 import { HIDDEN_PRODUCT_TAG, SHOPIFY_GRAPHQL_API_ENDPOINT, TAGS } from '@/lib/constants';
@@ -51,7 +49,6 @@ import {
 import { revalidateTag } from 'next/cache';
 import { redirect } from 'next/navigation';
 
-// This function was not being exported, causing many errors.
 export async function shopifyFetch<T>({
   query,
   variables,
@@ -64,7 +61,8 @@ export async function shopifyFetch<T>({
   cache?: RequestCache;
 }): Promise<{ status: number; body: T }> {
   try {
-    const result = await fetch(SHOPIFY_GRAPHQL_API_ENDPOINT, {
+    const endpoint = `${process.env.SHOPIFY_STORE_DOMAIN}${SHOPIFY_GRAPHQL_API_ENDPOINT}`;
+    const result = await fetch(endpoint, {
       method: 'POST',
       headers: {
         'X-Shopify-Storefront-Access-Token': process.env.SHOPIFY_STOREFRONT_ACCESS_TOKEN!,
@@ -275,6 +273,12 @@ export async function getCollectionProducts(variables: {
     },
     tags: [TAGS.products, TAGS.collections]
   });
+
+  if (!res.body.data.collection) {
+    console.log(`No collection found for handle: ${variables.collection}`);
+    return [];
+  }
+
   return reshapeProducts(removeEdgesAndNodes(res.body.data.collection.products));
 }
 
