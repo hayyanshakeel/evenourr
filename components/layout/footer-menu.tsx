@@ -1,3 +1,5 @@
+// components/layout/footer-menu.tsx
+
 'use client';
 
 import clsx from 'clsx';
@@ -32,7 +34,10 @@ export function FooterMenuItem({ item }: { item: Menu }) {
 }
 
 export default function FooterMenu({ menu }: { menu: Menu[] }) {
-  if (!menu.length) return null;
+  // FIX: Added a safety check to ensure 'menu' is an array before accessing its length.
+  if (!menu || !Array.isArray(menu) || menu.length === 0) {
+    return null;
+  }
 
   return (
     <nav>
