@@ -3,21 +3,22 @@
 import Image from 'next/image';
 
 export function Gallery({ images }: { images: { src: string; altText: string }[] }) {
-  // Do not render gallery if no images are available
   if (!images || images.length === 0) {
-    return null;
+    return <div className="h-[75vh] w-full bg-gray-100" />; // Placeholder if no images
   }
 
   return (
-    <div className="relative h-full w-full">
+    // Set a defined height for the gallery container
+    <div className="relative h-[75vh] w-full">
       {/* Horizontally-scrolling container */}
-      <div className="flex h-full w-full snap-x snap-mandatory overflow-x-auto scroll-smooth">
+      <div className="no-scrollbar flex h-full w-full snap-x snap-mandatory overflow-x-auto scroll-smooth">
         {images.map((image, index) => (
           <div
-            key={image.src}
-            className="h-full w-full flex-shrink-0 snap-center"
+            key={`${image.src}-${index}`}
+            className="relative h-full w-full flex-shrink-0 snap-center"
           >
             <Image
+              // FIX: Changed back to 'object-cover' to fill the frame
               className="h-full w-full object-cover"
               fill
               sizes="100vw"
@@ -35,9 +36,7 @@ export function Gallery({ images }: { images: { src: string; altText: string }[]
           {images.map((_, index) => (
             <div
               key={index}
-              // The active dot is difficult to track with pure CSS scroll-snapping,
-              // so we'll just show the dots for visual reference without an active state.
-              className="h-2 w-2 rounded-full bg-white/50 backdrop-blur-sm"
+              className="h-2 w-2 rounded-full bg-white/70 shadow-md backdrop-blur-sm"
             />
           ))}
         </div>

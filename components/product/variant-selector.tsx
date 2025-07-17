@@ -31,7 +31,6 @@ export function VariantSelector({ options, variants }: { options: ProductOption[
     )
   }));
 
-  // Ensure options are sorted with 'Color' first, then 'Size'
   const sortedOptions = [...options].sort((a, b) => {
     if (a.name.toLowerCase() === 'color') return -1;
     if (b.name.toLowerCase() === 'color') return 1;
@@ -41,11 +40,11 @@ export function VariantSelector({ options, variants }: { options: ProductOption[
   });
 
   return (
-    <div className="flex flex-col gap-y-4">
+    // UPDATED: Reduced margin-top from mt-8 to mt-4
+    <div className="mt-4 flex flex-col gap-y-4"> 
       {sortedOptions.map((option) => {
         const optionNameLowerCase = option.name.toLowerCase();
 
-        // Color Swatches
         if (optionNameLowerCase === 'color') {
           const selectedColor = searchParams.get('color') || options.find(o => o.name.toLowerCase() === 'color')?.values[0];
           return (
@@ -64,7 +63,6 @@ export function VariantSelector({ options, variants }: { options: ProductOption[
                   );
                   const isActive = searchParams.get(optionNameLowerCase) === value;
 
-                  // Expanded color map for better accuracy
                   const colorMap: { [key: string]: string } = {
                     black: '#000000', white: '#FFFFFF', brown: '#8B4513', 
                     beige: '#E8DFCF', blue: '#3b82f6', green: '#22c55e', red: '#ef4444',
@@ -94,7 +92,6 @@ export function VariantSelector({ options, variants }: { options: ProductOption[
           );
         }
 
-        // Size Selector
         if (optionNameLowerCase === 'size') {
           const selectedSize = searchParams.get('size');
           return (

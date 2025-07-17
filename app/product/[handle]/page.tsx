@@ -86,54 +86,51 @@ export default async function ProductPage({ params: paramsPromise }: { params: {
             __html: JSON.stringify(productJsonLd)
           }}
         />
-        {/* Add padding-bottom to prevent content from being hidden by the sticky button */}
-        <div className="pb-24">
-          <div className="mx-auto max-w-screen-2xl px-4">
-            <div className="flex flex-col lg:flex-row">
-              {/* Gallery */}
-              <div className="w-full lg:w-3/5">
-                <Gallery
-                  images={product.images.map((image: Image) => ({
-                    src: image.url,
-                    altText: image.altText
-                  }))}
-                />
-              </div>
+        
+        <div className="pb-28">
+          <div className="flex flex-col lg:flex-row">
+            {/* Gallery */}
+            <div className="w-full lg:w-3/5">
+              <Gallery
+                images={product.images.map((image: Image) => ({
+                  src: image.url,
+                  altText: image.altText
+                }))}
+              />
+            </div>
 
-              {/* Product Info, Variants, and Description */}
-              <div className="w-full lg:w-2/5 lg:px-12">
-                <div className="py-6">
-                  {/* Title and Price */}
-                  <ProductDescription product={product} />
-                  
-                  {/* Color and Size Selectors */}
-                  <VariantSelector options={product.options} variants={product.variants} />
+            {/* Product Info, Variants, and Description */}
+            <div className="w-full lg:w-2/5 px-4 lg:px-12">
+              <div className="pt-4 pb-6">
+                {/* UPDATED: Made the separator line thicker */}
+                <hr className="mb-4 border-t-2 border-black" />
+                
+                <ProductDescription product={product} />
+                <VariantSelector options={product.options} variants={product.variants} />
 
-                  {/* Product Description Text (Moved Here) */}
-                  {product.descriptionHtml ? (
-                    <div
-                      className="prose max-w-none pt-6 text-sm text-gray-700"
-                      dangerouslySetInnerHTML={{ __html: product.descriptionHtml }}
-                    />
-                  ) : null}
-                </div>
+                {product.descriptionHtml ? (
+                  <div
+                    className="prose max-w-none pt-6 text-sm text-gray-700"
+                    dangerouslySetInnerHTML={{ __html: product.descriptionHtml }}
+                  />
+                ) : null}
               </div>
             </div>
           </div>
-        </div>
-
-        {/* Sticky Add to Bag Button */}
-        <div className="fixed bottom-0 left-0 z-10 w-full border-t bg-white p-4">
+          
           <div className="mx-auto max-w-screen-2xl px-4">
-            <AddToCart product={product} />
+            <Suspense>
+              <RelatedProducts id={product.id} />
+            </Suspense>
           </div>
         </div>
 
-        <div className="mx-auto max-w-screen-2xl px-4">
-          <Suspense>
-            <RelatedProducts id={product.id} />
-          </Suspense>
+        <div className="fixed bottom-0 left-0 z-20 w-full border-t border-neutral-200 bg-white p-4">
+          <div className="mx-auto max-w-2xl">
+            <AddToCart product={product} />
+          </div>
         </div>
+        
         <Suspense>
           <Footer />
         </Suspense>
