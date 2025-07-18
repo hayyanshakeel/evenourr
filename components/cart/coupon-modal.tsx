@@ -3,7 +3,7 @@
 'use client';
 
 import { applyDiscount } from '@/components/cart/actions';
-import { getPublicCoupons } from '@/lib/shopify'; // CORRECTED IMPORT PATH
+import { getPublicCoupons } from '@/lib/shopify';
 import { Dialog, Tab, Transition } from '@headlessui/react';
 import {
   CheckCircleIcon,
@@ -43,7 +43,6 @@ export function CouponModal({
   useEffect(() => {
     if (isOpen) {
       setCouponState({ loading: true, coupons: [], error: undefined });
-      // ADDED TYPE ANNOTATION FOR 'result'
       getPublicCoupons().then((result: { success: boolean; coupons: Coupon[]; error?: string }) => {
         if (result.success) {
           setCouponState({ loading: false, coupons: result.coupons, error: undefined });
@@ -142,10 +141,12 @@ export function CouponModal({
                           className="relative flex cursor-pointer rounded-lg bg-blue-50 p-4"
                           onClick={() => handleApplyPromo(coupon.code)}
                         >
+                          {/* Left Column */}
                           <div className="flex w-1/3 flex-col items-center justify-center pr-4">
                             <h3 className="text-xl font-bold text-blue-600">{coupon.title}</h3>
                             <p className="text-xs text-blue-500">SAVED ₹{coupon.savedAmount}</p>
                           </div>
+                          {/* Right Column */}
                           <div className="w-2/3 border-l-2 border-dashed border-blue-200 pl-4">
                             <span className="rounded-full bg-blue-200 px-2 py-0.5 text-xs font-semibold text-blue-800">
                               RECOMMENDED

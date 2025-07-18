@@ -1,4 +1,4 @@
-// /lib/shopify/fragments/cart.ts
+// FILE: /lib/shopify/fragments/cart.ts
 
 import { productFragment } from './product';
 
@@ -47,6 +47,10 @@ export const cartFragment = /* GraphQL */ `
           }
         }
       }
+    }
+    # This line is new and fixes the discount bug
+    discountCodes {
+      code
     }
   }
   ${productFragment}

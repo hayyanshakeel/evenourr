@@ -4,6 +4,7 @@
 
 import Price from '@/components/price';
 import { useCart } from '@/components/cart/cart-context';
+import { CouponModal } from '@/components/cart/coupon-modal';
 import OpenCart from '@/components/cart/open-cart';
 import { YouMayAlsoLike } from '@/components/product/you-may-also-like';
 import { Product } from '@/lib/shopify/types';
@@ -19,22 +20,7 @@ import {
 import Image from 'next/image';
 import Link from 'next/link';
 import { Fragment, useEffect, useRef, useState } from 'react';
-import { useFormStatus } from 'react-dom';
 import { getRecommendedProducts, redirectToCheckout } from './actions';
-import { CouponModal } from './coupon-modal';
-
-function CheckoutButton({ totalQuantity }: { totalQuantity: number }) {
-  const { pending } = useFormStatus();
-  return (
-    <button
-      type="submit"
-      disabled={pending || totalQuantity === 0}
-      className="w-full rounded-full bg-black p-4 text-center text-sm font-semibold text-white transition-opacity hover:opacity-90 disabled:cursor-not-allowed disabled:bg-neutral-400"
-    >
-      {pending ? 'Processing...' : `CHECKOUT (${totalQuantity})`}
-    </button>
-  );
-}
 
 export default function CartModal() {
   const { cart } = useCart();
@@ -70,6 +56,7 @@ export default function CartModal() {
 
   const checkoutAction = cart ? redirectToCheckout.bind(null, cart.id) : undefined;
 
+  // CORRECTED LOGIC: This now reliably checks if a coupon is applied.
   const isDiscountApplied = cart?.discountCodes && cart.discountCodes.length > 0;
   const savedAmount =
     cart && isDiscountApplied
@@ -216,7 +203,13 @@ export default function CartModal() {
                     </div>
                   </div>
                   <form action={checkoutAction} className="mt-4">
-                    <CheckoutButton totalQuantity={cart?.totalQuantity || 0} />
+                    <button
+                      type="submit"
+                      disabled={!cart || cart.lines.length === 0}
+                      className="w-full rounded-full bg-black p-4 text-center text-sm font-semibold text-white transition-opacity hover:opacity-90 disabled:cursor-not-allowed disabled:bg-neutral-400"
+                    >
+                      CHECKOUT ({cart?.totalQuantity || 0})
+                    </button>
                   </form>
                 </div>
               </footer>
