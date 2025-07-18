@@ -2,7 +2,7 @@
 
 'use server';
 
-import { shopifyFetch } from 'lib/shopify';
+import { getCollectionProducts, getProductRecommendations, shopifyFetch } from 'lib/shopify'; // Import getProductRecommendations
 import {
   addToCartMutation,
   createCartMutation,
@@ -14,6 +14,7 @@ import { getCartQuery } from 'lib/shopify/queries/cart';
 import {
   Cart,
   Connection,
+  Product,
   ShopifyAddToCartOperation,
   ShopifyApplyDiscountOperation,
   ShopifyCart,
@@ -129,12 +130,17 @@ export async function applyDiscount(
   return { success: true };
 }
 
-export async function redirectToCheckout(cartId: string): Promise<void> {
+export async function redirectToCheckout(cartId: string) {
   const cart = await getCart(cartId);
-  
   if (!cart?.checkoutUrl) {
     throw new Error('Could not retrieve checkout URL.');
   }
-
   redirect(cart.checkoutUrl);
+}
+
+// UPDATED function to get recommendations for a specific product
+export async function getRecommendedProducts(productId: string): Promise<Product[]> {
+  if (!productId) return [];
+  const products = await getProductRecommendations(productId);
+  return products.slice(0, 4); // Return the first 4 recommendations
 }
