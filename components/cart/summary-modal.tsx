@@ -20,7 +20,7 @@ export function SummaryModal({
 }) {
   if (!cart) return null;
 
-  const dynamicHeight = 180 + cart.lines.length * 80; // Base height + height per item
+  const dynamicHeight = 220 + cart.lines.length * 80; // Adjusted base height for tax line
 
   return (
     <Transition show={isOpen} as={Fragment}>
@@ -57,7 +57,7 @@ export function SummaryModal({
                 </button>
               </div>
 
-              <div className="mt-4 h-[calc(100%-150px)] space-y-4 overflow-y-auto">
+              <div className="mt-4 h-[calc(100%-180px)] space-y-4 overflow-y-auto">
                 {cart.lines.map((item) => (
                   <div key={item.id} className="flex items-center gap-4">
                     <div className="relative h-16 w-16 flex-shrink-0 rounded-md border">
@@ -90,6 +90,14 @@ export function SummaryModal({
                     currencyCode={cart.cost.subtotalAmount.currencyCode}
                   />
                 </div>
+                {/* Added Taxes line */}
+                <div className="flex justify-between">
+                  <span>Taxes</span>
+                  <Price
+                    amount={cart.cost.totalTaxAmount.amount}
+                    currencyCode={cart.cost.totalTaxAmount.currencyCode}
+                  />
+                </div>
                 <div className="flex justify-between font-bold">
                   <span>Estimated Total</span>
                   <Price
@@ -98,7 +106,7 @@ export function SummaryModal({
                   />
                 </div>
                 <p className="text-xs text-gray-500">
-                  Shipping fees & taxes (if any) are calculated on the checkout page.
+                  Shipping fees are calculated on the checkout page.
                 </p>
               </div>
             </div>

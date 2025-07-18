@@ -27,14 +27,13 @@ export type CartItem = {
   };
 };
 
-// REMOVED discountCodes property from ShopifyCart
+// REMOVED totalTaxAmount from ShopifyCart
 export type ShopifyCart = {
   id: string;
   checkoutUrl: string;
   cost: {
     subtotalAmount: Money;
     totalAmount: Money;
-    totalTaxAmount: Money;
   };
   lines: Connection<CartItem>;
   totalQuantity: number;
