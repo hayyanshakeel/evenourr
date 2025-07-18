@@ -27,6 +27,7 @@ export type CartItem = {
   };
 };
 
+// ADD discountCodes property here
 export type ShopifyCart = {
   id: string;
   checkoutUrl: string;
@@ -37,10 +38,17 @@ export type ShopifyCart = {
   };
   lines: Connection<CartItem>;
   totalQuantity: number;
+  discountCodes: {
+    code: string;
+  }[];
 };
 
+// And also add it here
 export type Cart = Omit<ShopifyCart, 'lines'> & {
   lines: CartItem[];
+  discountCodes: {
+    code: string;
+  }[];
 };
 
 export type Collection = ShopifyCollection & {
