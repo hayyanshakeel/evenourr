@@ -39,7 +39,6 @@ function parseDescription(html: string, product: Product): { description: string
   return { description: html || defaultDescription, sizeFit: defaultSizeFit };
 }
 
-// FIX: Add the Combination type to allow for dynamic properties like 'size'.
 type Combination = {
   id: string;
   availableForSale: boolean;
@@ -70,7 +69,6 @@ export function ProductPageClient({
   const sizeOption = product.options.find(option => option.name.toLowerCase() === 'size');
   const selectedSize = searchParams.get('size');
   
-  // FIX: Apply the Combination type to the combinations array.
   const combinations: Combination[] = product.variants.map((variant: ProductVariant) => ({
     id: variant.id,
     availableForSale: variant.availableForSale,
@@ -201,19 +199,40 @@ export function ProductPageClient({
         </div>
       </div>
 
-      <SlideUpPanel isOpen={isDescriptionOpen} onClose={() => setIsDescriptionOpen(false)} title="Product Description">
+      {/* FIX: Use panelClassName to make these panels auto-height with a maximum size */}
+      <SlideUpPanel 
+        isOpen={isDescriptionOpen} 
+        onClose={() => setIsDescriptionOpen(false)} 
+        title="Product Description"
+        panelClassName="h-auto max-h-[85vh]"
+      >
         <Prose html={description} />
       </SlideUpPanel>
 
-      <SlideUpPanel isOpen={isSizeFitOpen} onClose={() => setIsSizeFitOpen(false)} title="Size & Fit">
+      <SlideUpPanel 
+        isOpen={isSizeFitOpen} 
+        onClose={() => setIsSizeFitOpen(false)} 
+        title="Size & Fit"
+        panelClassName="h-auto max-h-[85vh]"
+      >
         <Prose html={sizeFit} />
       </SlideUpPanel>
 
-      <SlideUpPanel isOpen={isCareOpen} onClose={() => setIsCareOpen(false)} title="Handle & Wash Care">
+      <SlideUpPanel 
+        isOpen={isCareOpen} 
+        onClose={() => setIsCareOpen(false)} 
+        title="Handle & Wash Care"
+        panelClassName="h-auto max-h-[85vh]"
+      >
         <Prose html={`<ul><li>Machine wash cold with like colors</li><li>Do not bleach</li><li>Tumble dry low</li><li>Iron on low heat if needed</li><li>Do not dry clean</li></ul>`} />
       </SlideUpPanel>
 
-      <SlideUpPanel isOpen={isSizeSelectorOpen} onClose={() => setIsSizeSelectorOpen(false)} title="SELECT SIZE">
+      <SlideUpPanel 
+        isOpen={isSizeSelectorOpen} 
+        onClose={() => setIsSizeSelectorOpen(false)} 
+        title="SELECT SIZE"
+        panelClassName="h-auto max-h-[45vh]"
+      >
           <div className="flex w-full items-center justify-between">
               <span className="font-semibold">SIZE</span>
               <a href="#" className="flex items-center gap-1 text-sm font-semibold uppercase">
@@ -255,4 +274,4 @@ export function ProductPageClient({
       </SlideUpPanel>
     </ProductProvider>
   );
-}
+} 
