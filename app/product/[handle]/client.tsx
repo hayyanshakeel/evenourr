@@ -9,12 +9,10 @@ import { ProductDescription } from '@/components/product/product-description';
 import { ProductProvider } from '@/components/product/product-context';
 import { YouMayAlsoLike } from '@/components/product/you-may-also-like';
 import { VariantSelector } from '@/components/product/variant-selector';
-// FIX: Add necessary imports
 import { getAvailableShippingCountries } from '@/lib/shopify';
 import { Country, Image, Product } from '@/lib/shopify/types';
 import { ChevronRightIcon } from '@heroicons/react/24/outline';
 import Link from 'next/link';
-// FIX: Add necessary hooks
 import { useEffect, useState } from 'react';
 
 export function ProductPageClient({
@@ -24,11 +22,9 @@ export function ProductPageClient({
   product: Product;
   recommendations: Product[];
 }) {
-  // FIX: Add state to manage the selected country dynamically
   const [selectedCountry, setSelectedCountry] = useState<Country | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
-  // FIX: Add effect to load the selected country from local storage
   useEffect(() => {
     const initShipping = async () => {
       setIsLoading(true);
@@ -47,7 +43,6 @@ export function ProductPageClient({
     };
 
     initShipping();
-    // Listen for changes in local storage from other tabs
     window.addEventListener('storage', initShipping);
     return () => window.removeEventListener('storage', initShipping);
   }, []);
@@ -89,7 +84,6 @@ export function ProductPageClient({
               <div>
                 <Link href="/shipping" className="flex items-center justify-between py-2 text-left">
                   <h3 className="font-bold uppercase">
-                    {/* FIX: Heading is now dynamic and underlined */}
                     SHIPPING TO{' '}
                     {isLoading ? (
                       '...'
@@ -106,10 +100,11 @@ export function ProductPageClient({
                   <div className="flex items-center gap-2">
                     <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2"><path strokeLinecap="round" strokeLinejoin="round" d="M14 10l-2 1m0 0l-2-1m2 1v2.5M20 7l-2 1m2-1l-2-1m2 1v2.5M14 4l-2 1m0 0l-2-1m2 1V2M8 7l2 1M8 7l2-1M8 7v2.5M12 22l-4-4m4 4l4-4M4 12l4-4m-4 4l4 4" /></svg>
                     <span>Delivery</span>
-                    <ChevronRightIcon className="ml-auto h-4 w-4" />
+                    {/* FIX: Removed the arrow icon from this line */}
                   </div>
                   <div className="mt-2 ml-7 rounded-md bg-gray-50 p-3">
-                    <p>Express shipping available</p>
+                    <p>Free shipping on all orders</p>
+                    <p>Express Shipping: 3 - 5 business days</p>
                     <p>Standard Shipping: 5 - 7 business days</p>
                   </div>
                 </Link>
