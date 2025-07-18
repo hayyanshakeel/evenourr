@@ -1,4 +1,4 @@
-// lib/shopify/index.ts
+// FILE: lib/shopify/index.ts
 
 'use server';
 
@@ -24,6 +24,7 @@ import {
   getProductRecommendationsQuery,
   getProductsQuery
 } from './queries/product';
+import { getShopMetafieldsQuery } from './queries/shop';
 import {
   Cart,
   Collection,
@@ -49,6 +50,7 @@ import {
   ShopifyProductRecommendationsOperation,
   ShopifyProductsOperation,
   ShopifyRemoveFromCartOperation,
+  ShopifyShopMetafieldOperation,
   ShopifyUpdateCartOperation
 } from './types';
 import { revalidateTag } from 'next/cache';
@@ -313,12 +315,9 @@ export async function getMenu(handle: string): Promise<Menu[]> {
 export async function getPage(handle: string): Promise<Page> {
   const res = await shopifyFetch<ShopifyPageOperation>({
     query: getPageQuery,
-    variables: {
-      handle
-    },
+    variables: { handle },
     tags: [TAGS.pages]
   });
-  
   return res.body.data.pageByHandle;
 }
 
@@ -327,7 +326,6 @@ export async function getPages(): Promise<Page[]> {
     query: getPagesQuery,
     tags: [TAGS.pages]
   });
-
   return removeEdgesAndNodes(res.body.data.pages);
 }
 
@@ -336,6 +334,24 @@ export async function getAvailableShippingCountries(): Promise<Country[]> {
     query: getLocalizationQuery,
     tags: [TAGS.collections]
   });
-
   return res.body.data.localization.availableCountries.sort((a, b) => a.name.localeCompare(b.name));
+}
+
+export async function getPublicCoupons(): Promise<string[]> {
+  const res = await shopifyFetch<ShopifyShopMetafieldOperation>({
+    query: getShopMetafieldsQuery,
+    variables: {
+      namespace: 'custom',
+      key: 'public_coupons'
+    },
+    tags: [TAGS.collections]
+  });
+
+  const couponString = res.body.data.shop.metafield?.value;
+
+  if (!couponString) {
+    return [];
+  }
+
+  return couponString.split(',').map(code => code.trim());
 }

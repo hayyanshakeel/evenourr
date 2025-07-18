@@ -163,7 +163,6 @@ export type ShopifyCartOperation = {
   };
 };
 
-// FIX: Add the missing type for the discount operation
 export type ShopifyApplyDiscountOperation = {
   data: {
     cartDiscountCodesUpdate: {
@@ -314,5 +313,19 @@ export type ShopifyProductsOperation = {
     query?: string;
     reverse?: boolean;
     sortKey?: string;
+  };
+};
+
+export type ShopifyShopMetafieldOperation = {
+  data: {
+    shop: {
+      metafield?: {
+        value: string;
+      };
+    };
+  };
+  variables: {
+    namespace: string;
+    key: string;
   };
 };

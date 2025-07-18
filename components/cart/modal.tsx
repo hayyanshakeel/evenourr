@@ -25,6 +25,8 @@ import { applyDiscount } from './actions';
 import { DeleteItemButton } from './delete-item-button';
 import { useCart } from './cart-context';
 import OpenCart from './open-cart';
+// FIX: Import 'getPublicCoupons' from the correct location
+import { getPublicCoupons } from 'lib/shopify';
 
 const AVAILABLE_COUPONS = [
   {
@@ -70,9 +72,28 @@ export default function CartModal() {
   const [promoError, setPromoError] = useState<string | null>(null);
   
   const [isCouponsOpen, setIsCouponsOpen] = useState(false);
+  const [fetchedCoupons, setFetchedCoupons] = useState<string[]>([]);
+  const [isLoadingCoupons, setIsLoadingCoupons] = useState(false);
 
   const openCart = () => setIsOpen(true);
   const closeCart = () => setIsOpen(false);
+
+  useEffect(() => {
+    if (isCouponsOpen) {
+      setIsLoadingCoupons(true);
+      getPublicCoupons()
+        // FIX: Add 'string[]' type to the 'codes' parameter
+        .then((codes: string[]) => {
+          setFetchedCoupons(codes);
+          setIsLoadingCoupons(false);
+        })
+        // FIX: Add 'any' type to the 'err' parameter
+        .catch((err: any) => {
+          console.error("Failed to fetch coupons:", err);
+          setIsLoadingCoupons(false);
+        });
+    }
+  }, [isCouponsOpen]);
 
   useEffect(() => {
     if (cart?.totalQuantity !== quantityRef.current) {
@@ -87,7 +108,6 @@ export default function CartModal() {
   
   const handleApplyPromo = async (code: string) => {
     if (!cart?.id || !code) return;
-
     startTransition(async () => {
         const result = await applyDiscount(cart.id, code);
         if (!result.success) {
@@ -112,9 +132,7 @@ export default function CartModal() {
 
   return (
     <>
-      <div onClick={openCart}>
-        <OpenCart quantity={cart?.totalQuantity} />
-      </div>
+      <div onClick={openCart}><OpenCart quantity={cart?.totalQuantity} /></div>
       <Transition show={isOpen}>
         <Dialog onClose={closeCart} className="relative z-50">
           <Transition.Child as={Fragment} enter="transition-all ease-in-out duration-300" enterFrom="opacity-0 backdrop-blur-none" enterTo="opacity-100 backdrop-blur-sm" leave="transition-all ease-in-out duration-200" leaveFrom="opacity-100 backdrop-blur-sm" leaveTo="opacity-0 backdrop-blur-none">
@@ -130,7 +148,6 @@ export default function CartModal() {
                     <HeartIcon className="h-6 w-6" />
                 </div>
               </div>
-
               {!cart || cart.lines.length === 0 ? (
                 <div className="mt-20 flex w-full flex-col items-center justify-center overflow-hidden">
                   <ShoppingCartIcon className="h-16" />
@@ -142,25 +159,13 @@ export default function CartModal() {
                     <div className="bg-white p-4">
                       <ul className="space-y-4">
                         {cart.lines.map((item: CartItem) => (
-                          <li key={item.id} className="flex w-full items-start gap-4">
-                            <input type="checkbox" className="mt-1 h-5 w-5 rounded" defaultChecked />
-                            <div className="h-24 w-20 flex-shrink-0"><Image className="h-full w-full object-cover" width={80} height={96} alt={item.merchandise.product.featuredImage?.altText || item.merchandise.product.title} src={item.merchandise.product.featuredImage?.url || ''}/></div>
-                            <div className="flex-grow">
-                              <p className="text-sm">{item.merchandise.product.title}</p>
-                              <Price className="text-sm font-semibold" amount={item.cost.totalAmount.amount} currencyCode={item.cost.totalAmount.currencyCode}/>
-                              {item.merchandise.title !== DEFAULT_OPTION && (<p className="mt-1 text-xs text-neutral-500">{item.merchandise.title}</p>)}
-                            </div>
-                            <div className="flex-shrink-0"><HeartIcon className="h-5 w-5" /></div>
-                          </li>
+                          <li key={item.id} className="flex w-full items-start gap-4"><input type="checkbox" className="mt-1 h-5 w-5 rounded" defaultChecked /><div className="h-24 w-20 flex-shrink-0"><Image className="h-full w-full object-cover" width={80} height={96} alt={item.merchandise.product.featuredImage?.altText || item.merchandise.product.title} src={item.merchandise.product.featuredImage?.url || ''}/></div><div className="flex-grow"><p className="text-sm">{item.merchandise.product.title}</p><Price className="text-sm font-semibold" amount={item.cost.totalAmount.amount} currencyCode={item.cost.totalAmount.currencyCode}/>{item.merchandise.title !== DEFAULT_OPTION && (<p className="mt-1 text-xs text-neutral-500">{item.merchandise.title}</p>)}</div><div className="flex-shrink-0"><HeartIcon className="h-5 w-5" /></div></li>
                         ))}
                       </ul>
                     </div>
                     <div className="mt-4 bg-white p-4">
                       <h3 className="font-semibold">ADD PROMO CODE</h3>
-                      <form action={() => handleApplyPromo(promoCode)} className="mt-2 flex gap-2">
-                        <input value={promoCode} onChange={(e) => setPromoCode(e.target.value)} type="text" placeholder="coupons, store credit or gift card" className="w-full rounded-md border-gray-300" />
-                        <button type="submit" disabled={isPending} className="rounded-md bg-gray-200 px-4 font-semibold disabled:opacity-50">{isPending ? '...' : 'APPLY'}</button>
-                      </form>
+                      <form action={() => handleApplyPromo(promoCode)} className="mt-2 flex gap-2"><input value={promoCode} onChange={(e) => setPromoCode(e.target.value)} type="text" placeholder="coupons, store credit or gift card" className="w-full rounded-md border-gray-300" /><button type="submit" disabled={isPending} className="rounded-md bg-gray-200 px-4 font-semibold disabled:opacity-50">{isPending ? '...' : 'APPLY'}</button></form>
                       {promoError && <p className="mt-2 text-sm text-red-600">{promoError}</p>}
                     </div>
                     <div className="mt-4 bg-white p-4">
@@ -193,65 +198,17 @@ export default function CartModal() {
           </Transition.Child>
         </Dialog>
       </Transition>
-
-      {/* FIX: Replaced the slide-up panel with a full-screen modal for coupons */}
       <Transition show={isCouponsOpen} as={Fragment}>
         <Dialog onClose={() => setIsCouponsOpen(false)} className="relative z-[51]">
-           <Transition.Child as={Fragment} enter="ease-out duration-300" enterFrom="opacity-0" enterTo="opacity-100" leave="ease-in duration-200" leaveFrom="opacity-100" leaveTo="opacity-0">
-            <div className="fixed inset-0 bg-white" />
-          </Transition.Child>
-          <Transition.Child as={Fragment} enter="transition-all ease-in-out duration-300" enterFrom="translate-x-full" enterTo="translate-x-0" leave="transition-all ease-in-out duration-200" leaveFrom="translate-x-0" leaveTo="translate-x-full">
-            <Dialog.Panel className="fixed inset-0 flex h-full w-full flex-col bg-gray-100">
-              <div className="flex flex-shrink-0 items-center justify-between border-b bg-white p-4">
-                <button onClick={() => setIsCouponsOpen(false)}><ArrowLeftIcon className="h-6 w-6" /></button>
-                <Dialog.Title className="text-lg font-semibold">Coupons</Dialog.Title>
-                <div className="w-6"></div>
-              </div>
-              <div className="overflow-y-auto">
-                  <div className="bg-white p-4">
-                    <form action={() => handleApplyPromo(promoCode)} className="flex gap-2">
-                      <input value={promoCode} onChange={(e) => setPromoCode(e.target.value)} type="text" placeholder="coupons, store credit..." className="w-full rounded-md border-gray-300" />
-                      <button type="submit" disabled={isPending} className="rounded-md bg-gray-200 px-4 font-semibold disabled:opacity-50">{isPending ? '...' : 'APPLY'}</button>
-                    </form>
-                  </div>
-                  <Tab.Group>
-                    <Tab.List className="flex border-b bg-white">
-                      <Tab className={({ selected }) => clsx('w-1/2 py-2.5 text-sm font-medium leading-5', selected ? 'border-b-2 border-black text-black' : 'text-gray-500' )}>AVAILABLE</Tab>
-                      <Tab className={({ selected }) => clsx('w-1/2 py-2.5 text-sm font-medium leading-5', selected ? 'border-b-2 border-black text-black' : 'text-gray-500' )}>NOT AVAILABLE</Tab>
-                    </Tab.List>
-                    <Tab.Panels className="p-4">
-                      <Tab.Panel>
-                        <div className="space-y-4">
-                          {AVAILABLE_COUPONS.map(coupon => (
-                            <div key={coupon.code} className="flex gap-4 rounded-lg border-2 border-blue-500 bg-blue-50 p-4">
-                              <div className="flex-grow">
-                                <div className="flex items-center gap-2">
-                                  <h3 className="text-lg font-bold text-blue-600">{coupon.title}</h3>
-                                  {coupon.isRecommended && <span className="rounded-full bg-gray-200 px-2 text-xs">RECOMMENDED</span>}
-                                </div>
-                                <p className="text-xs font-semibold">{coupon.subTitle}</p>
-                                <p className="mt-2 text-xs text-gray-500">Saved: ₹{coupon.savedAmount}</p>
-                                <p className="text-xs text-gray-500">{coupon.validity}</p>
-                                <div className="mt-4 flex items-center justify-between rounded-md border border-dashed border-blue-400 bg-white p-2">
-                                  <span className="text-sm font-semibold">{coupon.code}</span>
-                                  <button className="text-sm font-bold">COPY</button>
-                                </div>
-                              </div>
-                              <button onClick={() => handleCouponSelect(coupon.code)} className="flex-shrink-0">
-                                <CheckCircleIcon className="h-8 w-8 text-blue-500" />
-                              </button>
-                            </div>
-                          ))}
-                        </div>
-                      </Tab.Panel>
-                      <Tab.Panel>
-                        <p className="text-center text-gray-500">No unavailable coupons.</p>
-                      </Tab.Panel>
-                    </Tab.Panels>
-                  </Tab.Group>
+          <Transition.Child as={Fragment} enter="ease-out duration-300" enterFrom="opacity-0" enterTo="opacity-100" leave="ease-in duration-200" leaveFrom="opacity-100" leaveTo="opacity-0"><div className="fixed inset-0 bg-black/30" /></Transition.Child>
+          <div className="fixed inset-0 flex items-center justify-center p-4">
+            <Dialog.Panel className="w-full max-w-sm rounded-lg bg-white p-6">
+              <Dialog.Title className="text-lg font-semibold">Available Coupons</Dialog.Title>
+              <div className="mt-4 max-h-64 space-y-4 overflow-y-auto">
+                {isLoadingCoupons ? (<p>Loading coupons...</p>) : fetchedCoupons.length > 0 ? (fetchedCoupons.map(code => (<button key={code} onClick={() => handleCouponSelect(code)} className="w-full rounded-lg border p-4 text-left hover:bg-gray-50"><p className="font-bold text-green-600">{code}</p><p className="text-sm text-gray-600">Click to apply this coupon</p></button>))) : (<p className="text-gray-500">No public coupons are available at this time.</p>)}
               </div>
             </Dialog.Panel>
-          </Transition.Child>
+          </div>
         </Dialog>
       </Transition>
     </>
