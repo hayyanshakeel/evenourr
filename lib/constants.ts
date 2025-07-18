@@ -1,4 +1,5 @@
-// lib/constants.ts
+// FILE: lib/constants.ts
+
 export type SortFilterItem = {
   title: string;
   slug: string | null;
@@ -15,9 +16,9 @@ export const defaultSort: SortFilterItem = {
 
 export const sorting: SortFilterItem[] = [
   defaultSort,
-  { title: 'Trending', slug: 'trending-desc', sortKey: 'BEST_SELLING', reverse: false }, // asc
+  { title: 'Trending', slug: 'trending-desc', sortKey: 'BEST_SELLING', reverse: false },
   { title: 'Latest arrivals', slug: 'latest-desc', sortKey: 'CREATED_AT', reverse: true },
-  { title: 'Price: Low to high', slug: 'price-asc', sortKey: 'PRICE', reverse: false }, // asc
+  { title: 'Price: Low to high', slug: 'price-asc', sortKey: 'PRICE', reverse: false },
   { title: 'Price: High to low', slug: 'price-desc', sortKey: 'PRICE', reverse: true }
 ];
 
@@ -25,7 +26,8 @@ export const TAGS = {
   collections: 'collections',
   products: 'products',
   cart: 'cart',
-  pages: 'pages' // Add this line
+  pages: 'pages',
+  metafields: 'metafields'
 };
 
 export const HIDDEN_PRODUCT_TAG = 'nextjs-frontend-hidden';
