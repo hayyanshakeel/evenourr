@@ -46,18 +46,4 @@ export const removeFromCartMutation = /* GraphQL */ `
   ${cartFragment}
 `;
 
-// FIX: Add the new mutation for applying discount codes
-export const applyDiscountMutation = /* GraphQL */ `
-  mutation applyDiscount($cartId: ID!, $discountCodes: [String!]) {
-    cartDiscountCodesUpdate(cartId: $cartId, discountCodes: $discountCodes) {
-      cart {
-        ...cart
-      }
-      userErrors {
-        field
-        message
-      }
-    }
-  }
-  ${cartFragment}
-`;
+// The applyDiscountMutation has been removed.

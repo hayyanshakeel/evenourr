@@ -27,7 +27,7 @@ export type CartItem = {
   };
 };
 
-// ADD discountCodes property here
+// REMOVED discountCodes property from ShopifyCart
 export type ShopifyCart = {
   id: string;
   checkoutUrl: string;
@@ -38,17 +38,11 @@ export type ShopifyCart = {
   };
   lines: Connection<CartItem>;
   totalQuantity: number;
-  discountCodes: {
-    code: string;
-  }[];
 };
 
-// And also add it here
+// REMOVED discountCodes property from Cart
 export type Cart = Omit<ShopifyCart, 'lines'> & {
   lines: CartItem[];
-  discountCodes: {
-    code: string;
-  }[];
 };
 
 export type Collection = ShopifyCollection & {
@@ -171,21 +165,7 @@ export type ShopifyCartOperation = {
   };
 };
 
-export type ShopifyApplyDiscountOperation = {
-  data: {
-    cartDiscountCodesUpdate: {
-      cart: ShopifyCart;
-      userErrors: {
-        field: string[];
-        message: string;
-      }[];
-    };
-  };
-  variables: {
-    cartId: string;
-    discountCodes: string[];
-  };
-};
+// The ShopifyApplyDiscountOperation type has been removed.
 
 export type ShopifyRemoveFromCartOperation = {
   data: {

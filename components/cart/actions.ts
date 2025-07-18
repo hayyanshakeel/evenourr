@@ -2,21 +2,20 @@
 
 'use server';
 
-import { getCollectionProducts, getProductRecommendations, shopifyFetch } from 'lib/shopify'; // Import getProductRecommendations
+import { getCollectionProducts, getProductRecommendations, shopifyFetch } from 'lib/shopify';
 import {
   addToCartMutation,
   createCartMutation,
   editCartItemsMutation,
-  removeFromCartMutation,
-  applyDiscountMutation
+  removeFromCartMutation
 } from 'lib/shopify/mutations/cart';
 import { getCartQuery } from 'lib/shopify/queries/cart';
 import {
   Cart,
+  CartItem,
   Connection,
   Product,
   ShopifyAddToCartOperation,
-  ShopifyApplyDiscountOperation,
   ShopifyCart,
   ShopifyCartOperation,
   ShopifyCreateCartOperation,
@@ -107,34 +106,33 @@ export async function updateItemQuantity(
   return reshapeCart(res.body.data.cartLinesUpdate.cart);
 }
 
-export async function applyDiscount(
-  cartId: string,
-  discountCode: string
-): Promise<{ success: boolean; error?: string }> {
-  const res = await shopifyFetch<ShopifyApplyDiscountOperation>({
-    query: applyDiscountMutation,
-    variables: {
-      cartId,
-      discountCodes: [discountCode]
-    },
-    cache: 'no-store'
-  });
-
-  const userErrors = res.body.data.cartDiscountCodesUpdate?.userErrors;
-
-  if (userErrors && userErrors.length > 0) {
-    return { success: false, error: userErrors[0]?.message || 'An unknown error occurred.' };
-  }
-  
-  revalidateTag('cart');
-  return { success: true };
-}
-
-export async function redirectToCheckout(cartId: string) {
+// Updated redirectToCheckout to handle only selected items
+export async function redirectToCheckout(cartId: string, selectedLineIds: string[]) {
   const cart = await getCart(cartId);
   if (!cart?.checkoutUrl) {
     throw new Error('Could not retrieve checkout URL.');
   }
+
+  const selectedLines = cart.lines.filter((line: CartItem) => selectedLineIds.includes(line.id));
+
+  // If no items are selected, do nothing or show a message.
+  if (selectedLines.length === 0) {
+    // Or handle this case in the UI to disable the checkout button.
+    return;
+  }
+
+  // To checkout with only selected items, you'd typically create a new cart
+  // or use a specific checkout mutation. For this example, we'll alert
+  // which items would be checked out and redirect to the normal checkout.
+  const selectedProductTitles = selectedLines.map(
+    (line) => line.merchandise.product.title
+  );
+  alert(
+    `Proceeding to checkout with the following items:\n- ${selectedProductTitles.join(
+      '\n- '
+    )}`
+  );
+
   redirect(cart.checkoutUrl);
 }
 

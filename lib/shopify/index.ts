@@ -4,7 +4,7 @@
 
 import { HIDDEN_PRODUCT_TAG, SHOPIFY_GRAPHQL_API_ENDPOINT, TAGS } from '@/lib/constants';
 import { isShopifyError } from '@/lib/type-guards';
-import { 
+import {
   addToCartMutation,
   createCartMutation,
   editCartItemsMutation,
@@ -55,37 +55,31 @@ import {
 } from './types';
 import { revalidateTag } from 'next/cache';
 
-// Define the new Coupon type
-type Coupon = {
-  id: number;
-  code: string;
-  title: string;
-  savedAmount: string;
-  expiry: string;
-};
-
 // Helper function to remove edges and nodes from a GraphQL connection
 const removeEdgesAndNodes = (array: Connection<any>) => {
   return array.edges.map((edge) => edge?.node);
 };
 
 // Helper function to reshape a Shopify product object
-const reshapeProduct = (product: ShopifyProduct, filterHiddenProducts: boolean = true): Product | undefined => {
-    if (!product || (filterHiddenProducts && product.tags.includes(HIDDEN_PRODUCT_TAG))) {
-        return undefined;
-    }
+const reshapeProduct = (
+  product: ShopifyProduct,
+  filterHiddenProducts: boolean = true
+): Product | undefined => {
+  if (!product || (filterHiddenProducts && product.tags.includes(HIDDEN_PRODUCT_TAG))) {
+    return undefined;
+  }
 
-    const { images, variants, collections, ...rest } = product;
+  const { images, variants, collections, ...rest } = product;
 
-    return {
-        ...rest,
-        images: removeEdgesAndNodes(images),
-        variants: removeEdgesAndNodes(variants),
-        collections: removeEdgesAndNodes(collections).map(collection => ({
-            ...collection,
-            path: `/search/${collection.handle}`
-        }))
-    };
+  return {
+    ...rest,
+    images: removeEdgesAndNodes(images),
+    variants: removeEdgesAndNodes(variants),
+    collections: removeEdgesAndNodes(collections).map((collection) => ({
+      ...collection,
+      path: `/search/${collection.handle}`
+    }))
+  };
 };
 
 // Helper function to reshape an array of Shopify product objects
@@ -101,7 +95,6 @@ const reshapeProducts = (products: ShopifyProduct[]): Product[] => {
 
   return reshapedProducts;
 };
-
 
 // Shopify fetch function
 export async function shopifyFetch<T>({
@@ -156,35 +149,7 @@ export async function shopifyFetch<T>({
   }
 }
 
-// Updated function to return detailed, hardcoded coupon objects
-export async function getPublicCoupons(): Promise<{
-  success: boolean;
-  coupons: Coupon[];
-  error?: string;
-}> {
-  const hardcodedCoupons: Coupon[] = [
-    {
-      id: 1,
-      code: 'SUMMER10',
-      title: '10% OFF',
-      savedAmount: '120.50',
-      expiry: '2025/08/16 23:55:11'
-    },
-    {
-      id: 2,
-      code: 'SALE20',
-      title: '20% OFF',
-      savedAmount: '250.00',
-      expiry: '2025/07/31 23:55:11'
-    }
-  ];
-
-  return Promise.resolve({
-    success: true,
-    coupons: hardcodedCoupons,
-    error: undefined
-  });
-}
+// The getPublicCoupons function has been removed.
 
 // Function to get a menu from Shopify
 export async function getMenu(handle: string): Promise<Menu[]> {
@@ -255,11 +220,11 @@ export async function getProducts({
 
 // Function to get available shipping countries from Shopify
 export async function getAvailableShippingCountries(): Promise<Country[]> {
-    const res = await shopifyFetch<ShopifyLocalizationOperation>({
-        query: getLocalizationQuery,
-        tags: [TAGS.cart]
-    });
-    return res.body.data.localization.availableCountries;
+  const res = await shopifyFetch<ShopifyLocalizationOperation>({
+    query: getLocalizationQuery,
+    tags: [TAGS.cart]
+  });
+  return res.body.data.localization.availableCountries;
 }
 
 // Function to get collections from Shopify
@@ -322,7 +287,6 @@ export async function getCollectionProducts({
 
   return reshapeProducts(removeEdgesAndNodes(res.body.data.collection.products));
 }
-
 
 // Cart functions
 const reshapeCart = (cart: ShopifyCart): Cart => {

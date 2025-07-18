@@ -48,10 +48,6 @@ export const cartFragment = /* GraphQL */ `
         }
       }
     }
-    # This line is new and fixes the discount bug
-    discountCodes {
-      code
-    }
   }
   ${productFragment}
 `;

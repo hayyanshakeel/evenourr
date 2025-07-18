@@ -25,6 +25,9 @@ interface CartContextType {
   addToCart: (variantId: string) => void;
   removeFromCart: (lineId: string) => void;
   updateCartItemQuantity: (lineId: string, quantity: number) => void;
+  selectedLineIds: Set<string>;
+  toggleItemSelection: (lineId: string) => void;
+  toggleSelectAll: (select: boolean) => void;
   openCart: () => void; // Added for programmatic opening
   isCartOpen: boolean; // Added to check state
 }
@@ -34,7 +37,8 @@ const CartContext = createContext<CartContextType | null>(null);
 export function CartProvider({ children }: { children: React.ReactNode }) {
   const [cart, setCart] = useState<Cart | undefined>(undefined);
   const [isPending, startTransition] = useTransition();
-  const [isCartOpen, setIsCartOpen] = useState(false); // For programmatic control
+  const [isCartOpen, setIsCartOpen] = useState(false);
+  const [selectedLineIds, setSelectedLineIds] = useState<Set<string>>(new Set());
 
   const openCart = () => setIsCartOpen(true);
 
@@ -44,26 +48,62 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
       const existingCart = cartId ? await getCart(cartId) : null;
       if (existingCart) {
         setCart(existingCart);
+        // Initially, all items are selected
+        setSelectedLineIds(new Set(existingCart.lines.map((line) => line.id)));
       }
     }
     initializeCart();
   }, []);
 
-  const addToCartAndUpdateState = useCallback(async (variantId: string) => {
-    let currentCart = cart;
-    if (!currentCart) {
-      currentCart = await createCart();
-      localStorage.setItem('cartId', currentCart.id);
-    }
-    const updatedCart = await addItem(currentCart.id, [{ merchandiseId: variantId, quantity: 1 }]);
-    setCart(updatedCart);
-  }, [cart]);
+  const toggleItemSelection = (lineId: string) => {
+    setSelectedLineIds((prev) => {
+      const newSelection = new Set(prev);
+      if (newSelection.has(lineId)) {
+        newSelection.delete(lineId);
+      } else {
+        newSelection.add(lineId);
+      }
+      return newSelection;
+    });
+  };
 
-  const removeFromCartAndUpdateState = useCallback(async (lineId: string) => {
-    if (!cart) return;
-    const updatedCart = await removeItem(cart.id, [lineId]);
-    setCart(updatedCart);
-  }, [cart]);
+  const toggleSelectAll = (select: boolean) => {
+    if (select && cart) {
+      setSelectedLineIds(new Set(cart.lines.map((line) => line.id)));
+    } else {
+      setSelectedLineIds(new Set());
+    }
+  };
+
+  const addToCartAndUpdateState = useCallback(
+    async (variantId: string) => {
+      let currentCart = cart;
+      if (!currentCart) {
+        currentCart = await createCart();
+        localStorage.setItem('cartId', currentCart.id);
+      }
+      const updatedCart = await addItem(currentCart.id, [
+        { merchandiseId: variantId, quantity: 1 }
+      ]);
+      setCart(updatedCart);
+      setSelectedLineIds(new Set(updatedCart.lines.map((line) => line.id)));
+    },
+    [cart]
+  );
+
+  const removeFromCartAndUpdateState = useCallback(
+    async (lineId: string) => {
+      if (!cart) return;
+      const updatedCart = await removeItem(cart.id, [lineId]);
+      setCart(updatedCart);
+      setSelectedLineIds((prev) => {
+        const newSelection = new Set(prev);
+        newSelection.delete(lineId);
+        return newSelection;
+      });
+    },
+    [cart]
+  );
 
   // FIX: This function has been updated to correctly pass the 'merchandiseId'.
   const updateCartItemQuantityAndUpdateState = useCallback(
@@ -94,13 +134,24 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
     return {
       cart,
       addToCart: (variantId: string) => startTransition(() => addToCartAndUpdateState(variantId)),
-      removeFromCart: (lineId: string) => startTransition(() => removeFromCartAndUpdateState(lineId)),
+      removeFromCart: (lineId: string) =>
+        startTransition(() => removeFromCartAndUpdateState(lineId)),
       updateCartItemQuantity: (lineId: string, quantity: number) =>
         startTransition(() => updateCartItemQuantityAndUpdateState(lineId, quantity)),
+      selectedLineIds,
+      toggleItemSelection,
+      toggleSelectAll,
       openCart,
       isCartOpen
     };
-  }, [cart, isCartOpen, addToCartAndUpdateState, removeFromCartAndUpdateState, updateCartItemQuantityAndUpdateState]);
+  }, [
+    cart,
+    isCartOpen,
+    selectedLineIds,
+    addToCartAndUpdateState,
+    removeFromCartAndUpdateState,
+    updateCartItemQuantityAndUpdateState
+  ]);
 
   return <CartContext.Provider value={contextValue}>{children}</CartContext.Provider>;
 }

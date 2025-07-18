@@ -4,34 +4,76 @@
 
 import Price from '@/components/price';
 import { useCart } from '@/components/cart/cart-context';
-import { CouponModal } from '@/components/cart/coupon-modal';
 import OpenCart from '@/components/cart/open-cart';
 import { YouMayAlsoLike } from '@/components/product/you-may-also-like';
-import { Product } from '@/lib/shopify/types';
+import { QuickView } from '@/components/product/quick-view';
+import { CartItem, Product } from '@/lib/shopify/types';
 import { Dialog, Transition } from '@headlessui/react';
 import {
+  ChevronLeftIcon,
   ChevronRightIcon,
   HeartIcon,
   ShareIcon,
   ShoppingCartIcon,
-  TagIcon,
+  TrashIcon,
   XMarkIcon
 } from '@heroicons/react/24/outline';
+import { useDrag } from '@use-gesture/react';
+import clsx from 'clsx';
 import Image from 'next/image';
-import Link from 'next/link';
-import { Fragment, useEffect, useRef, useState } from 'react';
+import { Fragment, useEffect, useMemo, useRef, useState } from 'react';
 import { getRecommendedProducts, redirectToCheckout } from './actions';
+import { SummaryModal } from './summary-modal';
 
 export default function CartModal() {
-  const { cart } = useCart();
+  const { cart, removeFromCart, selectedLineIds, toggleItemSelection, toggleSelectAll } =
+    useCart();
   const [isOpen, setIsOpen] = useState(false);
-  const [isCouponsOpen, setIsCouponsOpen] = useState(false);
+  const [isSummaryOpen, setIsSummaryOpen] = useState(false);
   const quantityRef = useRef(cart?.totalQuantity);
   const [recommendations, setRecommendations] = useState<Product[]>([]);
   const [quickViewProduct, setQuickViewProduct] = useState<Product | null>(null);
 
+  // This state now tracks the position of each swiped item
+  const [swipePositions, setSwipePositions] = useState<Record<string, number>>({});
+  const [isDraggingId, setIsDraggingId] = useState<string | null>(null);
+
   const openCart = () => setIsOpen(true);
   const closeCart = () => setIsOpen(false);
+
+  // A refined drag handler for a smooth, physics-based swipe
+  const bind = useDrag(
+    ({ args: [itemId], down, movement: [mx], velocity: [vx] }) => {
+      const typedItemId = itemId as string;
+
+      if (down) {
+        setIsDraggingId(typedItemId);
+        setSwipePositions((prev) => ({ ...prev, [typedItemId]: mx }));
+      } else {
+        setIsDraggingId(null);
+        // If swiped past halfway or flicked with enough velocity, snap open
+        const shouldOpen = mx < -96 || vx < -0.5;
+        setSwipePositions((prev) => ({
+          ...prev,
+          [typedItemId]: shouldOpen ? -192 : 0
+        }));
+      }
+    },
+    {
+      axis: 'x',
+      bounds: { left: -192, right: 0 },
+      rubberband: 0.2 // Adds the stretchy effect at the edges
+    }
+  );
+
+  const handleDelete = (item: CartItem) => {
+    removeFromCart(item.id);
+  };
+
+  const handleMoveToWishlist = (item: CartItem) => {
+    alert(`"${item.merchandise.product.title}" moved to wishlist!`);
+    removeFromCart(item.id);
+  };
 
   useEffect(() => {
     if (isOpen && cart && cart.lines.length > 0 && recommendations.length === 0) {
@@ -46,24 +88,45 @@ export default function CartModal() {
   }, [isOpen, cart, recommendations.length]);
 
   useEffect(() => {
-    if (cart?.totalQuantity !== quantityRef.current) {
+    // Only open the cart automatically if the quantity changes from a known value.
+    if (cart?.totalQuantity !== quantityRef.current && typeof quantityRef.current === 'number') {
       if (!isOpen && cart?.totalQuantity !== 0) {
         setIsOpen(true);
       }
-      quantityRef.current = cart?.totalQuantity;
     }
-  }, [isOpen, cart?.totalQuantity, quantityRef]);
 
-  const checkoutAction = cart ? redirectToCheckout.bind(null, cart.id) : undefined;
+    // Always update the ref to the latest quantity.
+    quantityRef.current = cart?.totalQuantity;
+  }, [isOpen, cart?.totalQuantity]);
 
-  // CORRECTED LOGIC: This now reliably checks if a coupon is applied.
-  const isDiscountApplied = cart?.discountCodes && cart.discountCodes.length > 0;
-  const savedAmount =
-    cart && isDiscountApplied
-      ? (
-          parseFloat(cart.cost.subtotalAmount.amount) - parseFloat(cart.cost.totalAmount.amount)
-        ).toFixed(2)
-      : '0.00';
+  const checkoutAction = cart
+    ? redirectToCheckout.bind(null, cart.id, Array.from(selectedLineIds))
+    : undefined;
+
+  const { selectedItemsTotal, selectedItemsCount } = useMemo(() => {
+    if (!cart?.lines) {
+      return { selectedItemsTotal: '0.00', selectedItemsCount: 0 };
+    }
+
+    let total = 0;
+    let count = 0;
+
+    cart.lines.forEach((item) => {
+      if (selectedLineIds.has(item.id)) {
+        total += parseFloat(item.cost.totalAmount.amount) * item.quantity;
+        count += item.quantity;
+      }
+    });
+
+    return { selectedItemsTotal: total.toFixed(2), selectedItemsCount: count };
+  }, [cart, selectedLineIds]);
+
+  const areAllItemsSelected = useMemo(() => {
+    if (!cart?.lines || cart.lines.length === 0) {
+      return false;
+    }
+    return selectedLineIds.size === cart.lines.length;
+  }, [cart?.lines, selectedLineIds]);
 
   return (
     <>
@@ -95,7 +158,13 @@ export default function CartModal() {
           >
             <Dialog.Panel className="fixed bottom-0 right-0 top-0 flex h-full w-full flex-col bg-white text-black md:w-[420px]">
               <header className="sticky top-0 z-10 flex items-center justify-between border-b bg-white p-4">
-                <button onClick={closeCart} className="p-2">
+                <button
+                  onClick={() => {
+                    closeCart();
+                    setSwipePositions({}); // Reset swipe on close
+                  }}
+                  className="p-2"
+                >
                   <XMarkIcon className="h-6 w-6" />
                 </button>
                 <h1 className="text-lg font-semibold">SHOPPING BAG</h1>
@@ -116,55 +185,82 @@ export default function CartModal() {
                     <>
                       <ul className="space-y-4">
                         {cart.lines.map((item) => (
-                          <li key={item.id} className="flex items-start gap-4 rounded-lg border p-4">
-                            <input
-                              type="checkbox"
-                              className="mt-1 h-5 w-5 rounded border-gray-300 text-black focus:ring-black"
-                              defaultChecked
-                            />
-                            <div className="relative h-28 w-24 flex-shrink-0">
-                              <Image
-                                src={item.merchandise.product.featuredImage.url}
-                                alt={item.merchandise.product.title}
-                                fill
-                                className="rounded-md object-cover"
-                              />
+                          <li
+                            key={item.id}
+                            className="group relative w-full overflow-hidden rounded-lg border"
+                          >
+                            <div className="absolute top-0 right-0 z-0 flex h-full">
+                              <button
+                                onClick={() => handleMoveToWishlist(item)}
+                                className="flex h-full w-24 flex-col items-center justify-center gap-1 bg-yellow-400 p-2 text-xs font-medium text-black"
+                              >
+                                <HeartIcon className="h-5 w-5" />
+                                <span className="text-center leading-tight">Move to Wishlist</span>
+                              </button>
+                              <button
+                                onClick={() => handleDelete(item)}
+                                className="flex h-full w-24 flex-col items-center justify-center gap-1 bg-red-500 p-2 text-xs font-medium text-white"
+                              >
+                                <TrashIcon className="h-5 w-5" />
+                                <span>Delete</span>
+                              </button>
                             </div>
-                            <div className="flex-grow">
-                              <div className="flex justify-between">
-                                <h3 className="font-semibold">{item.merchandise.product.title}</h3>
-                                <HeartIcon className="h-5 w-5 flex-shrink-0 text-gray-400" />
+                            <div
+                              {...bind(item.id)}
+                              id={item.id}
+                              style={{
+                                transform: `translateX(${swipePositions[item.id] || 0}px)`,
+                                touchAction: 'pan-y'
+                              }}
+                              className={clsx(
+                                'relative z-10 w-full cursor-grab bg-white active:cursor-grabbing',
+                                {
+                                  'transition-transform duration-300 ease-out':
+                                    isDraggingId !== item.id
+                                }
+                              )}
+                            >
+                              <div className="flex w-full items-start gap-4 p-4">
+                                <input
+                                  type="checkbox"
+                                  className="mt-1 h-5 w-5 rounded border-gray-300 text-black focus:ring-black"
+                                  checked={selectedLineIds.has(item.id)}
+                                  onChange={() => toggleItemSelection(item.id)}
+                                />
+                                <div className="relative h-28 w-24 flex-shrink-0">
+                                  <Image
+                                    src={item.merchandise.product.featuredImage.url}
+                                    alt={item.merchandise.product.title}
+                                    fill
+                                    className="rounded-md object-cover"
+                                  />
+                                </div>
+                                <div className="flex-grow">
+                                  <h3 className="font-semibold">
+                                    {item.merchandise.product.title}
+                                  </h3>
+                                  <Price
+                                    className="mt-1 font-bold"
+                                    amount={item.cost.totalAmount.amount}
+                                    currencyCode={item.cost.totalAmount.currencyCode}
+                                  />
+                                  <p className="mt-1 text-sm text-gray-500">
+                                    {item.merchandise.title}
+                                  </p>
+                                </div>
+                                <div
+                                  className={clsx(
+                                    'absolute right-4 top-1/2 -translate-y-1/2 text-gray-300 transition-opacity',
+                                    { 'opacity-0': (swipePositions[item.id] ?? 0) < 0 }
+                                  )}
+                                >
+                                  <ChevronLeftIcon className="h-5 w-5 animate-pulse" />
+                                </div>
                               </div>
-                              <Price
-                                className="mt-1 font-bold"
-                                amount={item.cost.totalAmount.amount}
-                                currencyCode={item.cost.totalAmount.currencyCode}
-                              />
-                              <p className="mt-1 text-sm text-gray-500">{item.merchandise.title}</p>
                             </div>
                           </li>
                         ))}
                       </ul>
-
-                      <div className="mt-6 rounded-lg border p-4">
-                        <button
-                          onClick={() => setIsCouponsOpen(true)}
-                          className="flex w-full items-center justify-between text-sm"
-                        >
-                          <div className="flex items-center gap-2">
-                            <TagIcon className="h-5 w-5" />
-                            <span>Coupons</span>
-                          </div>
-                          <div className="flex items-center gap-2">
-                            {isDiscountApplied && (
-                              <span className="rounded-full bg-green-100 px-2 py-0.5 text-xs font-semibold text-green-800">
-                                PROMO APPLIED -₹{savedAmount}
-                              </span>
-                            )}
-                            <ChevronRightIcon className="h-4 w-4 text-gray-400" />
-                          </div>
-                        </button>
-                      </div>
 
                       <div className="mt-8">
                         <YouMayAlsoLike
@@ -184,31 +280,30 @@ export default function CartModal() {
                       <input
                         type="checkbox"
                         className="h-5 w-5 rounded border-gray-300 text-black focus:ring-black"
-                        defaultChecked
+                        checked={areAllItemsSelected}
+                        onChange={(e) => toggleSelectAll(e.target.checked)}
                       />
-                      <div>
-                        <Price
-                          className="font-bold"
-                          amount={cart?.cost.totalAmount.amount || '0'}
-                          currencyCode={cart?.cost.totalAmount.currencyCode || 'USD'}
-                        />
-                        {isDiscountApplied && (
-                          <p className="text-xs text-green-600">Saved: ₹{savedAmount}</p>
-                        )}
-                      </div>
+                      <Price
+                        className="font-bold"
+                        amount={selectedItemsTotal}
+                        currencyCode={cart?.cost.totalAmount.currencyCode || 'USD'}
+                      />
                     </div>
-                    <div className="flex items-center gap-2">
+                    <button
+                      onClick={() => setIsSummaryOpen(true)}
+                      className="flex items-center gap-2"
+                    >
                       <span className="text-sm font-semibold">Summary</span>
                       <ChevronRightIcon className="h-4 w-4 rotate-[-90deg]" />
-                    </div>
+                    </button>
                   </div>
                   <form action={checkoutAction} className="mt-4">
                     <button
                       type="submit"
-                      disabled={!cart || cart.lines.length === 0}
+                      disabled={selectedItemsCount === 0}
                       className="w-full rounded-full bg-black p-4 text-center text-sm font-semibold text-white transition-opacity hover:opacity-90 disabled:cursor-not-allowed disabled:bg-neutral-400"
                     >
-                      CHECKOUT ({cart?.totalQuantity || 0})
+                      CHECKOUT ({selectedItemsCount})
                     </button>
                   </form>
                 </div>
@@ -217,8 +312,10 @@ export default function CartModal() {
           </Transition.Child>
         </Dialog>
       </Transition>
-
-      <CouponModal isOpen={isCouponsOpen} onClose={() => setIsCouponsOpen(false)} cartId={cart?.id} />
+      {/* Quick View Modal for "You May Also Like" */}
+      <QuickView product={quickViewProduct} onClose={() => setQuickViewProduct(null)} />
+      {/* Summary Modal */}
+      <SummaryModal isOpen={isSummaryOpen} onClose={() => setIsSummaryOpen(false)} cart={cart} />
     </>
   );
 }
