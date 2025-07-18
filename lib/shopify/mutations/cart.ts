@@ -1,3 +1,5 @@
+// FILE: lib/shopify/mutations/cart.ts
+
 import { cartFragment } from '../fragments/cart';
 
 export const addToCartMutation = /* GraphQL */ `
@@ -38,6 +40,22 @@ export const removeFromCartMutation = /* GraphQL */ `
     cartLinesRemove(cartId: $cartId, lineIds: $lineIds) {
       cart {
         ...cart
+      }
+    }
+  }
+  ${cartFragment}
+`;
+
+// FIX: Add the new mutation for applying discount codes
+export const applyDiscountMutation = /* GraphQL */ `
+  mutation applyDiscount($cartId: ID!, $discountCodes: [String!]) {
+    cartDiscountCodesUpdate(cartId: $cartId, discountCodes: $discountCodes) {
+      cart {
+        ...cart
+      }
+      userErrors {
+        field
+        message
       }
     }
   }

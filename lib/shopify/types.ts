@@ -1,4 +1,4 @@
-// lib/shopify/types.ts
+// FILE: lib/shopify/types.ts
 
 export type Maybe<T> = T | null;
 
@@ -96,7 +96,6 @@ export type ProductVariant = {
     value: string;
   }[];
   price: Money;
-  // FIX: Add the optional image property
   image?: Image;
 };
 
@@ -155,13 +154,29 @@ export type ShopifyLocalizationOperation = {
   };
 };
 
-
 export type ShopifyCartOperation = {
   data: {
     cart: ShopifyCart;
   };
   variables: {
     cartId: string;
+  };
+};
+
+// FIX: Add the missing type for the discount operation
+export type ShopifyApplyDiscountOperation = {
+  data: {
+    cartDiscountCodesUpdate: {
+      cart: ShopifyCart;
+      userErrors: {
+        field: string[];
+        message: string;
+      }[];
+    };
+  };
+  variables: {
+    cartId: string;
+    discountCodes: string[];
   };
 };
 

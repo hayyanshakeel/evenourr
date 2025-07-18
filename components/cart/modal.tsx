@@ -1,56 +1,114 @@
+// FILE: components/cart/modal.tsx
+
 'use client';
 
-import { Dialog, Transition } from '@headlessui/react';
-import { ShoppingCartIcon } from '@heroicons/react/24/outline';
 import Price from '@/components/price';
 import { DEFAULT_OPTION } from '@/lib/constants';
+import { redirectToCheckout } from '@/lib/shopify';
 import type { CartItem } from '@/lib/shopify/types';
+import { Dialog, Tab, Transition } from '@headlessui/react';
+import {
+  ArrowLeftIcon,
+  CheckCircleIcon,
+  ChevronRightIcon,
+  HeartIcon,
+  ShoppingCartIcon,
+  TagIcon,
+  XMarkIcon
+} from '@heroicons/react/24/outline';
+import clsx from 'clsx';
 import Image from 'next/image';
 import Link from 'next/link';
-import { Fragment, useEffect, useRef, useState } from 'react';
+import { Fragment, useEffect, useRef, useState, useTransition } from 'react';
 import { useFormStatus } from 'react-dom';
-import { redirectToCheckout } from '@/lib/shopify';
-import { useCart } from './cart-context';
-import CloseCart from './close-cart';
+import { applyDiscount } from './actions';
 import { DeleteItemButton } from './delete-item-button';
-import { EditItemQuantityButton } from './edit-item-quantity-button';
+import { useCart } from './cart-context';
 import OpenCart from './open-cart';
 
-function CheckoutButton() {
+const AVAILABLE_COUPONS = [
+  {
+    code: 'SUMMER15',
+    title: '15% OFF',
+    subTitle: 'UNLIMITED',
+    description: '15% off your entire order.',
+    savedAmount: '60.30',
+    validity: '2025/07/17 - 2025/08/16',
+    isRecommended: true
+  },
+  {
+    code: 'FREESHIP',
+    title: 'FREE SHIPPING',
+    subTitle: 'LIMITED',
+    description: 'Free shipping on orders over ₹1,000.',
+    savedAmount: '50.00',
+    validity: '2025/07/01 - 2025/07/31',
+    isRecommended: false
+  }
+];
+
+function CheckoutButton({ itemCount }: { itemCount: number }) {
   const { pending } = useFormStatus();
   return (
     <button
       type="submit"
       disabled={pending}
-      className="w-full rounded-md bg-black p-3 text-center text-sm font-medium text-white opacity-90 hover:opacity-100"
+      className="w-full rounded-full bg-black p-4 text-center text-sm font-semibold text-white transition-opacity hover:opacity-90 disabled:opacity-50"
     >
-      {pending ? 'Processing...' : 'Proceed to Checkout'}
+      {pending ? 'PROCESSING...' : `CHECKOUT (${itemCount})`}
     </button>
   );
 }
 
 export default function CartModal() {
-  const { cart, optimisticUpdate } = useCart();
+  const { cart } = useCart();
   const [isOpen, setIsOpen] = useState(false);
   const quantityRef = useRef(cart?.totalQuantity);
+
+  const [promoCode, setPromoCode] = useState('');
+  const [isPending, startTransition] = useTransition();
+  const [promoError, setPromoError] = useState<string | null>(null);
+  
+  const [isCouponsOpen, setIsCouponsOpen] = useState(false);
+
   const openCart = () => setIsOpen(true);
   const closeCart = () => setIsOpen(false);
 
   useEffect(() => {
-    // Open cart modal when quantity changes.
     if (cart?.totalQuantity !== quantityRef.current) {
-      // But only if it's not already open (quantity also changes when editing items in cart).
       if (!isOpen && cart?.totalQuantity !== 0) {
         setIsOpen(true);
       }
-
-      // Always update the quantity reference
       quantityRef.current = cart?.totalQuantity;
     }
   }, [isOpen, cart?.totalQuantity, quantityRef]);
 
-  // Create a server action that's pre-filled with the cart ID
   const checkoutAction = cart ? redirectToCheckout.bind(null, cart.id) : null;
+  
+  const handleApplyPromo = async (code: string) => {
+    if (!cart?.id || !code) return;
+
+    startTransition(async () => {
+        const result = await applyDiscount(cart.id, code);
+        if (!result.success) {
+            setPromoError(result.error || 'Failed to apply promo code.');
+        } else {
+            setPromoError(null);
+            setPromoCode('');
+        }
+    });
+  };
+
+  const handleCouponSelect = (code: string) => {
+    setPromoCode(code);
+    setIsCouponsOpen(false);
+    handleApplyPromo(code);
+  };
+
+  const isDiscountApplied = cart && cart.cost.totalAmount.amount !== cart.cost.subtotalAmount.amount;
+  const discountAmount = isDiscountApplied
+    ? (parseFloat(cart.cost.subtotalAmount.amount) - parseFloat(cart.cost.totalAmount.amount)).toString()
+    : '0';
 
   return (
     <>
@@ -59,32 +117,18 @@ export default function CartModal() {
       </div>
       <Transition show={isOpen}>
         <Dialog onClose={closeCart} className="relative z-50">
-          <Transition.Child
-            as={Fragment}
-            enter="transition-all ease-in-out duration-300"
-            enterFrom="opacity-0 backdrop-blur-none"
-            enterTo="opacity-100 backdrop-blur-sm"
-            leave="transition-all ease-in-out duration-200"
-            leaveFrom="opacity-100 backdrop-blur-sm"
-            leaveTo="opacity-0 backdrop-blur-none"
-          >
+          <Transition.Child as={Fragment} enter="transition-all ease-in-out duration-300" enterFrom="opacity-0 backdrop-blur-none" enterTo="opacity-100 backdrop-blur-sm" leave="transition-all ease-in-out duration-200" leaveFrom="opacity-100 backdrop-blur-sm" leaveTo="opacity-0 backdrop-blur-none">
             <div className="fixed inset-0 bg-black/30" aria-hidden="true" />
           </Transition.Child>
-          <Transition.Child
-            as={Fragment}
-            enter="transition-all ease-in-out duration-300"
-            enterFrom="translate-x-full"
-            enterTo="translate-x-0"
-            leave="transition-all ease-in-out duration-200"
-            leaveFrom="translate-x-0"
-            leaveTo="translate-x-full"
-          >
-            <Dialog.Panel className="fixed bottom-0 right-0 top-0 flex h-full w-full flex-col border-l border-neutral-200 bg-white/80 p-6 text-black backdrop-blur-xl dark:border-neutral-700 dark:bg-black/80 dark:text-white md:w-[390px]">
-              <div className="flex items-center justify-between">
-                <p className="text-lg font-semibold">My Cart</p>
-                <button aria-label="Close cart" onClick={closeCart}>
-                  <CloseCart />
-                </button>
+          <Transition.Child as={Fragment} enter="transition-all ease-in-out duration-300" enterFrom="translate-y-full" enterTo="translate-y-0" leave="transition-all ease-in-out duration-200" leaveFrom="translate-y-0" leaveTo="translate-y-full">
+            <Dialog.Panel className="fixed inset-0 flex h-full w-full flex-col bg-gray-100 text-black">
+              <div className="flex flex-shrink-0 items-center justify-between border-b bg-white p-4">
+                <button aria-label="Go back" onClick={closeCart}><ArrowLeftIcon className="h-6" /></button>
+                <p className="text-lg font-semibold">SHOPPING BAG</p>
+                <div className="flex items-center gap-4">
+                    <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" /></svg>
+                    <HeartIcon className="h-6 w-6" />
+                </div>
               </div>
 
               {!cart || cart.lines.length === 0 ? (
@@ -93,100 +137,119 @@ export default function CartModal() {
                   <p className="mt-6 text-center text-2xl font-bold">Your cart is empty.</p>
                 </div>
               ) : (
-                <div className="flex h-full flex-col justify-between overflow-hidden p-1">
-                  <ul className="flex-grow overflow-auto py-4">
-                    {cart.lines.map((item: CartItem) => (
-                      <li
-                        key={item.id}
-                        className="flex w-full flex-col border-b border-neutral-300 dark:border-neutral-700"
-                      >
-                        <div className="relative flex w-full flex-row justify-between px-1 py-4">
-                          <div className="absolute z-40 -mt-2 ml-[55px]">
-                            <DeleteItemButton item={item} optimisticUpdate={optimisticUpdate} />
-                          </div>
-                          <Link
-                            href={`/product/${item.merchandise.product.handle}`}
-                            onClick={closeCart}
-                            className="z-30 flex flex-row space-x-4"
-                          >
-                            <div className="relative h-16 w-16 cursor-pointer overflow-hidden rounded-md border border-neutral-300 bg-neutral-300 dark:border-neutral-700 dark:bg-neutral-900 dark:hover:bg-neutral-800">
-                              <Image
-                                className="h-full w-full object-cover"
-                                width={64}
-                                height={64}
-                                alt={
-                                  item.merchandise.product.featuredImage?.altText ||
-                                  item.merchandise.product.title
-                                }
-                                src={item.merchandise.product.featuredImage?.url || ''}
-                              />
+                <>
+                  <div className="flex-grow overflow-y-auto">
+                    <div className="bg-white p-4">
+                      <ul className="space-y-4">
+                        {cart.lines.map((item: CartItem) => (
+                          <li key={item.id} className="flex w-full items-start gap-4">
+                            <input type="checkbox" className="mt-1 h-5 w-5 rounded" defaultChecked />
+                            <div className="h-24 w-20 flex-shrink-0"><Image className="h-full w-full object-cover" width={80} height={96} alt={item.merchandise.product.featuredImage?.altText || item.merchandise.product.title} src={item.merchandise.product.featuredImage?.url || ''}/></div>
+                            <div className="flex-grow">
+                              <p className="text-sm">{item.merchandise.product.title}</p>
+                              <Price className="text-sm font-semibold" amount={item.cost.totalAmount.amount} currencyCode={item.cost.totalAmount.currencyCode}/>
+                              {item.merchandise.title !== DEFAULT_OPTION && (<p className="mt-1 text-xs text-neutral-500">{item.merchandise.title}</p>)}
                             </div>
-                            <div className="flex flex-1 flex-col text-base">
-                              <span className="leading-tight">
-                                {item.merchandise.product.title}
-                              </span>
-                              {item.merchandise.title !== DEFAULT_OPTION && (
-                                <p className="text-sm text-neutral-500 dark:text-neutral-400">
-                                  {item.merchandise.title}
-                                </p>
-                              )}
-                            </div>
-                          </Link>
-                          <div className="flex h-16 flex-col justify-between">
-                            <Price
-                              className="flex justify-end space-y-2 text-right text-sm"
-                              amount={item.cost.totalAmount.amount}
-                              currencyCode={item.cost.totalAmount.currencyCode}
-                            />
-                            <div className="ml-auto flex h-9 flex-row items-center rounded-full border border-neutral-200 dark:border-neutral-700">
-                              <EditItemQuantityButton
-                                item={item}
-                                type="minus"
-                                optimisticUpdate={optimisticUpdate}
-                              />
-                              <p className="w-6 text-center">
-                                <span className="w-full text-sm">{item.quantity}</span>
-                              </p>
-                              <EditItemQuantityButton
-                                item={item}
-                                type="plus"
-                                optimisticUpdate={optimisticUpdate}
-                              />
-                            </div>
-                          </div>
-                        </div>
-                      </li>
-                    ))}
-                  </ul>
-                  <div className="py-4 text-sm text-neutral-500 dark:text-neutral-400">
-                    <div className="mb-3 flex items-center justify-between border-b border-neutral-200 pb-1 dark:border-neutral-700">
-                      <p>Taxes</p>
-                      <Price
-                        className="text-right text-base text-black dark:text-white"
-                        amount={cart.cost.totalTaxAmount.amount}
-                        currencyCode={cart.cost.totalTaxAmount.currencyCode}
-                      />
+                            <div className="flex-shrink-0"><HeartIcon className="h-5 w-5" /></div>
+                          </li>
+                        ))}
+                      </ul>
                     </div>
-                    <div className="mb-3 flex items-center justify-between border-b border-neutral-200 pb-1 pt-1 dark:border-neutral-700">
-                      <p>Shipping</p>
-                      <p className="text-right">Calculated at checkout</p>
+                    <div className="mt-4 bg-white p-4">
+                      <h3 className="font-semibold">ADD PROMO CODE</h3>
+                      <form action={() => handleApplyPromo(promoCode)} className="mt-2 flex gap-2">
+                        <input value={promoCode} onChange={(e) => setPromoCode(e.target.value)} type="text" placeholder="coupons, store credit or gift card" className="w-full rounded-md border-gray-300" />
+                        <button type="submit" disabled={isPending} className="rounded-md bg-gray-200 px-4 font-semibold disabled:opacity-50">{isPending ? '...' : 'APPLY'}</button>
+                      </form>
+                      {promoError && <p className="mt-2 text-sm text-red-600">{promoError}</p>}
                     </div>
-                    <div className="mb-3 flex items-center justify-between border-b border-neutral-200 pb-1 pt-1 dark:border-neutral-700">
-                      <p>Total</p>
-                      <Price
-                        className="text-right text-base text-black dark:text-white"
-                        amount={cart.cost.totalAmount.amount}
-                        currencyCode={cart.cost.totalAmount.currencyCode}
-                      />
+                    <div className="mt-4 bg-white p-4">
+                       <button onClick={() => setIsCouponsOpen(true)} className="flex w-full items-center">
+                          <TagIcon className="h-6 w-6 text-gray-500" />
+                          <span className="ml-2">Coupons</span>
+                          <div className="ml-auto flex items-center gap-2">
+                            {isDiscountApplied && (<><span className="rounded-full bg-green-100 px-2 py-0.5 text-xs font-semibold text-green-700">PROMO APPLIED</span><Price className="text-blue-600" amount={discountAmount} currencyCode={cart.cost.totalAmount.currencyCode}/></>)}
+                            <ChevronRightIcon className="h-5 w-5 text-gray-400" />
+                          </div>
+                       </button>
+                    </div>
+                    <div className="mt-4 bg-white p-4">
+                      <h3 className="text-center font-bold">YOU MAY ALSO LIKE</h3>
+                      <div className="mt-4 h-32 w-full rounded-md bg-gray-100"></div>
                     </div>
                   </div>
                   {checkoutAction && (
-                    <form action={checkoutAction}>
-                      <CheckoutButton />
-                    </form>
+                    <div className="flex-shrink-0 border-t bg-white p-4">
+                      <div className="mb-4 flex items-center justify-between text-sm">
+                        <div><input type="checkbox" defaultChecked /><span className="ml-2">All</span></div>
+                        <Price amount={cart.cost.totalAmount.amount} currencyCode={cart.cost.totalAmount.currencyCode} />
+                      </div>
+                      <form action={checkoutAction}><CheckoutButton itemCount={cart.totalQuantity} /></form>
+                    </div>
                   )}
-                </div>
+                </>
               )}
+            </Dialog.Panel>
+          </Transition.Child>
+        </Dialog>
+      </Transition>
+
+      {/* FIX: Replaced the slide-up panel with a full-screen modal for coupons */}
+      <Transition show={isCouponsOpen} as={Fragment}>
+        <Dialog onClose={() => setIsCouponsOpen(false)} className="relative z-[51]">
+           <Transition.Child as={Fragment} enter="ease-out duration-300" enterFrom="opacity-0" enterTo="opacity-100" leave="ease-in duration-200" leaveFrom="opacity-100" leaveTo="opacity-0">
+            <div className="fixed inset-0 bg-white" />
+          </Transition.Child>
+          <Transition.Child as={Fragment} enter="transition-all ease-in-out duration-300" enterFrom="translate-x-full" enterTo="translate-x-0" leave="transition-all ease-in-out duration-200" leaveFrom="translate-x-0" leaveTo="translate-x-full">
+            <Dialog.Panel className="fixed inset-0 flex h-full w-full flex-col bg-gray-100">
+              <div className="flex flex-shrink-0 items-center justify-between border-b bg-white p-4">
+                <button onClick={() => setIsCouponsOpen(false)}><ArrowLeftIcon className="h-6 w-6" /></button>
+                <Dialog.Title className="text-lg font-semibold">Coupons</Dialog.Title>
+                <div className="w-6"></div>
+              </div>
+              <div className="overflow-y-auto">
+                  <div className="bg-white p-4">
+                    <form action={() => handleApplyPromo(promoCode)} className="flex gap-2">
+                      <input value={promoCode} onChange={(e) => setPromoCode(e.target.value)} type="text" placeholder="coupons, store credit..." className="w-full rounded-md border-gray-300" />
+                      <button type="submit" disabled={isPending} className="rounded-md bg-gray-200 px-4 font-semibold disabled:opacity-50">{isPending ? '...' : 'APPLY'}</button>
+                    </form>
+                  </div>
+                  <Tab.Group>
+                    <Tab.List className="flex border-b bg-white">
+                      <Tab className={({ selected }) => clsx('w-1/2 py-2.5 text-sm font-medium leading-5', selected ? 'border-b-2 border-black text-black' : 'text-gray-500' )}>AVAILABLE</Tab>
+                      <Tab className={({ selected }) => clsx('w-1/2 py-2.5 text-sm font-medium leading-5', selected ? 'border-b-2 border-black text-black' : 'text-gray-500' )}>NOT AVAILABLE</Tab>
+                    </Tab.List>
+                    <Tab.Panels className="p-4">
+                      <Tab.Panel>
+                        <div className="space-y-4">
+                          {AVAILABLE_COUPONS.map(coupon => (
+                            <div key={coupon.code} className="flex gap-4 rounded-lg border-2 border-blue-500 bg-blue-50 p-4">
+                              <div className="flex-grow">
+                                <div className="flex items-center gap-2">
+                                  <h3 className="text-lg font-bold text-blue-600">{coupon.title}</h3>
+                                  {coupon.isRecommended && <span className="rounded-full bg-gray-200 px-2 text-xs">RECOMMENDED</span>}
+                                </div>
+                                <p className="text-xs font-semibold">{coupon.subTitle}</p>
+                                <p className="mt-2 text-xs text-gray-500">Saved: ₹{coupon.savedAmount}</p>
+                                <p className="text-xs text-gray-500">{coupon.validity}</p>
+                                <div className="mt-4 flex items-center justify-between rounded-md border border-dashed border-blue-400 bg-white p-2">
+                                  <span className="text-sm font-semibold">{coupon.code}</span>
+                                  <button className="text-sm font-bold">COPY</button>
+                                </div>
+                              </div>
+                              <button onClick={() => handleCouponSelect(coupon.code)} className="flex-shrink-0">
+                                <CheckCircleIcon className="h-8 w-8 text-blue-500" />
+                              </button>
+                            </div>
+                          ))}
+                        </div>
+                      </Tab.Panel>
+                      <Tab.Panel>
+                        <p className="text-center text-gray-500">No unavailable coupons.</p>
+                      </Tab.Panel>
+                    </Tab.Panels>
+                  </Tab.Group>
+              </div>
             </Dialog.Panel>
           </Transition.Child>
         </Dialog>

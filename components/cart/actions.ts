@@ -1,3 +1,5 @@
+// FILE: components/cart/actions.ts
+
 'use server';
 
 import { shopifyFetch } from 'lib/shopify';
@@ -5,13 +7,15 @@ import {
   addToCartMutation,
   createCartMutation,
   editCartItemsMutation,
-  removeFromCartMutation
+  removeFromCartMutation,
+  applyDiscountMutation
 } from 'lib/shopify/mutations/cart';
 import { getCartQuery } from 'lib/shopify/queries/cart';
 import {
   Cart,
   Connection,
   ShopifyAddToCartOperation,
+  ShopifyApplyDiscountOperation,
   ShopifyCart,
   ShopifyCartOperation,
   ShopifyCreateCartOperation,
@@ -20,13 +24,12 @@ import {
 } from 'lib/shopify/types';
 import { revalidateTag } from 'next/cache';
 
-// Helper function to extract nodes from edges
 function removeEdgesAndNodes(array: Connection<any>) {
   return array.edges.map((edge) => edge?.node);
 }
 
-// Export this helper so it can be used elsewhere if needed
-export function reshapeCart(cart: ShopifyCart): Cart {
+// FIX: Removed the 'export' keyword. This is now a private helper function.
+function reshapeCart(cart: ShopifyCart): Cart {
   if (!cart.cost?.totalTaxAmount) {
     cart.cost.totalTaxAmount = {
       amount: '0.0',
@@ -103,7 +106,29 @@ export async function updateItemQuantity(
   return reshapeCart(res.body.data.cartLinesUpdate.cart);
 }
 
-// This function was missing
+export async function applyDiscount(
+  cartId: string,
+  discountCode: string
+): Promise<{ success: boolean; error?: string }> {
+  const res = await shopifyFetch<ShopifyApplyDiscountOperation>({
+    query: applyDiscountMutation,
+    variables: {
+      cartId,
+      discountCodes: [discountCode]
+    },
+    cache: 'no-store'
+  });
+
+  const userErrors = res.body.data.cartDiscountCodesUpdate?.userErrors;
+
+  if (userErrors && userErrors.length > 0) {
+    return { success: false, error: userErrors[0]?.message || 'An unknown error occurred.' };
+  }
+  
+  revalidateTag('cart');
+  return { success: true };
+}
+
 export async function redirectToCheckout(cartId: string): Promise<string> {
   const cart = await getCart(cartId);
   if (!cart?.checkoutUrl) {
