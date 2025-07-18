@@ -96,6 +96,8 @@ export type ProductVariant = {
     value: string;
   }[];
   price: Money;
+  // FIX: Add the optional image property
+  image?: Image;
 };
 
 export type SEO = {
@@ -137,7 +139,6 @@ export type ShopifyProduct = {
   updatedAt: string;
 };
 
-// FIX: Added Country and Localization types
 export type Country = {
   isoCode: string;
   name: string;

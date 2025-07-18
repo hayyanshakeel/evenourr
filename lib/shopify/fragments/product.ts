@@ -1,4 +1,4 @@
-// lib/shopify/fragments/product.ts
+// FILE: lib/shopify/fragments/product.ts
 
 import { imageFragment } from './image';
 import { seoFragment } from './seo';
@@ -26,7 +26,6 @@ export const productFragment = /* GraphQL */ `
         currencyCode
       }
     }
-    # FIX: Added compareAtPriceRange to the query to get sale data
     compareAtPriceRange {
       maxVariantPrice {
         amount
@@ -50,6 +49,10 @@ export const productFragment = /* GraphQL */ `
           price {
             amount
             currencyCode
+          }
+          # FIX: Add the image for each variant to the query
+          image {
+            ...image
           }
         }
       }

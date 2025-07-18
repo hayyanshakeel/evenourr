@@ -190,10 +190,6 @@ export function ProductPageClient({
       <QuickView 
         product={quickViewProduct} 
         onClose={() => setQuickViewProduct(null)}
-        onOpenSizeSelector={() => {
-            setQuickViewProduct(null); // Close the quick view panel first
-            setIsSizeSelectorOpen(true); // Then open the main size selector
-        }}
       />
     </ProductProvider>
   );

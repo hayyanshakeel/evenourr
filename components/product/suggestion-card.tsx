@@ -65,12 +65,13 @@ export function SuggestionCard({
           </div>
         )}
 
+        {/* FIX: Corrected button styling to ensure icon is always visible and styled correctly */}
         <button
           onClick={handleQuickViewClick}
           aria-label="Quick Shop"
-          className="absolute bottom-3 right-3 z-20 flex h-10 w-10 items-center justify-center rounded-full bg-white/80 text-black backdrop-blur-sm transition-all opacity-0 group-hover:opacity-100"
+          className="absolute bottom-4 right-4 z-20 flex h-9 w-9 items-center justify-center rounded-full bg-white shadow-md transition-transform hover:scale-105"
         >
-          <ShoppingBagIcon className="h-5 w-5" />
+          <ShoppingBagIcon className="h-5 w-5 text-black" />
         </button>
       </div>
 
