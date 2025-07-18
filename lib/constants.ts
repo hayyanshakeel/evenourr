@@ -27,7 +27,7 @@ export const TAGS = {
   products: 'products',
   cart: 'cart',
   pages: 'pages',
-  metafields: 'metafields'
+  metafields: 'metafields' // This was missing
 };
 
 export const HIDDEN_PRODUCT_TAG = 'nextjs-frontend-hidden';

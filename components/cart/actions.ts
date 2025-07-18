@@ -23,12 +23,12 @@ import {
   ShopifyUpdateCartOperation
 } from 'lib/shopify/types';
 import { revalidateTag } from 'next/cache';
+import { redirect } from 'next/navigation';
 
 function removeEdgesAndNodes(array: Connection<any>) {
   return array.edges.map((edge) => edge?.node);
 }
 
-// FIX: Removed the 'export' keyword. This is now a private helper function.
 function reshapeCart(cart: ShopifyCart): Cart {
   if (!cart.cost?.totalTaxAmount) {
     cart.cost.totalTaxAmount = {
@@ -129,10 +129,12 @@ export async function applyDiscount(
   return { success: true };
 }
 
-export async function redirectToCheckout(cartId: string): Promise<string> {
+export async function redirectToCheckout(cartId: string): Promise<void> {
   const cart = await getCart(cartId);
+  
   if (!cart?.checkoutUrl) {
     throw new Error('Could not retrieve checkout URL.');
   }
-  return cart.checkoutUrl;
+
+  redirect(cart.checkoutUrl);
 }
