@@ -15,7 +15,6 @@ type Combination = {
   [key: string]: string | boolean;
 };
 
-// FIX: Add the new 'onOpenSizeSelector' prop to the component's type definition.
 export function VariantSelector({
   options,
   variants,
@@ -125,7 +124,8 @@ export function VariantSelector({
             <div key={option.id} className="mt-6">
               <button
                 onClick={onOpenSizeSelector}
-                className="flex w-full items-center justify-between border border-black px-4 py-2.5 text-sm font-medium text-black"
+                // FIX: Increased vertical padding from py-2.5 to py-3
+                className="flex w-full items-center justify-between border border-black px-4 py-3 text-sm font-medium text-black"
               >
                 <span>{selectedSize || 'Select Size'}</span>
                 <ChevronRightIcon className="h-4 w-4 text-neutral-500" aria-hidden="true" />

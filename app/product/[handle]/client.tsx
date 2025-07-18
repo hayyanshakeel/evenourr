@@ -9,6 +9,8 @@ import { ProductProvider } from '@/components/product/product-context';
 import { YouMayAlsoLike } from '@/components/product/you-may-also-like';
 import { VariantSelector } from '@/components/product/variant-selector';
 import { SlideUpPanel } from '@/components/product/slide-up-panel';
+// FIX: Import the new QuickView component
+import { QuickView } from '@/components/product/quick-view';
 import Prose from '@/components/prose';
 import { getAvailableShippingCountries } from '@/lib/shopify';
 import { Country, Image, Product, ProductVariant } from '@/lib/shopify/types';
@@ -59,6 +61,9 @@ export function ProductPageClient({
   const [isSizeFitOpen, setIsSizeFitOpen] = useState(false);
   const [isCareOpen, setIsCareOpen] = useState(false);
   const [isSizeSelectorOpen, setIsSizeSelectorOpen] = useState(false);
+
+  // FIX: Add state for the Quick View panel
+  const [quickViewProduct, setQuickViewProduct] = useState<Product | null>(null);
   
   const { description, sizeFit } = parseDescription(product.descriptionHtml, product);
   
@@ -137,7 +142,7 @@ export function ProductPageClient({
           </div>
           <div className="w-full lg:w-2/5">
             <hr className="border-t-2 border-black" />
-            <div className="px-4 pt-6 pb-6 lg:px-12">
+            <div className="px-4 pt-6 pb-4 lg:px-12">
               <ProductDescriptionHeader product={product} />
               <VariantSelector 
                 options={product.options} 
@@ -189,7 +194,8 @@ export function ProductPageClient({
         <hr className="my-8 border-black" />
 
         <div className="mx-auto max-w-screen-2xl px-4">
-          <YouMayAlsoLike products={recommendations} />
+          {/* FIX: Pass the 'setQuickViewProduct' function to the component */}
+          <YouMayAlsoLike products={recommendations} onQuickView={setQuickViewProduct} />
         </div>
       </div>
 
@@ -199,7 +205,6 @@ export function ProductPageClient({
         </div>
       </div>
 
-      {/* FIX: Use panelClassName to make these panels auto-height with a maximum size */}
       <SlideUpPanel 
         isOpen={isDescriptionOpen} 
         onClose={() => setIsDescriptionOpen(false)} 
@@ -272,6 +277,9 @@ export function ProductPageClient({
             })}
           </div>
       </SlideUpPanel>
+
+      {/* FIX: Render the new QuickView component */}
+      <QuickView product={quickViewProduct} onClose={() => setQuickViewProduct(null)} />
     </ProductProvider>
   );
-} 
+}
