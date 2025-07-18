@@ -3,7 +3,6 @@
 import { Product } from '@/lib/shopify/types';
 import { SuggestionCard } from './suggestion-card';
 
-// FIX: Add 'onQuickView' to the component's props
 export function YouMayAlsoLike({
   products,
   onQuickView
@@ -20,7 +19,6 @@ export function YouMayAlsoLike({
       </h2>
       <div className="grid grid-cols-2 gap-x-4 gap-y-8 md:grid-cols-4">
         {products.map((product) => (
-          // FIX: Pass the 'onQuickView' prop down to each card
           <SuggestionCard key={product.id} product={product} onQuickView={onQuickView} />
         ))}
       </div>

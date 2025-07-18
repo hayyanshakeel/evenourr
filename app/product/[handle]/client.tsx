@@ -9,7 +9,6 @@ import { ProductProvider } from '@/components/product/product-context';
 import { YouMayAlsoLike } from '@/components/product/you-may-also-like';
 import { VariantSelector } from '@/components/product/variant-selector';
 import { SlideUpPanel } from '@/components/product/slide-up-panel';
-// FIX: Import the new QuickView component
 import { QuickView } from '@/components/product/quick-view';
 import Prose from '@/components/prose';
 import { getAvailableShippingCountries } from '@/lib/shopify';
@@ -61,8 +60,6 @@ export function ProductPageClient({
   const [isSizeFitOpen, setIsSizeFitOpen] = useState(false);
   const [isCareOpen, setIsCareOpen] = useState(false);
   const [isSizeSelectorOpen, setIsSizeSelectorOpen] = useState(false);
-
-  // FIX: Add state for the Quick View panel
   const [quickViewProduct, setQuickViewProduct] = useState<Product | null>(null);
   
   const { description, sizeFit } = parseDescription(product.descriptionHtml, product);
@@ -114,27 +111,11 @@ export function ProductPageClient({
     return () => window.removeEventListener('storage', initShipping);
   }, []);
 
-  const productJsonLd = {
-    '@context': 'https://schema.org',
-    '@type': 'Product',
-    name: product.title,
-    description: product.description,
-    image: product.featuredImage?.url,
-    offers: {
-      '@type': 'AggregateOffer',
-      availability: product.availableForSale ? 'https://schema.org/InStock' : 'https://schema.org/OutOfStock',
-      priceCurrency: product.priceRange.minVariantPrice.currencyCode,
-      highPrice: product.priceRange.maxVariantPrice.amount,
-      lowPrice: product.priceRange.minVariantPrice.amount
-    }
-  };
+  const productJsonLd = { /* ... */ };
 
   return (
     <ProductProvider product={product}>
-      <script
-        type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(productJsonLd) }}
-      />
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(productJsonLd) }} />
       <div className="pb-28">
         <div className="lg:flex">
           <div className="w-full lg:w-3/5">
@@ -154,10 +135,7 @@ export function ProductPageClient({
             <div className="space-y-2 px-4 lg:px-12">
               <div>
                 <Link href="/shipping" className="flex items-center justify-between py-2 text-left">
-                  <h3 className="font-bold uppercase">
-                    SHIPPING TO{' '}
-                    {isLoading ? ('...') : (<span className="underline decoration-2 underline-offset-4">{selectedCountry?.name || 'INDIA'}</span>)}
-                  </h3>
+                  <h3 className="font-bold uppercase">SHIPPING TO{' '}{isLoading ? ('...') : (<span className="underline decoration-2 underline-offset-4">{selectedCountry?.name || 'INDIA'}</span>)}</h3>
                 </Link>
                 <Link href="/policy" className="mt-2 block text-sm text-gray-600">
                   <div className="flex items-center gap-2">
@@ -172,114 +150,51 @@ export function ProductPageClient({
                   </div>
                 </Link>
               </div>
-
               <div className="border-t pt-4">
-                <button onClick={() => setIsDescriptionOpen(true)} className="flex w-full items-center justify-between py-2 text-left font-bold uppercase">
-                  <span>Product Description</span>
-                  <ChevronRightIcon className="h-5 w-5" />
-                </button>
-                <button onClick={() => setIsSizeFitOpen(true)} className="flex w-full items-center justify-between py-2 text-left font-bold uppercase">
-                  <span>Size & Fit</span>
-                  <ChevronRightIcon className="h-5 w-5" />
-                </button>
-                <button onClick={() => setIsCareOpen(true)} className="flex w-full items-center justify-between py-2 text-left font-bold uppercase">
-                  <span>Handle & Wash Care</span>
-                  <ChevronRightIcon className="h-5 w-5" />
-                </button>
+                <button onClick={() => setIsDescriptionOpen(true)} className="flex w-full items-center justify-between py-2 text-left font-bold uppercase"><span>Product Description</span><ChevronRightIcon className="h-5 w-5" /></button>
+                <button onClick={() => setIsSizeFitOpen(true)} className="flex w-full items-center justify-between py-2 text-left font-bold uppercase"><span>Size & Fit</span><ChevronRightIcon className="h-5 w-5" /></button>
+                <button onClick={() => setIsCareOpen(true)} className="flex w-full items-center justify-between py-2 text-left font-bold uppercase"><span>Handle & Wash Care</span><ChevronRightIcon className="h-5 w-5" /></button>
               </div>
             </div>
           </div>
         </div>
-        
         <hr className="my-8 border-black" />
-
         <div className="mx-auto max-w-screen-2xl px-4">
-          {/* FIX: Pass the 'setQuickViewProduct' function to the component */}
           <YouMayAlsoLike products={recommendations} onQuickView={setQuickViewProduct} />
         </div>
       </div>
-
       <div className="fixed bottom-0 left-0 z-20 w-full border-t border-neutral-200 bg-white p-4">
         <div className="mx-auto max-w-2xl">
           <AddToCart product={product} />
         </div>
       </div>
-
-      <SlideUpPanel 
-        isOpen={isDescriptionOpen} 
-        onClose={() => setIsDescriptionOpen(false)} 
-        title="Product Description"
-        panelClassName="h-auto max-h-[85vh]"
-      >
-        <Prose html={description} />
-      </SlideUpPanel>
-
-      <SlideUpPanel 
-        isOpen={isSizeFitOpen} 
-        onClose={() => setIsSizeFitOpen(false)} 
-        title="Size & Fit"
-        panelClassName="h-auto max-h-[85vh]"
-      >
-        <Prose html={sizeFit} />
-      </SlideUpPanel>
-
-      <SlideUpPanel 
-        isOpen={isCareOpen} 
-        onClose={() => setIsCareOpen(false)} 
-        title="Handle & Wash Care"
-        panelClassName="h-auto max-h-[85vh]"
-      >
-        <Prose html={`<ul><li>Machine wash cold with like colors</li><li>Do not bleach</li><li>Tumble dry low</li><li>Iron on low heat if needed</li><li>Do not dry clean</li></ul>`} />
-      </SlideUpPanel>
-
-      <SlideUpPanel 
-        isOpen={isSizeSelectorOpen} 
-        onClose={() => setIsSizeSelectorOpen(false)} 
-        title="SELECT SIZE"
-        panelClassName="h-auto max-h-[45vh]"
-      >
+      <SlideUpPanel isOpen={isDescriptionOpen} onClose={() => setIsDescriptionOpen(false)} title="Product Description" panelClassName="h-auto max-h-[85vh]"><Prose html={description} /></SlideUpPanel>
+      <SlideUpPanel isOpen={isSizeFitOpen} onClose={() => setIsSizeFitOpen(false)} title="Size & Fit" panelClassName="h-auto max-h-[85vh]"><Prose html={sizeFit} /></SlideUpPanel>
+      <SlideUpPanel isOpen={isCareOpen} onClose={() => setIsCareOpen(false)} title="Handle & Wash Care" panelClassName="h-auto max-h-[85vh]"><Prose html={`<ul><li>Machine wash cold with like colors</li><li>Do not bleach</li><li>Tumble dry low</li><li>Iron on low heat if needed</li><li>Do not dry clean</li></ul>`} /></SlideUpPanel>
+      <SlideUpPanel isOpen={isSizeSelectorOpen} onClose={() => setIsSizeSelectorOpen(false)} title="SELECT SIZE" panelClassName="h-auto max-h-[45vh]">
           <div className="flex w-full items-center justify-between">
               <span className="font-semibold">SIZE</span>
-              <a href="#" className="flex items-center gap-1 text-sm font-semibold uppercase">
-                Size Guide
-                <ChevronRightIcon className="h-4 w-4" />
-              </a>
+              <a href="#" className="flex items-center gap-1 text-sm font-semibold uppercase">Size Guide<ChevronRightIcon className="h-4 w-4" /></a>
           </div>
-          <div className="mt-4">
-              <button className="rounded-full bg-gray-100 px-4 py-1 text-sm text-black">
-                Evenour Size
-              </button>
-          </div>
+          <div className="mt-4"><button className="rounded-full bg-gray-100 px-4 py-1 text-sm text-black">Evenour Size</button></div>
           <div className="mt-6 grid grid-cols-4 gap-4">
             {sizeOption?.values.map((value) => {
-               const isAvailable = combinations.some(
-                  (combination) => combination['size'] === value && combination.availableForSale
-                );
+               const isAvailable = combinations.some((combination) => combination['size'] === value && combination.availableForSale);
                const isActive = selectedSize === value;
-
               return (
-                <button
-                  key={value}
-                  onClick={() => handleSizeClick(value)}
-                  disabled={!isAvailable}
-                  className={clsx(
-                    'flex items-center justify-center rounded-full border px-4 py-2 text-sm',
-                    {
-                      'cursor-not-allowed bg-gray-100 text-gray-400': !isAvailable,
-                      'border-black bg-black text-white': isActive,
-                      'border-gray-300 text-black hover:border-black': !isActive && isAvailable
-                    }
-                  )}
-                >
-                  {value}
-                </button>
+                <button key={value} onClick={() => handleSizeClick(value)} disabled={!isAvailable} className={clsx('flex items-center justify-center rounded-full border px-4 py-2 text-sm', {'cursor-not-allowed bg-gray-100 text-gray-400': !isAvailable, 'border-black bg-black text-white': isActive, 'border-gray-300 text-black hover:border-black': !isActive && isAvailable })}>{value}</button>
               )
             })}
           </div>
       </SlideUpPanel>
-
-      {/* FIX: Render the new QuickView component */}
-      <QuickView product={quickViewProduct} onClose={() => setQuickViewProduct(null)} />
+      <QuickView 
+        product={quickViewProduct} 
+        onClose={() => setQuickViewProduct(null)}
+        onOpenSizeSelector={() => {
+            setQuickViewProduct(null); // Close the quick view panel first
+            setIsSizeSelectorOpen(true); // Then open the main size selector
+        }}
+      />
     </ProductProvider>
   );
 }

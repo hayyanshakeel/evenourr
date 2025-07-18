@@ -7,18 +7,36 @@ import { ProductProvider } from '@/components/product/product-context';
 import { VariantSelector } from '@/components/product/variant-selector';
 import type { Product } from '@/lib/shopify/types';
 import { Dialog, Transition } from '@headlessui/react';
-import { XMarkIcon } from '@heroicons/react/24/outline';
+import { ChevronRightIcon, XMarkIcon } from '@heroicons/react/24/outline';
 import Image from 'next/image';
-import Link from 'next/link';
+import { useSearchParams } from 'next/navigation';
 import { Fragment } from 'react';
 import Price from '../price';
 
-export function QuickView({ product, onClose }: { product: Product | null; onClose: () => void }) {
+export function QuickView({
+  product,
+  onClose,
+  onOpenSizeSelector
+}: {
+  product: Product | null;
+  onClose: () => void;
+  onOpenSizeSelector: () => void;
+}) {
   const isOpen = !!product;
+  const searchParams = useSearchParams();
+  const selectedSize = searchParams.get('size');
 
   if (!product) {
     return null;
   }
+  
+  const handleSelectSizeClick = () => {
+    onClose(); // Close this panel first
+    onOpenSizeSelector(); // Then open the main size selector panel
+  };
+
+  // We only want to show the color options in this panel
+  const colorOptions = product.options.filter(option => option.name.toLowerCase() === 'color');
 
   return (
     <Transition show={isOpen} as={Fragment}>
@@ -45,54 +63,53 @@ export function QuickView({ product, onClose }: { product: Product | null; onClo
           leaveTo="translate-y-full"
         >
           <div className="fixed inset-x-0 bottom-0">
-            <Dialog.Panel className="h-auto max-h-[80vh] w-full rounded-t-lg bg-white">
-              {/* ProductProvider is crucial for VariantSelector and AddToCart to work */}
+            <Dialog.Panel className="h-auto max-h-[90vh] w-full rounded-t-lg bg-white">
+              {/* ProductProvider is crucial for child components to work */}
               <ProductProvider product={product}>
                 <div className="flex h-full flex-col">
-                  {/* Header */}
-                  <div className="flex flex-shrink-0 items-center justify-between p-4">
-                    <Dialog.Title className="text-lg font-semibold uppercase">
-                      Product Detail
-                    </Dialog.Title>
+                  <div className="absolute top-4 right-4 z-10">
                     <button onClick={onClose} aria-label="Close panel">
                       <XMarkIcon className="h-6 w-6" />
                     </button>
                   </div>
-
-                  {/* Content */}
-                  <div className="flex-grow overflow-y-auto px-4 pb-4">
-                    <div className="grid grid-cols-2 gap-4">
-                      {product.images.slice(0, 2).map((image) => (
-                        <div key={image.url} className="aspect-square w-full">
+                  
+                  <div className="flex-grow overflow-y-auto p-6">
+                    {product.featuredImage && (
+                       <div className="aspect-square w-full">
                           <Image
-                            src={image.url}
-                            alt={image.altText || 'Product image'}
-                            width={400}
-                            height={400}
+                            src={product.featuredImage.url}
+                            alt={product.featuredImage.altText || 'Product image'}
+                            width={800}
+                            height={800}
                             className="h-full w-full object-cover"
                           />
                         </div>
-                      ))}
-                    </div>
+                    )}
                     <div className="mt-4">
-                      <Link
-                        href={`/product/${product.handle}`}
-                        className="font-semibold hover:underline"
-                      >
-                        {product.title}
-                      </Link>
+                      <h3 className="font-semibold">{product.title}</h3>
                       <Price
                         className="mt-1 text-lg"
                         amount={product.priceRange.maxVariantPrice.amount}
                         currencyCode={product.priceRange.maxVariantPrice.currencyCode}
                       />
                     </div>
-                    <div className="mt-4 border-t pt-4">
-                      <VariantSelector options={product.options} variants={product.variants} onOpenSizeSelector={() => {}} />
+                    
+                    <div className="mt-4">
+                      <VariantSelector options={colorOptions} variants={product.variants} onOpenSizeSelector={() => {}} />
                     </div>
+
+                    <div className="mt-6">
+                       <button
+                        onClick={handleSelectSizeClick}
+                        className="flex w-full items-center justify-between border border-black px-4 py-3 text-sm font-medium text-black"
+                      >
+                        <span>{selectedSize || 'Select Size'}</span>
+                        <ChevronRightIcon className="h-4 w-4 text-neutral-500" aria-hidden="true" />
+                      </button>
+                    </div>
+
                   </div>
 
-                  {/* Footer with Add to Bag */}
                   <div className="flex-shrink-0 border-t p-4">
                     <AddToCart product={product} />
                   </div>
