@@ -48,6 +48,9 @@ export const cartFragment = /* GraphQL */ `
         }
       }
     }
+    discountCodes {
+      code
+    }
   }
   ${productFragment}
 `;

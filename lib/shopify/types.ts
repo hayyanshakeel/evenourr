@@ -27,7 +27,7 @@ export type CartItem = {
   };
 };
 
-// REMOVED discountCodes property from ShopifyCart
+// ADDED totalTaxAmount back to ShopifyCart
 export type ShopifyCart = {
   id: string;
   checkoutUrl: string;
@@ -38,11 +38,17 @@ export type ShopifyCart = {
   };
   lines: Connection<CartItem>;
   totalQuantity: number;
+  discountCodes: {
+    code: string;
+  }[];
 };
 
-// REMOVED discountCodes property from Cart
+// And also add it here
 export type Cart = Omit<ShopifyCart, 'lines'> & {
   lines: CartItem[];
+  discountCodes: {
+    code: string;
+  }[];
 };
 
 export type Collection = ShopifyCollection & {
@@ -165,7 +171,21 @@ export type ShopifyCartOperation = {
   };
 };
 
-// The ShopifyApplyDiscountOperation type has been removed.
+export type ShopifyApplyDiscountOperation = {
+  data: {
+    cartDiscountCodesUpdate: {
+      cart: ShopifyCart;
+      userErrors: {
+        field: string[];
+        message: string;
+      }[];
+    };
+  };
+  variables: {
+    cartId: string;
+    discountCodes: string[];
+  };
+};
 
 export type ShopifyRemoveFromCartOperation = {
   data: {

@@ -41,15 +41,15 @@ export default function CartModal() {
   const openCart = () => setIsOpen(true);
   const closeCart = () => setIsOpen(false);
 
-  // A refined drag handler for a smooth, physics-based swipe
+  // A refined drag handler for a smooth, one-directional swipe
   const bind = useDrag(
-    ({ args: [itemId], down, movement: [mx], velocity: [vx] }) => {
+    ({ args: [itemId], down, movement: [mx], velocity: [vx], cancel }) => {
       const typedItemId = itemId as string;
 
-      if (down) {
+      if (down && mx < 0) {
         setIsDraggingId(typedItemId);
         setSwipePositions((prev) => ({ ...prev, [typedItemId]: mx }));
-      } else {
+      } else if (!down) {
         setIsDraggingId(null);
         // If swiped past halfway or flicked with enough velocity, snap open
         const shouldOpen = mx < -96 || vx < -0.5;
@@ -61,8 +61,7 @@ export default function CartModal() {
     },
     {
       axis: 'x',
-      bounds: { left: -192, right: 0 },
-      rubberband: 0.2 // Adds the stretchy effect at the edges
+      bounds: { left: -192, right: 0 }
     }
   );
 
@@ -98,6 +97,12 @@ export default function CartModal() {
     // Always update the ref to the latest quantity.
     quantityRef.current = cart?.totalQuantity;
   }, [isOpen, cart?.totalQuantity]);
+
+  // FIX: Reset swipe state when cart items change to prevent slider from getting stuck.
+  useEffect(() => {
+    setSwipePositions({});
+    setIsDraggingId(null);
+  }, [cart?.lines.length]);
 
   const checkoutAction = cart
     ? redirectToCheckout.bind(null, cart.id, Array.from(selectedLineIds))
@@ -286,7 +291,7 @@ export default function CartModal() {
                       <Price
                         className="font-bold"
                         amount={selectedItemsTotal}
-                        currencyCode={cart?.cost.totalAmount.currencyCode || 'USD'}
+                        currencyCode={cart?.cost?.totalAmount?.currencyCode || 'USD'}
                       />
                     </div>
                     <button

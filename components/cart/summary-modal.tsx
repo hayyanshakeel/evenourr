@@ -90,7 +90,7 @@ export function SummaryModal({
                     currencyCode={cart.cost.subtotalAmount.currencyCode}
                   />
                 </div>
-                {/* Added Taxes line */}
+                {/* Displaying Taxes */}
                 <div className="flex justify-between">
                   <span>Taxes</span>
                   <Price
