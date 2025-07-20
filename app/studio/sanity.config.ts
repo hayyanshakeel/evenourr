@@ -1,26 +1,25 @@
-import { defineConfig } from 'sanity';
-// --- FIX: Corrected import from 'sanity/structure' ---
-// The `structureTool` has been renamed or is now accessed via the `structure` export.
-import { structureTool } from 'sanity/structure';
+// app/studio/sanity.config.ts
 
-// --- FIX: Corrected the path to your schemas ---
-// I'm assuming your schemas are in a 'schemas' directory at the root of your project.
-// If not, you'll need to adjust this path.
-import { schemaTypes } from '../../schemas';
+import {defineConfig} from 'sanity'
+import {structureTool} from 'sanity/structure'
+import {schemaTypes} from 'sanity/schemaTypes' // Corrected path
+import {structure} from 'sanity/structure' // Import the structure from your file
 
 export default defineConfig({
   name: 'default',
   title: 'jsevenour',
 
-  projectId: 'your-project-id', // Replace with your actual project ID
-  dataset: 'production', // Replace with your dataset name
+  projectId: process.env.NEXT_PUBLIC_SANITY_PROJECT_ID!,
+  dataset: process.env.NEXT_PUBLIC_SANITY_DATASET!,
 
   plugins: [
-    // --- FIX: Using the corrected import ---
-    structureTool(),
+    // Use the structure from your file
+    structureTool({
+      structure
+    })
   ],
 
   schema: {
     types: schemaTypes
   }
-});
+})
