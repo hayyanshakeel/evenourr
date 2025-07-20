@@ -1,27 +1,24 @@
 import clsx from 'clsx';
 
 const Price = ({
-  className,
   amount,
-  currencyCode = 'USD'
+  className,
+  currencyCode = 'USD',
+  currencyCodeClassName
 }: {
-  className?: string;
   amount: string;
+  className?: string;
   currencyCode: string;
-}) => {
-  const formattedPrice = new Intl.NumberFormat('en-IN', {
-    style: 'currency',
-    currency: currencyCode,
-    minimumFractionDigits: 2,
-    maximumFractionDigits: 2,
-  }).format(parseFloat(amount));
-
-  return (
-    // This component now just applies the className passed from its parent
-    <p className={clsx(className)}>
-      {formattedPrice}
-    </p>
-  );
-};
+  currencyCodeClassName?: string; // This line was missing
+} & React.ComponentProps<'p'>) => (
+  <p suppressHydrationWarning={true} className={className}>
+    {`${new Intl.NumberFormat(undefined, {
+      style: 'currency',
+      currency: currencyCode,
+      currencyDisplay: 'narrowSymbol'
+    }).format(parseFloat(amount))}`}
+    <span className={clsx('ml-2 inline', currencyCodeClassName)}>{`${currencyCode}`}</span>
+  </p>
+);
 
 export default Price;
