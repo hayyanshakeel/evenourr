@@ -13,7 +13,6 @@ import {
   ChevronLeftIcon,
   ChevronRightIcon,
   HeartIcon,
-  ShareIcon,
   ShoppingCartIcon,
   TrashIcon,
   XMarkIcon
@@ -174,7 +173,6 @@ export default function CartModal() {
                 </button>
                 <h1 className="text-lg font-semibold">SHOPPING BAG</h1>
                 <div className="flex items-center gap-4">
-                  <ShareIcon className="h-6 w-6" />
                   <HeartIcon className="h-6 w-6" />
                 </div>
               </header>

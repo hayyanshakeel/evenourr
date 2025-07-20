@@ -24,7 +24,6 @@ import {
   getProductRecommendationsQuery,
   getProductsQuery
 } from './queries/product';
-// No longer importing from './queries/shop'
 import {
   Cart,
   Collection,
@@ -50,10 +49,32 @@ import {
   ShopifyProductRecommendationsOperation,
   ShopifyProductsOperation,
   ShopifyRemoveFromCartOperation,
-  ShopifyShopMetafieldOperation,
   ShopifyUpdateCartOperation
 } from './types';
 import { revalidateTag } from 'next/cache';
+
+// --- START: Firebase Integration ---
+import { initializeApp, getApps, getApp } from 'firebase/app';
+import { getFirestore, collection, getDocs } from 'firebase/firestore';
+
+const firebaseConfigStr = typeof process !== 'undefined' ? process.env.NEXT_PUBLIC_FIREBASE_CONFIG || '{}' : '{}';
+let firebaseConfig = {};
+try {
+    firebaseConfig = JSON.parse(firebaseConfigStr);
+} catch (e) {
+    console.error("Could not parse Firebase config in lib/shopify/index.ts:", e);
+}
+const appId = (typeof process !== 'undefined' ? process.env.NEXT_PUBLIC_APP_ID : undefined) || 'default-app-id';
+
+// Initialize Firebase App
+const getFirebaseApp = () => {
+  if (getApps().length) {
+    return getApp();
+  }
+  return initializeApp(firebaseConfig);
+};
+// --- END: Firebase Integration ---
+
 
 // Helper function to remove edges and nodes from a GraphQL connection
 const removeEdgesAndNodes = (array: Connection<any>) => {
@@ -149,7 +170,21 @@ export async function shopifyFetch<T>({
   }
 }
 
-// The getPublicCoupons function has been removed.
+// --- NEW FUNCTION TO GET COUPONS FROM FIREBASE ---
+export async function getPublicCoupons() {
+  try {
+    const app = getFirebaseApp();
+    const db = getFirestore(app);
+    const couponsCol = collection(db, `/artifacts/${appId}/public/data/coupons`);
+    const couponSnapshot = await getDocs(couponsCol);
+    const coupons = couponSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+    return { success: true, coupons };
+  } catch (error) {
+    console.error('Error fetching public coupons:', error);
+    return { success: false, coupons: [], error: 'Could not fetch coupons.' };
+  }
+}
+
 
 // Function to get a menu from Shopify
 export async function getMenu(handle: string): Promise<Menu[]> {
