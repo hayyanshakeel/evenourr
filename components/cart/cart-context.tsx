@@ -1,165 +1,77 @@
-// FILE: components/cart/cart-context.tsx
-
 'use client';
 
-import {
-  addItem,
-  createCart,
-  getCart,
-  removeItem,
-  updateItemQuantity
-} from './actions';
-import { Cart, CartItem } from '@/lib/shopify/types';
-import {
-  createContext,
-  useCallback,
-  useContext,
-  useEffect,
-  useMemo,
-  useState,
-  useTransition
-} from 'react';
+import { createContext, useContext, useState, ReactNode } from 'react';
 
-interface CartContextType {
-  cart: Cart | undefined;
-  addToCart: (variantId: string) => void;
-  removeFromCart: (lineId: string) => void;
-  updateCartItemQuantity: (lineId: string, quantity: number) => void;
-  selectedLineIds: Set<string>;
-  toggleItemSelection: (lineId: string) => void;
-  toggleSelectAll: (select: boolean) => void;
-  openCart: () => void; // Added for programmatic opening
-  isCartOpen: boolean; // Added to check state
+// Define what our cart will hold
+interface CartItem {
+  id: string;
+  name: string;
+  price: number;
+  quantity: number;
 }
 
-const CartContext = createContext<CartContextType | null>(null);
+interface CartContextType {
+  items: CartItem[];
+  addItem: (item: CartItem) => void;
+  removeItem: (id: string) => void;
+  clearCart: () => void;
+  totalItems: number;
+  totalPrice: number;
+}
 
-export function CartProvider({ children }: { children: React.ReactNode }) {
-  const [cart, setCart] = useState<Cart | undefined>(undefined);
-  const [isPending, startTransition] = useTransition();
-  const [isCartOpen, setIsCartOpen] = useState(false);
-  const [selectedLineIds, setSelectedLineIds] = useState<Set<string>>(new Set());
+// Create the context
+const CartContext = createContext<CartContextType | undefined>(undefined);
 
-  const openCart = () => setIsCartOpen(true);
+// Create the provider component
+export function CartProvider({ children }: { children: ReactNode }) {
+  const [items, setItems] = useState<CartItem[]>([]);
 
-  useEffect(() => {
-    async function initializeCart() {
-      const cartId = localStorage.getItem('cartId');
-      const existingCart = cartId ? await getCart(cartId) : null;
-      if (existingCart) {
-        setCart(existingCart);
-        // Initially, all items are selected
-        setSelectedLineIds(new Set(existingCart.lines.map((line) => line.id)));
+  const addItem = (item: CartItem) => {
+    setItems(prev => {
+      const existing = prev.find(i => i.id === item.id);
+      if (existing) {
+        return prev.map(i => 
+          i.id === item.id 
+            ? { ...i, quantity: i.quantity + 1 }
+            : i
+        );
       }
-    }
-    initializeCart();
-  }, []);
-
-  const toggleItemSelection = (lineId: string) => {
-    setSelectedLineIds((prev) => {
-      const newSelection = new Set(prev);
-      if (newSelection.has(lineId)) {
-        newSelection.delete(lineId);
-      } else {
-        newSelection.add(lineId);
-      }
-      return newSelection;
+      return [...prev, { ...item, quantity: 1 }];
     });
   };
 
-  const toggleSelectAll = (select: boolean) => {
-    if (select && cart) {
-      setSelectedLineIds(new Set(cart.lines.map((line) => line.id)));
-    } else {
-      setSelectedLineIds(new Set());
-    }
+  const removeItem = (id: string) => {
+    setItems(prev => prev.filter(item => item.id !== id));
   };
 
-  const addToCartAndUpdateState = useCallback(
-    async (variantId: string) => {
-      let currentCart = cart;
-      if (!currentCart) {
-        currentCart = await createCart();
-        localStorage.setItem('cartId', currentCart.id);
-      }
-      const updatedCart = await addItem(currentCart.id, [
-        { merchandiseId: variantId, quantity: 1 }
-      ]);
-      setCart(updatedCart);
-      setSelectedLineIds(new Set(updatedCart.lines.map((line) => line.id)));
-    },
-    [cart]
+  const clearCart = () => {
+    setItems([]);
+  };
+
+  const totalItems = items.reduce((sum, item) => sum + item.quantity, 0);
+  const totalPrice = items.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+
+  const value = {
+    items,
+    addItem,
+    removeItem,
+    clearCart,
+    totalItems,
+    totalPrice
+  };
+
+  return (
+    <CartContext.Provider value={value}>
+      {children}
+    </CartContext.Provider>
   );
-
-  const removeFromCartAndUpdateState = useCallback(
-    async (lineId: string) => {
-      if (!cart) return;
-      const updatedCart = await removeItem(cart.id, [lineId]);
-      setCart(updatedCart);
-      setSelectedLineIds((prev) => {
-        const newSelection = new Set(prev);
-        newSelection.delete(lineId);
-        return newSelection;
-      });
-    },
-    [cart]
-  );
-
-  // FIX: This function has been updated to correctly pass the 'merchandiseId'.
-  const updateCartItemQuantityAndUpdateState = useCallback(
-    async (lineId: string, quantity: number) => {
-      if (!cart) return;
-
-      // First, find the specific item in the cart to get its merchandiseId.
-      const itemToUpdate = cart.lines.find((item: CartItem) => item.id === lineId);
-      if (!itemToUpdate) {
-        console.error('Could not find cart item to update');
-        return;
-      }
-
-      // Now, call the update function with all the required properties.
-      const updatedCart = await updateItemQuantity(cart.id, [
-        {
-          id: lineId,
-          merchandiseId: itemToUpdate.merchandise.id,
-          quantity: quantity
-        }
-      ]);
-      setCart(updatedCart);
-    },
-    [cart]
-  );
-
-  const contextValue = useMemo(() => {
-    return {
-      cart,
-      addToCart: (variantId: string) => startTransition(() => addToCartAndUpdateState(variantId)),
-      removeFromCart: (lineId: string) =>
-        startTransition(() => removeFromCartAndUpdateState(lineId)),
-      updateCartItemQuantity: (lineId: string, quantity: number) =>
-        startTransition(() => updateCartItemQuantityAndUpdateState(lineId, quantity)),
-      selectedLineIds,
-      toggleItemSelection,
-      toggleSelectAll,
-      openCart,
-      isCartOpen
-    };
-  }, [
-    cart,
-    isCartOpen,
-    selectedLineIds,
-    addToCartAndUpdateState,
-    removeFromCartAndUpdateState,
-    updateCartItemQuantityAndUpdateState
-  ]);
-
-  return <CartContext.Provider value={contextValue}>{children}</CartContext.Provider>;
 }
 
-export const useCart = () => {
+// Hook to use the cart context
+export function useCart() {
   const context = useContext(CartContext);
-  if (!context) {
+  if (context === undefined) {
     throw new Error('useCart must be used within a CartProvider');
   }
   return context;
-};
+}
