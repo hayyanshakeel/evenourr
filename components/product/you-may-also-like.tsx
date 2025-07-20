@@ -13,7 +13,7 @@ interface YouMayAlsoLikeProps {
     onQuickView: (product: Product) => void;
 }
 
-export default function YouMayAlsoLike({ products, onQuickView }: YouMayAlsoLikeProps) {
+export function YouMayAlsoLike({ products, onQuickView }: YouMayAlsoLikeProps) {
     if (!products.length) return null;
 
     return (

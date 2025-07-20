@@ -1,9 +1,9 @@
 // app/studio/sanity.config.ts
 
 import {defineConfig} from 'sanity'
-import {structureTool} from 'sanity/structure'
-import {schemaTypes} from 'sanity/schemaTypes' // Corrected path
-import {structure} from 'sanity/structure' // Import the structure from your file
+import {deskTool} from 'sanity/desk'
+import {schema} from './schema'
+import {structure} from '../../sanity/structure'
 
 export default defineConfig({
   name: 'default',
@@ -13,13 +13,10 @@ export default defineConfig({
   dataset: process.env.NEXT_PUBLIC_SANITY_DATASET!,
 
   plugins: [
-    // Use the structure from your file
-    structureTool({
+    deskTool({
       structure
     })
   ],
 
-  schema: {
-    types: schemaTypes
-  }
+  schema: schema
 })

@@ -1,8 +1,9 @@
 'use client';
 
 import { useState } from 'react';
+import { Product } from 'lib/shopify/types';
 
-export function ProductAccordion() {
+export function ProductAccordion({ product }: { product: Product }) {
   const [open, setOpen] = useState<number | null>(null);
 
   const toggle = (index: number) => {

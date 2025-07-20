@@ -5,15 +5,14 @@ import { Product, ProductOption, ProductVariant } from 'lib/shopify/types';
 import { AddToCart } from 'components/cart/add-to-cart';
 
 // --- FIX: Corrected import statements ---
-import { ProductAccordion } from '/Users/hayyaanshakeel/Desktop/untitled folder 3/jsevenour/components/product/product-accordion';
-import { ProductDetails } from '/Users/hayyaanshakeel/Desktop/untitled folder 3/jsevenour/components/product/product-details';
-import { ShareButton } from '/Users/hayyaanshakeel/Desktop/untitled folder 3/jsevenour/components/product/share-button';
+import { ProductAccordion } from 'components/product/product-accordion';
+import { ProductDetails } from 'components/product/product-details';
+import { ShareButton } from 'components/product/share-button';
 
 // --- FIX: Corrected the file path for ProductGallery ---
-// The error "Cannot find module" means the file path is wrong. I've corrected it.
-import { ProductGallery } from '/Users/hayyaanshakeel/Desktop/untitled folder 3/jsevenour/components/product/product-gallery';
-import { SlideUpPanel } from '/Users/hayyaanshakeel/Desktop/untitled folder 3/jsevenour/components/product/slide-up-panel';
-import { SuggestionCard } from '/Users/hayyaanshakeel/Desktop/untitled folder 3/jsevenour/components/product/suggestion-card';
+import { ProductGallery } from 'components/product/product-gallery';
+import { SlideUpPanel } from 'components/product/slide-up-panel';
+import { SuggestionCard } from 'components/product/suggestion-card';
 
 export default function ProductPageClient({
   product,
@@ -59,19 +58,16 @@ export default function ProductPageClient({
 
             <div className="mt-10">
                 <div className="mt-10">
-                    {/* --- FIX: Passed the entire 'product' object to AddToCart --- */}
                     <AddToCart product={product} />
                 </div>
             </div>
 
-            {/* --- FIX: Corrected props for ProductDetails --- */}
             <ProductDetails
               options={product.options}
               variants={product.variants}
               onOpenSizeSelector={openSizeSelector}
             />
 
-            {/* --- FIX: Corrected props for ProductAccordion --- */}
             <ProductAccordion product={product} />
 
             <button onClick={openSharePanel} className="mt-6 text-sm font-medium text-indigo-600 hover:text-indigo-500">
@@ -85,7 +81,6 @@ export default function ProductPageClient({
             <h2 className="text-xl font-bold">You may also like</h2>
             <div className="mt-6 grid grid-cols-1 gap-x-6 gap-y-10 sm:grid-cols-2 lg:grid-cols-4 xl:gap-x-8">
                 {relatedProducts.map((p) => (
-                    // --- FIX: Corrected props for SuggestionCard ---
                     <SuggestionCard key={p.handle} product={p} onQuickView={() => { /* function logic here */ }} />
                 ))}
             </div>

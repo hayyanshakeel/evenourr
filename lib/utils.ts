@@ -25,3 +25,29 @@ export const absoluteUrl = (path: string) => {
     : 'http://localhost:3000';
   return `${baseUrl}${path}`;
 };
+
+export const baseUrl = process.env.NEXT_PUBLIC_VERCEL_URL
+  ? `https://${process.env.NEXT_PUBLIC_VERCEL_URL}`
+  : 'http://localhost:3000';
+
+export const validateEnvironmentVariables = () => {
+  const requiredEnvironmentVariables = [
+    'SHOPIFY_STORE_DOMAIN',
+    'SHOPIFY_STOREFRONT_ACCESS_TOKEN'
+  ];
+  const missingEnvironmentVariables = [] as string[];
+
+  requiredEnvironmentVariables.forEach((envVar) => {
+    if (!process.env[envVar]) {
+      missingEnvironmentVariables.push(envVar);
+    }
+  });
+
+  if (missingEnvironmentVariables.length) {
+    throw new Error(
+      `The following environment variables are missing. Your site will not work without them. Read more: https://vercel.com/docs/integrations/shopify#configure-environment-variables\n\n${missingEnvironmentVariables.join(
+        '\n'
+      )}\n`
+    );
+  }
+};

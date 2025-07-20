@@ -1,4 +1,5 @@
 import Navbar from '@/components/layout/navbar';
+import Footer from '@/components/layout/footer';
 import { ensureStartsWith } from '@/lib/utils';
 import { getMenu } from '@/lib/shopify';
 import { Inter } from 'next/font/google';
@@ -48,6 +49,7 @@ export default async function RootLayout({ children }: { children: ReactNode }) 
         <Suspense>
           <main>{children}</main>
         </Suspense>
+        <Footer />
       </body>
     </html>
   );

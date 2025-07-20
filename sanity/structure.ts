@@ -1,8 +1,8 @@
 // sanity/structure.ts
 
-import {StructureBuilder} from 'sanity/structure'
+import type {StructureBuilder as SanityStructureBuilder} from 'sanity/desk'
 
-export const structure = (S: StructureBuilder) =>
+export const structure = (S: SanityStructureBuilder) =>
   S.list()
     .id('root')
     .title('Content')
@@ -16,6 +16,6 @@ export const structure = (S: StructureBuilder) =>
       S.divider(),
       // Lists all other document types
       ...S.documentTypeListItems().filter(
-        (item) => !['siteSettings'].includes(item.getId() || '')
+        (item: any) => !['siteSettings'].includes(item.getId() || '')
       )
     ])

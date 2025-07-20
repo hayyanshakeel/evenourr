@@ -14,12 +14,12 @@ export function EditItemQuantityButton({
   item: CartItem;
   type: 'plus' | 'minus';
 }) {
-  const { updateCartItemQuantity } = useCart();
+  const { updateQuantity } = useCart();
 
   function handleUpdate() {
     const newQuantity = type === 'plus' ? item.quantity + 1 : item.quantity - 1;
     if (newQuantity >= 0) {
-      updateCartItemQuantity(item.id, newQuantity);
+      updateQuantity(item, newQuantity);
     }
   }
 
