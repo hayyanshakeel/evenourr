@@ -1,39 +1,45 @@
 'use client';
 
 import { MagnifyingGlassIcon } from '@heroicons/react/24/outline';
-import Form from 'next/form';
-import { useSearchParams } from 'next/navigation';
+import { useSearchParams, useRouter } from 'next/navigation';
 
 export default function Search() {
+  const router = useRouter();
   const searchParams = useSearchParams();
+  const defaultSearch = searchParams.get('q') || '';
+
+  function onSubmit(e: React.FormEvent<HTMLFormElement>) {
+    e.preventDefault();
+    const val = e.target as HTMLFormElement;
+    const search = val.search as HTMLInputElement;
+    const newParams = new URLSearchParams(searchParams.toString());
+
+    if (search.value) {
+      newParams.set('q', search.value);
+    } else {
+      newParams.delete('q');
+    }
+
+    // This will navigate to the search page with the correct query
+    router.push(`/search?${newParams.toString()}`);
+  }
 
   return (
-    <Form action="/search" className="w-max-[550px] relative w-full lg:w-80 xl:w-full">
-      <input
-        key={searchParams?.get('q')}
-        type="text"
-        name="q"
-        placeholder="Search for products..."
-        autoComplete="off"
-        defaultValue={searchParams?.get('q') || ''}
-        className="text-md w-full rounded-lg border bg-white px-4 py-2 text-black placeholder:text-neutral-500 md:text-sm dark:border-neutral-800 dark:bg-transparent dark:text-white dark:placeholder:text-neutral-400"
-      />
-      <div className="absolute right-0 top-0 mr-3 flex h-full items-center">
-        <MagnifyingGlassIcon className="h-4" />
-      </div>
-    </Form>
-  );
-}
-
-export function SearchSkeleton() {
-  return (
-    <form className="w-max-[550px] relative w-full lg:w-80 xl:w-full">
-      <input
-        placeholder="Search for products..."
-        className="w-full rounded-lg border bg-white px-4 py-2 text-sm text-black placeholder:text-neutral-500 dark:border-neutral-800 dark:bg-transparent dark:text-white dark:placeholder:text-neutral-400"
-      />
-      <div className="absolute right-0 top-0 mr-3 flex h-full items-center">
-        <MagnifyingGlassIcon className="h-4" />
+    <form onSubmit={onSubmit} className="w-full">
+      <div className="relative">
+        <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3">
+          <MagnifyingGlassIcon className="h-5 w-5 text-gray-400" aria-hidden="true" />
+        </div>
+        <input
+          key={defaultSearch}
+          id="search"
+          name="search"
+          type="search"
+          defaultValue={defaultSearch}
+          placeholder="Search for products..."
+          autoComplete="off"
+          className="block w-full rounded-md border-0 bg-white py-1.5 pl-10 pr-3 text-gray-900 ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-blue-600 sm:text-sm sm:leading-6"
+        />
       </div>
     </form>
   );

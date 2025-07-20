@@ -1,22 +1,14 @@
-// FILE: app/studio/sanity.config.ts
-
-import {defineConfig} from 'sanity'
-import {deskTool} from 'sanity/desk'
-import {visionTool} from '@sanity/vision'
-import {schemaTypes} from 'app/studio/schema'
+import { visionTool } from '@sanity/vision';
+import { defineConfig } from 'sanity';
+import { structureTool } from 'sanity/structure';
+import { schema } from './schema';
 
 export default defineConfig({
+  basePath: '/studio',
   name: 'default',
-  title: 'Evenour CMS',
-
-  projectId: '7z74tl10',
-  dataset: 'production',
-
-  plugins: [deskTool(), visionTool()],
-
-  basePath: '/studio', // This tells Next.js where your admin panel lives
-
-  schema: {
-    types: schemaTypes,
-  },
-})
+  title: 'next-js-commerce',
+  projectId: process.env.NEXT_PUBLIC_SANITY_PROJECT_ID!,
+  dataset: process.env.NEXT_PUBLIC_SANITY_DATASET!,
+  plugins: [structureTool(), visionTool()],
+  schema
+});
