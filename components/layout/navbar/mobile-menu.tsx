@@ -5,18 +5,16 @@ import Link from 'next/link';
 
 interface MobileMenuProps {
   menu: Menu[];
+  onClose: () => void;
 }
 
-export default function MobileMenu({ menu }: MobileMenuProps) {
+export default function MobileMenu({ menu, onClose }: MobileMenuProps) {
   return (
-    <div className="fixed inset-0 z-50 flex flex-col bg-white p-4 dark:bg-black md:hidden">
+    <div className="fixed inset-0 z-50 flex flex-col bg-white p-4 dark:bg-black">
       <button
         aria-label="Close menu"
         className="mb-4 self-end text-xl font-bold"
-        onClick={() => {
-          // Implement close menu logic here, e.g., toggle state or context
-          console.log('Close menu clicked');
-        }}
+        onClick={onClose}
       >
         ×
       </button>
@@ -26,6 +24,7 @@ export default function MobileMenu({ menu }: MobileMenuProps) {
             <Link
               href={item.path}
               className="block text-neutral-700 hover:text-black dark:text-neutral-300 dark:hover:text-white"
+              onClick={onClose}
             >
               {item.title}
             </Link>

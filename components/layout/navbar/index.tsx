@@ -1,9 +1,11 @@
+"use client";
+
 import Cart from '@/components/cart';
 import OpenCart from '@/components/cart/open-cart';
 import LogoSquare from '@/components/logo-square';
 import { Menu } from '@/lib/shopify/types';
 import Link from 'next/link';
-import { Suspense } from 'react';
+import { Suspense, useState } from 'react';
 import MobileMenu from './mobile-menu';
 import Search from './search';
 
@@ -12,11 +14,46 @@ interface NavbarProps {
 }
 
 export default function Navbar({ menu }: NavbarProps) {
+  const [isMenuOpen, setIsMenuOpen] = useState(false);
+
+  const toggleMenu = () => {
+    setIsMenuOpen(!isMenuOpen);
+  };
+
+  const closeMenu = () => {
+    setIsMenuOpen(false);
+  };
+
   return (
     <nav className="relative flex items-center justify-between p-4 lg:px-6">
       <div className="block flex-none md:hidden">
-        <MobileMenu menu={menu} />
+        <button
+          aria-label="Open menu"
+          className="flex h-11 w-11 items-center justify-center rounded-md border border-neutral-200 text-black transition-colors dark:border-neutral-700 dark:text-white"
+          onClick={toggleMenu}
+        >
+          <svg
+            width="14"
+            height="14"
+            viewBox="0 0 14 14"
+            fill="none"
+            xmlns="http://www.w3.org/2000/svg"
+            aria-hidden="true"
+          >
+            <path
+              d="M1 7H13M1 1H13M1 13H13"
+              stroke="currentColor"
+              strokeWidth="1.5"
+              strokeLinecap="round"
+            />
+          </svg>
+        </button>
       </div>
+
+      {isMenuOpen && (
+        <MobileMenu menu={menu} onClose={closeMenu} />
+      )}
+
       <div className="flex w-full items-center">
         <div className="flex w-full md:w-1/3">
           <Link href="/" className="mr-2 flex w-full items-center justify-center md:w-auto lg:mr-6">

@@ -36,7 +36,12 @@ export const metadata = {
         creator: twitterCreator,
         site: twitterSite
       }
-    })
+    }),
+  viewport: {
+    width: 'device-width',
+    initialScale: 1,
+    maximumScale: 1
+  }
 };
 
 export default async function RootLayout({ children }: { children: ReactNode }) {
@@ -44,7 +49,7 @@ export default async function RootLayout({ children }: { children: ReactNode }) 
 
   return (
     <html lang="en" className={inter.variable}>
-      <body className="bg-neutral-50 text-black selection:bg-teal-300 dark:bg-neutral-900 dark:text-white dark:selection:bg-pink-500 dark:selection:text-white">
+      <body className="bg-white text-black selection:bg-teal-300 dark:bg-white dark:text-black dark:selection:bg-pink-500 dark:selection:text-white">
         <Navbar menu={menu} />
         <Suspense>
           <main>{children}</main>
