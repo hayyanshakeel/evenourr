@@ -1,27 +1,16 @@
-interface ProductDetailsProps {
-  product: {
-    title: string;
-    description: string;
-    featuredImage?: {
-      url: string;
-    };
-  };
-}
+'use client';
 
-export function ProductDetails({ product }: ProductDetailsProps) {
+import { useProduct } from './product-context';
+
+export function ProductDetails() {
+  const { product } = useProduct();
+
   return (
-    <div className="max-w-3xl mx-auto p-6 border rounded-lg shadow-md">
-      <h1 className="text-3xl font-bold mb-4">{product.title}</h1>
-
-      {product.featuredImage?.url && (
-        <img
-          src={product.featuredImage.url}
-          alt={product.title}
-          className="mb-4 rounded-md w-full"
-        />
-      )}
-
-      <p className="text-gray-700">{product.description}</p>
+    <div className="mt-4">
+      <h3 className="text-lg font-medium text-gray-900">Product Details</h3>
+      <div className="mt-4 space-y-6">
+        <p className="text-sm text-gray-600">{product.description}</p>
+      </div>
     </div>
   );
 }

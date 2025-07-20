@@ -1,29 +1,53 @@
-// app/product/[handle]/page.tsx
-
-import { getProduct, getProductRecommendations } from '@/lib/shopify';
 import { notFound } from 'next/navigation';
-import { Suspense } from 'react';
-import { ProductPageClient } from './client';
+import { getProduct, getProductRecommendations } from 'lib/shopify';
+import { HIDDEN_PRODUCT_TAG } from 'lib/constants';
 
-// This is a Server Component. It can be async.
-export default async function ProductPage({ params }: { params: { handle: string } }) {
-  // Fetch only the data needed for this page.
+// --- FIX: Corrected import statement ---
+// ProductPageClient is a default export, so it should be imported without curly braces.
+import ProductPageClient from './client';
+
+export const runtime = 'edge';
+
+export async function generateMetadata({ params }: { params: { handle: string } }) {
   const product = await getProduct(params.handle);
 
-  if (!product) {
-    notFound();
-  }
+  if (!product) return notFound();
 
-  // The footer menu is handled by the root layout, so we only fetch recommendations here.
-  const recommendations = await getProductRecommendations(product.id);
+  const { url, width, height, altText: alt } = product.featuredImage || {};
+  const indexable = !product.tags.includes(HIDDEN_PRODUCT_TAG);
 
-  // Render the Client Component and pass only the relevant data.
-  return (
-    <Suspense fallback={<div className="flex h-screen items-center justify-center">Loading...</div>}>
-      <ProductPageClient
-        product={product}
-        recommendations={recommendations}
-      />
-    </Suspense>
-  );
+  return {
+    title: product.seo.title || product.title,
+    description: product.seo.description || product.description,
+    robots: {
+      index: indexable,
+      follow: indexable,
+      googleBot: {
+        index: indexable,
+        follow: indexable
+      }
+    },
+    openGraph: url
+      ? {
+          images: [
+            {
+              url,
+              width,
+              height,
+              alt
+            }
+          ]
+        }
+      : null
+  };
+}
+
+export default async function ProductPage({ params }: { params: { handle: string } }) {
+  const product = await getProduct(params.handle);
+
+  if (!product) return notFound();
+
+  const relatedProducts = await getProductRecommendations(product.id);
+
+  return <ProductPageClient product={product} relatedProducts={relatedProducts} />;
 }

@@ -1,18 +1,22 @@
-// app/layout.tsx
-
+import Navbar from '@/components/layout/navbar';
+import { ensureStartsWith } from '@/lib/utils';
+import { getMenu } from '@/lib/shopify';
 import { Inter } from 'next/font/google';
 import { ReactNode, Suspense } from 'react';
-
-import { CartProvider } from '@/components/cart/cart-context';
-import Footer from '@/components/layout/footer';
-import { Navbar } from '@/components/layout/navbar';
-import { getMenu } from '@/lib/shopify';
 import './globals.css';
 
 const { TWITTER_CREATOR, TWITTER_SITE, SITE_NAME } = process.env;
 const baseUrl = process.env.NEXT_PUBLIC_VERCEL_URL
-  ? `https://` + process.env.NEXT_PUBLIC_VERCEL_URL
+  ? `https://${process.env.NEXT_PUBLIC_VERCEL_URL}`
   : 'http://localhost:3000';
+const twitterCreator = TWITTER_CREATOR ? ensureStartsWith(TWITTER_CREATOR, '@') : undefined;
+const twitterSite = TWITTER_SITE ? ensureStartsWith(TWITTER_SITE, 'https://') : undefined;
+
+const inter = Inter({
+  subsets: ['latin'],
+  display: 'swap',
+  variable: '--font-inter'
+});
 
 export const metadata = {
   metadataBase: new URL(baseUrl),
@@ -24,42 +28,26 @@ export const metadata = {
     follow: true,
     index: true
   },
-  ...(TWITTER_CREATOR &&
-    TWITTER_SITE && {
+  ...(twitterCreator &&
+    twitterSite && {
       twitter: {
         card: 'summary_large_image',
-        creator: TWITTER_CREATOR,
-        site: TWITTER_SITE
+        creator: twitterCreator,
+        site: twitterSite
       }
     })
 };
 
-const inter = Inter({
-  subsets: ['latin'],
-  display: 'swap',
-  variable: '--font-inter'
-});
-
 export default async function RootLayout({ children }: { children: ReactNode }) {
-  // Fetch both the header and footer menus in parallel on the server
-  const [headerMenu, footerMenu] = await Promise.all([
-    getMenu('next-js-frontend-header-menu'),
-    getMenu('next-js-frontend-footer-menu') // Ensure you have a menu with this handle in Shopify
-  ]);
+  const menu = await getMenu('next-js-frontend-header-menu');
 
   return (
     <html lang="en" className={inter.variable}>
-      <body className="bg-[#f9f8f8] text-black selection:bg-teal-300">
-        <CartProvider>
-          <Navbar menu={headerMenu} />
-          <Suspense>
-            <main>{children}</main>
-          </Suspense>
-          <Suspense>
-            {/* FIX: Pass the fetched footerMenu data to the Footer component */}
-            <Footer menu={footerMenu} />
-          </Suspense>
-        </CartProvider>
+      <body className="bg-neutral-50 text-black selection:bg-teal-300 dark:bg-neutral-900 dark:text-white dark:selection:bg-pink-500 dark:selection:text-white">
+        <Navbar menu={menu} />
+        <Suspense>
+          <main>{children}</main>
+        </Suspense>
       </body>
     </html>
   );

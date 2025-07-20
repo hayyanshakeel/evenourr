@@ -1,11 +1,13 @@
 'use client';
 
+import type { PathFilterItem, SortFilterItem } from '@/lib/constants'; // Use type-only import
+import { createUrl } from '@/lib/utils';
 import clsx from 'clsx';
-import type { SortFilterItem } from 'lib/constants';
-import { createUrl } from 'lib/utils';
 import Link from 'next/link';
 import { usePathname, useSearchParams } from 'next/navigation';
-import type { ListItem, PathFilterItem } from '.';
+
+// A new union type to handle both kinds of filter items
+type ListItem = PathFilterItem | SortFilterItem;
 
 function PathFilterItem({ item }: { item: PathFilterItem }) {
   const pathname = usePathname();

@@ -1,36 +1,51 @@
-// components/cart/add-to-cart.tsx
-
 'use client';
 
-import { useCart } from '@/components/cart/cart-context';
-import { useProduct } from '@/components/product/product-context';
-import type { Product } from '@/lib/shopify/types';
-import { clsx } from 'clsx';
+import { addItem } from '@/components/cart/actions';
+import { Product } from '@/lib/shopify/types';
+import { useSearchParams } from 'next/navigation';
+import { useFormState, useFormStatus } from 'react-dom';
 
-export function AddToCart({ product }: { product: Product }) {
-  const { addToCart } = useCart();
-  const { selectedVariantId } = useProduct();
-  const isDisabled = !product.availableForSale || !selectedVariantId;
-
-  const handleAddToCart = () => {
-    if (!selectedVariantId) {
-      alert('Please select a variant.');
-      return;
-    }
-    addToCart(selectedVariantId);
-  };
+function SubmitButton({
+  availableForSale,
+  selectedVariantId
+}: {
+  availableForSale: boolean;
+  selectedVariantId: string | undefined;
+}) {
+  const { pending } = useFormStatus();
 
   return (
     <button
-      onClick={handleAddToCart}
-      disabled={isDisabled}
       aria-label="Add to cart"
-      // FIX: Removed rounded-lg class
-      className={clsx(
-        'flex w-full items-center justify-center gap-x-2 bg-black px-5 py-4 text-sm font-semibold uppercase text-white transition-colors duration-200 ease-in-out hover:bg-black/80 disabled:cursor-not-allowed disabled:bg-neutral-500'
-      )}
+      disabled={pending || !availableForSale || !selectedVariantId}
+      className="w-full rounded-xl bg-black p-4 text-sm font-medium text-white disabled:cursor-not-allowed disabled:opacity-70"
     >
-      <span>{product.availableForSale ? 'Add to Bag' : 'Out Of Stock'}</span>
+      <span>{availableForSale ? 'Add To Cart' : 'Out Of Stock'}</span>
     </button>
+  );
+}
+
+export function AddToCart({ product }: { product: Product }) {
+  const [message, formAction] = useFormState(addItem, null);
+  const searchParams = useSearchParams();
+  const defaultVariantId = product.variants.length === 1 ? product.variants[0]?.id : undefined;
+  const variant = product.variants.find((variant) =>
+    variant.selectedOptions.every(
+      (option) => option.value === searchParams.get(option.name.toLowerCase())
+    )
+  );
+  const selectedVariantId = variant?.id || defaultVariantId;
+  const actionWithVariant = formAction.bind(null, selectedVariantId);
+
+  return (
+    <form action={actionWithVariant}>
+      <SubmitButton
+        availableForSale={product.availableForSale}
+        selectedVariantId={selectedVariantId}
+      />
+      <p aria-live="polite" className="sr-only" role="status">
+        {message}
+      </p>
+    </form>
   );
 }

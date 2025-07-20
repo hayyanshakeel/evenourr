@@ -7,8 +7,9 @@ export default function robots(): MetadataRoute.Robots {
       {
         userAgent: '*',
         allow: '/',
-      },
+        disallow: '/private/'
+      }
     ],
-    sitemap: absoluteUrl('/sitemap.xml'),
+    sitemap: absoluteUrl('/sitemap.xml')
   };
 }

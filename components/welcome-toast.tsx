@@ -1,35 +1,42 @@
 'use client';
 
-import { useEffect } from 'react';
-import { toast } from 'sonner';
+import React, { createContext, useContext, useState, ReactNode } from 'react';
 
-export function WelcomeToast() {
-  useEffect(() => {
-    // ignore if screen height is too small
-    if (window.innerHeight < 650) return;
-    if (!document.cookie.includes('welcome-toast=2')) {
-      toast('🛍️ Welcome to Next.js Commerce!', {
-        id: 'welcome-toast',
-        duration: Infinity,
-        onDismiss: () => {
-          document.cookie = 'welcome-toast=2; max-age=31536000; path=/';
-        },
-        description: (
-          <>
-            This is a high-performance, SSR storefront powered by Shopify, Next.js, and Vercel.{' '}
-            <a
-              href="https://vercel.com/templates/next.js/nextjs-commerce"
-              className="text-blue-600 hover:underline"
-              target="_blank"
-            >
-              Deploy your own
-            </a>
-            .
-          </>
-        )
-      });
-    }
-  }, []);
-
-  return null;
+interface ToastContextType {
+  showToast: (message: string) => void;
 }
+
+const ToastContext = createContext<ToastContextType | undefined>(undefined);
+
+export const useToast = () => {
+  const context = useContext(ToastContext);
+  if (!context) {
+    throw new Error('useToast must be used within a ToastProvider');
+  }
+  return context;
+};
+
+export const ToastProvider = ({ children }: { children: ReactNode }) => {
+  const [toast, setToast] = useState<{ message: string; visible: boolean }>({
+    message: '',
+    visible: false
+  });
+
+  const showToast = (message: string) => {
+    setToast({ message, visible: true });
+    setTimeout(() => {
+      setToast({ message: '', visible: false });
+    }, 3000); // Hide after 3 seconds
+  };
+
+  return (
+    <ToastContext.Provider value={{ showToast }}>
+      {children}
+      {toast.visible && (
+        <div className="fixed bottom-5 right-5 rounded-md bg-black p-4 text-white shadow-lg">
+          {toast.message}
+        </div>
+      )}
+    </ToastContext.Provider>
+  );
+};
