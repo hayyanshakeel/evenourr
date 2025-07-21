@@ -3,7 +3,7 @@
 'use client';
 
 import { Dialog, Transition } from '@headlessui/react';
-import { Fragment } from 'react';
+import { Fragment, useState, useEffect } from 'react';
 
 // Helper component for each share icon
 const ShareIcon = ({
@@ -34,12 +34,21 @@ export function ShareModal({
   productTitle: string;
   productImage: string;
 }) {
-  const productUrl = typeof window !== 'undefined' ? window.location.href : '';
+  const [productUrl, setProductUrl] = useState('');
+
+  useEffect(() => {
+    // Set URL after component mounts to prevent hydration issues
+    if (typeof window !== 'undefined') {
+      setProductUrl(window.location.href);
+    }
+  }, []);
 
   const copyLink = () => {
-    navigator.clipboard.writeText(productUrl);
-    alert('Link copied to clipboard!');
-    onClose();
+    if (productUrl) {
+      navigator.clipboard.writeText(productUrl);
+      alert('Link copied to clipboard!');
+      onClose();
+    }
   };
 
   const socialLinks = {

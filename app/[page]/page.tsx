@@ -147,21 +147,59 @@ const ProductGridItems: React.FC<ProductGridItemsProps> = ({ products }) => {
 // This is the final component that Next.js will render for the page.
 
 export default function HomePage() {
-  const [products, setProducts] = useState<Product[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [products, setProducts] = useState<Product[]>(mockProducts); // Initialize with data to prevent hydration mismatch
+  const [loading, setLoading] = useState(false); // Start with false since we have initial data
+  const [mounted, setMounted] = useState(false);
 
-  // This simulates fetching data from an API when the component first loads.
   useEffect(() => {
-    // In your real application, you will replace this with your Shopify API call.
-    const fetchProducts = () => {
-      setTimeout(() => {
-        setProducts(mockProducts);
-        setLoading(false);
-      }, 500); // Simulate a 0.5 second network delay
-    };
+    setMounted(true);
+    // In your real application, you can fetch fresh data here if needed
+    // For now, we'll just use the mock data to prevent hydration issues
+  }, []);
 
-    fetchProducts();
-  }, []); // The empty array [] means this effect runs only once after the component mounts.
+  // Don't render interactive features until mounted to prevent hydration issues
+  if (!mounted) {
+    return (
+      <div className="bg-gray-50 min-h-screen font-sans">
+        <div className="container mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
+          <header className="mb-8 text-center sm:mb-12">
+            <h1 className="text-4xl font-extrabold tracking-tight text-gray-900 sm:text-5xl">
+              Our Collection
+            </h1>
+            <p className="mt-4 text-lg text-gray-600">
+              Find the perfect style for any occasion.
+            </p>
+          </header>
+          <main>
+            <div className="grid grid-cols-2 gap-4 sm:gap-6 md:grid-cols-3 lg:grid-cols-4">
+              {mockProducts.map((product) => (
+                <div key={product.handle} className="aspect-square">
+                  <div className="group relative h-full w-full overflow-hidden rounded-lg border border-gray-200">
+                    <img
+                      src={product.featuredImage?.url || 'https://placehold.co/600x600/eee/ccc?text=No+Image'}
+                      alt={product.featuredImage?.altText || 'Product Image'}
+                      className="h-full w-full object-cover"
+                    />
+                    <div className="absolute bottom-0 left-0 w-full bg-black bg-opacity-60 p-4 text-white backdrop-blur-sm">
+                      <h3 className="font-bold text-lg truncate">{product.title}</h3>
+                      <p className="text-sm">
+                        {product.priceRange.minVariantPrice.amount} {product.priceRange.minVariantPrice.currencyCode}
+                      </p>
+                    </div>
+                    {!product.availableForSale && (
+                      <div className="absolute top-3 left-3 bg-gray-800 text-white text-xs font-bold px-3 py-1 rounded-full shadow-lg">
+                        Sold Out
+                      </div>
+                    )}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </main>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="bg-gray-50 min-h-screen font-sans">

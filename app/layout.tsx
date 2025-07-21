@@ -1,5 +1,7 @@
 import Navbar from '@/components/layout/navbar';
 import Footer from '@/components/layout/footer';
+import { CartProvider } from '@/components/cart/cart-context';
+import { ToastProvider } from '@/components/welcome-toast';
 import { ensureStartsWith } from '@/lib/utils';
 import { getMenu } from '@/lib/shopify';
 import { Inter } from 'next/font/google';
@@ -50,11 +52,15 @@ export default async function RootLayout({ children }: { children: ReactNode }) 
   return (
     <html lang="en" className={inter.variable}>
       <body className="bg-white text-black selection:bg-teal-300 dark:bg-white dark:text-black dark:selection:bg-pink-500 dark:selection:text-white">
-        <Navbar menu={menu} />
-        <Suspense>
-          <main>{children}</main>
-        </Suspense>
-        <Footer />
+        <CartProvider>
+          <ToastProvider>
+            <Navbar menu={menu} />
+            <Suspense>
+              <main>{children}</main>
+            </Suspense>
+            <Footer />
+          </ToastProvider>
+        </CartProvider>
       </body>
     </html>
   );

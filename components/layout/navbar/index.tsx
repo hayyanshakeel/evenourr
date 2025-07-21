@@ -59,7 +59,7 @@ export default function Navbar({ menu }: NavbarProps) {
           <Link href="/" className="mr-2 flex w-full items-center justify-center md:w-auto lg:mr-6">
             <LogoSquare />
             <div className="ml-2 flex-none text-sm font-medium uppercase md:hidden lg:block">
-              {process.env.SITE_NAME}
+              Next.js Commerce
             </div>
           </Link>
           {menu.length ? (

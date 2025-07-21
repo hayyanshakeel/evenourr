@@ -7,7 +7,7 @@ import { Cart } from '@/lib/shopify/types';
 import { Dialog, Transition } from '@headlessui/react';
 import { XMarkIcon } from '@heroicons/react/24/outline';
 import Image from 'next/image';
-import { Fragment } from 'react';
+import { Fragment, useEffect, useState } from 'react';
 
 export function SummaryModal({
   isOpen,
@@ -18,9 +18,23 @@ export function SummaryModal({
   onClose: () => void;
   cart: Cart | undefined;
 }) {
+  const [windowHeight, setWindowHeight] = useState(600); // Default fallback height
+
+  useEffect(() => {
+    // Set window height after component mounts (client-side only)
+    if (typeof window !== 'undefined') {
+      setWindowHeight(window.innerHeight);
+      
+      const handleResize = () => setWindowHeight(window.innerHeight);
+      window.addEventListener('resize', handleResize);
+      return () => window.removeEventListener('resize', handleResize);
+    }
+  }, []);
+
   if (!cart) return null;
 
   const dynamicHeight = 220 + cart.lines.length * 80; // Adjusted base height for tax line
+  const maxHeight = Math.min(dynamicHeight, windowHeight * 0.8);
 
   return (
     <Transition show={isOpen} as={Fragment}>
@@ -47,7 +61,7 @@ export function SummaryModal({
         >
           <Dialog.Panel
             className="fixed bottom-0 left-0 right-0 w-full rounded-t-2xl bg-white transition-all"
-            style={{ height: `${Math.min(dynamicHeight, window.innerHeight * 0.8)}px` }}
+            style={{ height: `${maxHeight}px` }}
           >
             <div className="p-4">
               <div className="flex items-center justify-between">
