@@ -1,68 +1,81 @@
-// components/product/product-context.tsx
-
 'use client';
 
-import { Product, ProductVariant } from '@/lib/shopify/types';
-import { useSearchParams } from 'next/navigation';
-import { createContext, useContext, useMemo } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
+import React, { createContext, useContext, useMemo, useOptimistic } from 'react';
 
-export interface ProductContextType {
-  product: Product;
-  selectedVariantId: string | undefined;
-}
-
-const ProductContext = createContext<ProductContextType | null>(null);
-
-export const ProductProvider = ({
-  children,
-  product
-}: {
-  children: React.ReactNode;
-  product: Product;
-}) => {
-  const searchParams = useSearchParams();
-
-  // This is the key change: We derive the selected variant ID
-  // from the URL search parameters (color and size).
-  const selectedVariantId = useMemo(() => {
-    const selectedColor = searchParams.get('color');
-    const selectedSize = searchParams.get('size');
-
-    // Find the variant that matches the selected options
-    const variant = product.variants.find((v: ProductVariant) => {
-      const colorMatch =
-        !selectedColor ||
-        v.selectedOptions.some(
-          (opt) => opt.name.toLowerCase() === 'color' && opt.value === selectedColor
-        );
-      const sizeMatch =
-        !selectedSize ||
-        v.selectedOptions.some(
-          (opt) => opt.name.toLowerCase() === 'size' && opt.value === selectedSize
-        );
-      return colorMatch && sizeMatch;
-    });
-
-    // Fallback to the first available variant if no match is found
-    return variant?.id || product.variants[0]?.id;
-  }, [searchParams, product.variants]);
-
-  return (
-    <ProductContext.Provider
-      value={{
-        product,
-        selectedVariantId
-      }}
-    >
-      {children}
-    </ProductContext.Provider>
-  );
+type ProductState = {
+  [key: string]: string;
+} & {
+  image?: string;
 };
 
-export const useProduct = () => {
+type ProductContextType = {
+  state: ProductState;
+  updateOption: (name: string, value: string) => ProductState;
+  updateImage: (index: string) => ProductState;
+};
+
+const ProductContext = createContext<ProductContextType | undefined>(undefined);
+
+export function ProductProvider({ children }: { children: React.ReactNode }) {
+  const searchParams = useSearchParams();
+
+  const getInitialState = () => {
+    const params: ProductState = {};
+    for (const [key, value] of searchParams.entries()) {
+      params[key] = value;
+    }
+    return params;
+  };
+
+  const [state, setOptimisticState] = useOptimistic(
+    getInitialState(),
+    (prevState: ProductState, update: ProductState) => ({
+      ...prevState,
+      ...update
+    })
+  );
+
+  const updateOption = (name: string, value: string) => {
+    const newState = { [name]: value };
+    setOptimisticState(newState);
+    return { ...state, ...newState };
+  };
+
+  const updateImage = (index: string) => {
+    const newState = { image: index };
+    setOptimisticState(newState);
+    return { ...state, ...newState };
+  };
+
+  const value = useMemo(
+    () => ({
+      state,
+      updateOption,
+      updateImage
+    }),
+    [state]
+  );
+
+  return <ProductContext.Provider value={value}>{children}</ProductContext.Provider>;
+}
+
+export function useProduct() {
   const context = useContext(ProductContext);
-  if (!context) {
+  if (context === undefined) {
     throw new Error('useProduct must be used within a ProductProvider');
   }
   return context;
-};
+}
+
+export function useUpdateURL() {
+  const router = useRouter();
+
+  return (state: ProductState) => {
+    const newParams = new URLSearchParams(window.location.search);
+    Object.entries(state).forEach(([key, value]) => {
+      newParams.set(key, value);
+    });
+    router.push(`?${newParams.toString()}`, { scroll: false });
+  };
+}

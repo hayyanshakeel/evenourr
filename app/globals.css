@@ -1,7 +1,8 @@
-/* Use a single import for all Tailwind styles - this is correct for v4 */
 @import 'tailwindcss';
 
-/* The rest of your custom styles */
+@plugin "@tailwindcss/container-queries";
+@plugin "@tailwindcss/typography";
+
 @layer base {
   *,
   ::after,
@@ -10,16 +11,11 @@
   ::file-selector-button {
     border-color: var(--color-gray-200, currentColor);
   }
+}
 
-  /* FIX: Replaced the @apply directive with a standard CSS rule 
-    to create the custom focus ring, resolving the error.
-  */
-  a:focus-visible,
-  input:focus-visible,
-  button:focus-visible {
-    outline: 2px solid transparent;
-    outline-offset: 2px;
-    box-shadow: 0 0 0 2px #f9f8f8, 0 0 0 4px #a3a3a3;
+@media (prefers-color-scheme: dark) {
+  html {
+    color-scheme: dark;
   }
 }
 
@@ -27,4 +23,10 @@
   img[loading='lazy'] {
     clip-path: inset(0.6px);
   }
+}
+
+a,
+input,
+button {
+  @apply focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-neutral-400 focus-visible:ring-offset-2 focus-visible:ring-offset-neutral-50 dark:focus-visible:ring-neutral-600 dark:focus-visible:ring-offset-neutral-900;
 }

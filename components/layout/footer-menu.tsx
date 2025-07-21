@@ -1,30 +1,44 @@
 'use client';
 
-import { Menu } from '@/lib/shopify/types';
-import { usePathname } from 'next/navigation';
+import clsx from 'clsx';
+import { Menu } from 'lib/shopify/types';
 import Link from 'next/link';
-import { Fragment } from 'react';
+import { usePathname } from 'next/navigation';
+import { useEffect, useState } from 'react';
+
+export function FooterMenuItem({ item }: { item: Menu }) {
+  const pathname = usePathname();
+  const [active, setActive] = useState(pathname === item.path);
+
+  useEffect(() => {
+    setActive(pathname === item.path);
+  }, [pathname, item.path]);
+
+  return (
+    <li>
+      <Link
+        href={item.path}
+        className={clsx(
+          'block p-2 text-lg underline-offset-4 hover:text-black hover:underline md:inline-block md:text-sm dark:hover:text-neutral-300',
+          {
+            'text-black dark:text-neutral-300': active
+          }
+        )}
+      >
+        {item.title}
+      </Link>
+    </li>
+  );
+}
 
 export default function FooterMenu({ menu }: { menu: Menu[] }) {
-  const pathname = usePathname();
+  if (!menu.length) return null;
 
   return (
     <nav>
       <ul>
         {menu.map((item: Menu) => {
-          const active = pathname === item.path;
-          return (
-            <li key={item.title}>
-              <Link
-                href={item.path}
-                className={`block p-2 text-lg underline-offset-4 hover:text-black hover:underline md:inline-block md:text-sm dark:hover:text-neutral-300 ${
-                  active ? 'text-black dark:text-neutral-300' : ''
-                }`}
-              >
-                {item.title}
-              </Link>
-            </li>
-          );
+          return <FooterMenuItem key={item.title} item={item} />;
         })}
       </ul>
     </nav>

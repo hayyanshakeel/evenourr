@@ -1,98 +1,238 @@
 'use client';
 
-import { Cart, CartItem, ProductVariant } from '@/lib/shopify/types';
-import { createContext, useContext, useState, ReactNode } from 'react';
+import type {
+  Cart,
+  CartItem,
+  Product,
+  ProductVariant
+} from 'lib/shopify/types';
+import React, {
+  createContext,
+  use,
+  useContext,
+  useMemo,
+  useOptimistic
+} from 'react';
 
-// Define the shape of the context
-export interface CartContextType {
-  cart: Cart | undefined;
-  addToCart: (item: ProductVariant) => void;
-  removeFromCart: (itemId: string) => void;
-  updateQuantity: (item: CartItem, quantity: number) => void;
-  selectedLineIds: Set<string>;
-  toggleItemSelection: (itemId: string) => void;
-  toggleSelectAll: (selectAll: boolean) => void;
+type UpdateType = 'plus' | 'minus' | 'delete';
+
+type CartAction =
+  | {
+      type: 'UPDATE_ITEM';
+      payload: { merchandiseId: string; updateType: UpdateType };
+    }
+  | {
+      type: 'ADD_ITEM';
+      payload: { variant: ProductVariant; product: Product };
+    };
+
+type CartContextType = {
+  cartPromise: Promise<Cart | undefined>;
+};
+
+const CartContext = createContext<CartContextType | undefined>(undefined);
+
+function calculateItemCost(quantity: number, price: string): string {
+  return (Number(price) * quantity).toString();
 }
 
-// Create the context with an initial undefined value
-export const CartContext = createContext<CartContextType | undefined>(undefined);
+function updateCartItem(
+  item: CartItem,
+  updateType: UpdateType
+): CartItem | null {
+  if (updateType === 'delete') return null;
 
-// Custom hook to use the cart context
+  const newQuantity =
+    updateType === 'plus' ? item.quantity + 1 : item.quantity - 1;
+  if (newQuantity === 0) return null;
+
+  const singleItemAmount = Number(item.cost.totalAmount.amount) / item.quantity;
+  const newTotalAmount = calculateItemCost(
+    newQuantity,
+    singleItemAmount.toString()
+  );
+
+  return {
+    ...item,
+    quantity: newQuantity,
+    cost: {
+      ...item.cost,
+      totalAmount: {
+        ...item.cost.totalAmount,
+        amount: newTotalAmount
+      }
+    }
+  };
+}
+
+function createOrUpdateCartItem(
+  existingItem: CartItem | undefined,
+  variant: ProductVariant,
+  product: Product
+): CartItem {
+  const quantity = existingItem ? existingItem.quantity + 1 : 1;
+  const totalAmount = calculateItemCost(quantity, variant.price.amount);
+
+  return {
+    id: existingItem?.id,
+    quantity,
+    cost: {
+      totalAmount: {
+        amount: totalAmount,
+        currencyCode: variant.price.currencyCode
+      }
+    },
+    merchandise: {
+      id: variant.id,
+      title: variant.title,
+      selectedOptions: variant.selectedOptions,
+      product: {
+        id: product.id,
+        handle: product.handle,
+        title: product.title,
+        featuredImage: product.featuredImage
+      }
+    }
+  };
+}
+
+function updateCartTotals(
+  lines: CartItem[]
+): Pick<Cart, 'totalQuantity' | 'cost'> {
+  const totalQuantity = lines.reduce((sum, item) => sum + item.quantity, 0);
+  const totalAmount = lines.reduce(
+    (sum, item) => sum + Number(item.cost.totalAmount.amount),
+    0
+  );
+  const currencyCode = lines[0]?.cost.totalAmount.currencyCode ?? 'USD';
+
+  return {
+    totalQuantity,
+    cost: {
+      subtotalAmount: { amount: totalAmount.toString(), currencyCode },
+      totalAmount: { amount: totalAmount.toString(), currencyCode },
+      totalTaxAmount: { amount: '0', currencyCode }
+    }
+  };
+}
+
+function createEmptyCart(): Cart {
+  return {
+    id: undefined,
+    checkoutUrl: '',
+    totalQuantity: 0,
+    lines: [],
+    cost: {
+      subtotalAmount: { amount: '0', currencyCode: 'USD' },
+      totalAmount: { amount: '0', currencyCode: 'USD' },
+      totalTaxAmount: { amount: '0', currencyCode: 'USD' }
+    }
+  };
+}
+
+function cartReducer(state: Cart | undefined, action: CartAction): Cart {
+  const currentCart = state || createEmptyCart();
+
+  switch (action.type) {
+    case 'UPDATE_ITEM': {
+      const { merchandiseId, updateType } = action.payload;
+      const updatedLines = currentCart.lines
+        .map((item) =>
+          item.merchandise.id === merchandiseId
+            ? updateCartItem(item, updateType)
+            : item
+        )
+        .filter(Boolean) as CartItem[];
+
+      if (updatedLines.length === 0) {
+        return {
+          ...currentCart,
+          lines: [],
+          totalQuantity: 0,
+          cost: {
+            ...currentCart.cost,
+            totalAmount: { ...currentCart.cost.totalAmount, amount: '0' }
+          }
+        };
+      }
+
+      return {
+        ...currentCart,
+        ...updateCartTotals(updatedLines),
+        lines: updatedLines
+      };
+    }
+    case 'ADD_ITEM': {
+      const { variant, product } = action.payload;
+      const existingItem = currentCart.lines.find(
+        (item) => item.merchandise.id === variant.id
+      );
+      const updatedItem = createOrUpdateCartItem(
+        existingItem,
+        variant,
+        product
+      );
+
+      const updatedLines = existingItem
+        ? currentCart.lines.map((item) =>
+            item.merchandise.id === variant.id ? updatedItem : item
+          )
+        : [...currentCart.lines, updatedItem];
+
+      return {
+        ...currentCart,
+        ...updateCartTotals(updatedLines),
+        lines: updatedLines
+      };
+    }
+    default:
+      return currentCart;
+  }
+}
+
+export function CartProvider({
+  children,
+  cartPromise
+}: {
+  children: React.ReactNode;
+  cartPromise: Promise<Cart | undefined>;
+}) {
+  return (
+    <CartContext.Provider value={{ cartPromise }}>
+      {children}
+    </CartContext.Provider>
+  );
+}
+
 export function useCart() {
   const context = useContext(CartContext);
   if (context === undefined) {
     throw new Error('useCart must be used within a CartProvider');
   }
-  return context;
-}
 
-// The provider component
-export function CartProvider({ children }: { children: ReactNode }) {
-  const [cart, setCart] = useState<Cart | undefined>(undefined);
-  const [selectedLineIds, setSelectedLineIds] = useState<Set<string>>(new Set());
+  const initialCart = use(context.cartPromise);
+  const [optimisticCart, updateOptimisticCart] = useOptimistic(
+    initialCart,
+    cartReducer
+  );
 
-  // Define the addToCart function
-  const addToCart = (item: ProductVariant) => {
-    // This is a simplified example.
-    // In a real app, you would call your addItem action here.
-    console.log('Adding to cart:', item);
-    // For example: startTransition(() => addItem(item.id));
-  };
-
-  // Define the removeFromCart function
-  const removeFromCart = (itemId: string) => {
-    // This is a simplified example.
-    // In a real app, you would call your removeItem action here.
-    console.log('Removing from cart:', itemId);
-    // For example: startTransition(() => removeItem(itemId));
-    
-    // Also remove from selected items if it was selected
-    setSelectedLineIds(prev => {
-      const newSet = new Set(prev);
-      newSet.delete(itemId);
-      return newSet;
+  const updateCartItem = (merchandiseId: string, updateType: UpdateType) => {
+    updateOptimisticCart({
+      type: 'UPDATE_ITEM',
+      payload: { merchandiseId, updateType }
     });
   };
 
-  // Define the updateQuantity function
-  const updateQuantity = (item: CartItem, quantity: number) => {
-    // This is a simplified example.
-    // In a real app, you would call your updateItemQuantity action here.
-    console.log('Updating quantity:', item, quantity);
-    // For example: startTransition(() => updateItemQuantity(item.id, quantity));
+  const addCartItem = (variant: ProductVariant, product: Product) => {
+    updateOptimisticCart({ type: 'ADD_ITEM', payload: { variant, product } });
   };
 
-  // Toggle selection of a single item
-  const toggleItemSelection = (itemId: string) => {
-    setSelectedLineIds(prev => {
-      const newSet = new Set(prev);
-      if (newSet.has(itemId)) {
-        newSet.delete(itemId);
-      } else {
-        newSet.add(itemId);
-      }
-      return newSet;
-    });
-  };
-
-  // Toggle selection of all items
-  const toggleSelectAll = (selectAll: boolean) => {
-    if (selectAll && cart?.lines) {
-      setSelectedLineIds(new Set(cart.lines.map(line => line.id)));
-    } else {
-      setSelectedLineIds(new Set());
-    }
-  };
-
-  const value = {
-    cart,
-    addToCart,
-    removeFromCart,
-    updateQuantity,
-    selectedLineIds,
-    toggleItemSelection,
-    toggleSelectAll
-  };
-
-  return <CartContext.Provider value={value}>{children}</CartContext.Provider>;
+  return useMemo(
+    () => ({
+      cart: optimisticCart,
+      updateCartItem,
+      addCartItem
+    }),
+    [optimisticCart]
+  );
 }

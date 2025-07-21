@@ -1,25 +1,14 @@
-import Navbar from '@/components/layout/navbar';
-import Footer from '@/components/layout/footer';
-import { CartProvider } from '@/components/cart/cart-context';
-import { ToastProvider } from '@/components/welcome-toast';
-import { ensureStartsWith } from '@/lib/utils';
-import { getMenu } from '@/lib/shopify';
-import { Inter } from 'next/font/google';
-import { ReactNode, Suspense } from 'react';
+import { CartProvider } from 'components/cart/cart-context';
+import { Navbar } from 'components/layout/navbar';
+import { WelcomeToast } from 'components/welcome-toast';
+import { GeistSans } from 'geist/font/sans';
+import { getCart } from 'lib/shopify';
+import { ReactNode } from 'react';
+import { Toaster } from 'sonner';
 import './globals.css';
+import { baseUrl } from 'lib/utils';
 
-const { TWITTER_CREATOR, TWITTER_SITE, SITE_NAME } = process.env;
-const baseUrl = process.env.NEXT_PUBLIC_VERCEL_URL
-  ? `https://${process.env.NEXT_PUBLIC_VERCEL_URL}`
-  : 'http://localhost:3000';
-const twitterCreator = TWITTER_CREATOR ? ensureStartsWith(TWITTER_CREATOR, '@') : undefined;
-const twitterSite = TWITTER_SITE ? ensureStartsWith(TWITTER_SITE, 'https://') : undefined;
-
-const inter = Inter({
-  subsets: ['latin'],
-  display: 'swap',
-  variable: '--font-inter'
-});
+const { SITE_NAME } = process.env;
 
 export const metadata = {
   metadataBase: new URL(baseUrl),
@@ -30,36 +19,27 @@ export const metadata = {
   robots: {
     follow: true,
     index: true
-  },
-  ...(twitterCreator &&
-    twitterSite && {
-      twitter: {
-        card: 'summary_large_image',
-        creator: twitterCreator,
-        site: twitterSite
-      }
-    }),
-  viewport: {
-    width: 'device-width',
-    initialScale: 1,
-    maximumScale: 1
   }
 };
 
-export default async function RootLayout({ children }: { children: ReactNode }) {
-  const menu = await getMenu('next-js-frontend-header-menu');
+export default async function RootLayout({
+  children
+}: {
+  children: ReactNode;
+}) {
+  // Don't await the fetch, pass the Promise to the context provider
+  const cart = getCart();
 
   return (
-    <html lang="en" className={inter.variable}>
-      <body className="bg-white text-black selection:bg-teal-300 dark:bg-white dark:text-black dark:selection:bg-pink-500 dark:selection:text-white">
-        <CartProvider>
-          <ToastProvider>
-            <Navbar menu={menu} />
-            <Suspense>
-              <main>{children}</main>
-            </Suspense>
-            <Footer />
-          </ToastProvider>
+    <html lang="en" className={GeistSans.variable}>
+      <body className="bg-neutral-50 text-black selection:bg-teal-300 dark:bg-neutral-900 dark:text-white dark:selection:bg-pink-500 dark:selection:text-white">
+        <CartProvider cartPromise={cart}>
+          <Navbar />
+          <main>
+            {children}
+            <Toaster closeButton />
+            <WelcomeToast />
+          </main>
         </CartProvider>
       </body>
     </html>

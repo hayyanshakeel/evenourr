@@ -1,15 +1,13 @@
-import { absoluteUrl } from '@/lib/utils';
-import { MetadataRoute } from 'next';
+import { baseUrl } from 'lib/utils';
 
-export default function robots(): MetadataRoute.Robots {
+export default function robots() {
   return {
     rules: [
       {
-        userAgent: '*',
-        allow: '/',
-        disallow: '/private/'
+        userAgent: '*'
       }
     ],
-    sitemap: absoluteUrl('/sitemap.xml')
+    sitemap: `${baseUrl}/sitemap.xml`,
+    host: baseUrl
   };
 }

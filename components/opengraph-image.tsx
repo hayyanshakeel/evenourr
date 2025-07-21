@@ -1,5 +1,3 @@
-// components/opengraph-image.tsx
-
 import { ImageResponse } from 'next/og';
 import LogoIcon from './icons/logo';
 import { join } from 'path';
@@ -12,8 +10,12 @@ export type Props = {
 export default async function OpengraphImage(
   props?: Props
 ): Promise<ImageResponse> {
-  // FIX: Simplified the prop handling to be more robust.
-  const title = props?.title || process.env.SITE_NAME;
+  const { title } = {
+    ...{
+      title: process.env.SITE_NAME
+    },
+    ...props
+  };
 
   const file = await readFile(join(process.cwd(), './fonts/Inter-Bold.ttf'));
   const font = Uint8Array.from(file).buffer;

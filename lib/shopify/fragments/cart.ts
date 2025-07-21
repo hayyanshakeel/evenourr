@@ -1,12 +1,9 @@
-// FILE: /lib/shopify/fragments/cart.ts
+import productFragment from './product';
 
-import { productFragment } from './product';
-
-export const cartFragment = /* GraphQL */ `
+const cartFragment = /* GraphQL */ `
   fragment cart on Cart {
     id
     checkoutUrl
-    totalQuantity
     cost {
       subtotalAmount {
         amount
@@ -48,9 +45,9 @@ export const cartFragment = /* GraphQL */ `
         }
       }
     }
-    discountCodes {
-      code
-    }
+    totalQuantity
   }
   ${productFragment}
 `;
+
+export default cartFragment;

@@ -1,6 +1,4 @@
-// FILE: lib/shopify/mutations/cart.ts
-
-import { cartFragment } from '../fragments/cart';
+import cartFragment from '../fragments/cart';
 
 export const addToCartMutation = /* GraphQL */ `
   mutation addToCart($cartId: ID!, $lines: [CartLineInput!]!) {
@@ -45,5 +43,3 @@ export const removeFromCartMutation = /* GraphQL */ `
   }
   ${cartFragment}
 `;
-
-// The applyDiscountMutation has been removed.

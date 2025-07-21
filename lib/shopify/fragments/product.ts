@@ -1,9 +1,7 @@
-// FILE: lib/shopify/fragments/product.ts
+import imageFragment from './image';
+import seoFragment from './seo';
 
-import { imageFragment } from './image';
-import { seoFragment } from './seo';
-
-export const productFragment = /* GraphQL */ `
+const productFragment = /* GraphQL */ `
   fragment product on Product {
     id
     handle
@@ -17,16 +15,6 @@ export const productFragment = /* GraphQL */ `
       values
     }
     priceRange {
-      maxVariantPrice {
-        amount
-        currencyCode
-      }
-      minVariantPrice {
-        amount
-        currencyCode
-      }
-    }
-    compareAtPriceRange {
       maxVariantPrice {
         amount
         currencyCode
@@ -50,10 +38,6 @@ export const productFragment = /* GraphQL */ `
             amount
             currencyCode
           }
-          # FIX: Add the image for each variant to the query
-          image {
-            ...image
-          }
         }
       }
     }
@@ -67,18 +51,14 @@ export const productFragment = /* GraphQL */ `
         }
       }
     }
-    collections(first: 1) {
-      edges {
-        node {
-          handle
-        }
-      }
-    }
     seo {
       ...seo
     }
     tags
+    updatedAt
   }
   ${imageFragment}
   ${seoFragment}
 `;
+
+export default productFragment;

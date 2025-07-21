@@ -5,12 +5,6 @@ export type SortFilterItem = {
   reverse: boolean;
 };
 
-// We add this new type for filters that are simple paths
-export type PathFilterItem = {
-  title: string;
-  path: string;
-};
-
 export const defaultSort: SortFilterItem = {
   title: 'Relevance',
   slug: null,
@@ -34,4 +28,4 @@ export const TAGS = {
 
 export const HIDDEN_PRODUCT_TAG = 'nextjs-frontend-hidden';
 export const DEFAULT_OPTION = 'Default Title';
-export const SHOPIFY_GRAPHQL_API_ENDPOINT = '/api/graphql';
+export const SHOPIFY_GRAPHQL_API_ENDPOINT = '/api/2023-01/graphql.json';

@@ -1,7 +1,13 @@
 import { ReadonlyURLSearchParams } from 'next/navigation';
-import React from 'react';
 
-export const createUrl = (pathname: string, params: URLSearchParams | ReadonlyURLSearchParams) => {
+export const baseUrl = process.env.VERCEL_PROJECT_PRODUCTION_URL
+  ? `https://${process.env.VERCEL_PROJECT_PRODUCTION_URL}`
+  : 'http://localhost:3000';
+
+export const createUrl = (
+  pathname: string,
+  params: URLSearchParams | ReadonlyURLSearchParams
+) => {
   const paramsString = params.toString();
   const queryString = `${paramsString.length ? '?' : ''}${paramsString}`;
 
@@ -9,26 +15,9 @@ export const createUrl = (pathname: string, params: URLSearchParams | ReadonlyUR
 };
 
 export const ensureStartsWith = (stringToCheck: string, startsWith: string) =>
-  stringToCheck.startsWith(startsWith) ? stringToCheck : `${startsWith}${stringToCheck}`;
-
-export const validateContext = <T>(context: React.Context<T | undefined>): T => {
-  const contextValue = React.useContext(context);
-  if (contextValue === undefined) {
-    throw new Error('context must be used within a Provider');
-  }
-  return contextValue;
-};
-
-export const absoluteUrl = (path: string) => {
-  const baseUrl = process.env.NEXT_PUBLIC_VERCEL_URL
-    ? `https://${process.env.NEXT_PUBLIC_VERCEL_URL}`
-    : 'http://localhost:3000';
-  return `${baseUrl}${path}`;
-};
-
-export const baseUrl = process.env.NEXT_PUBLIC_VERCEL_URL
-  ? `https://${process.env.NEXT_PUBLIC_VERCEL_URL}`
-  : 'http://localhost:3000';
+  stringToCheck.startsWith(startsWith)
+    ? stringToCheck
+    : `${startsWith}${stringToCheck}`;
 
 export const validateEnvironmentVariables = () => {
   const requiredEnvironmentVariables = [
@@ -48,6 +37,15 @@ export const validateEnvironmentVariables = () => {
       `The following environment variables are missing. Your site will not work without them. Read more: https://vercel.com/docs/integrations/shopify#configure-environment-variables\n\n${missingEnvironmentVariables.join(
         '\n'
       )}\n`
+    );
+  }
+
+  if (
+    process.env.SHOPIFY_STORE_DOMAIN?.includes('[') ||
+    process.env.SHOPIFY_STORE_DOMAIN?.includes(']')
+  ) {
+    throw new Error(
+      'Your `SHOPIFY_STORE_DOMAIN` environment variable includes brackets (ie. `[` and / or `]`). Your site will not work with them there. Please remove them.'
     );
   }
 };
