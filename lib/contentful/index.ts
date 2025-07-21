@@ -1,36 +1,30 @@
-import { createClient, type Asset, type EntryFieldTypes } from 'contentful';
+import { createClient, type Asset, type Entry, type EntryFieldTypes } from 'contentful';
 
 export const contentfulClient = createClient({
   space: process.env.CONTENTFUL_SPACE_ID || '',
   accessToken: process.env.CONTENTFUL_ACCESS_TOKEN || '',
 });
 
-// Interface for our Homepage content type
+// CORRECT: Interface for a hero with a single asset (video or image)
 export interface HomepageHero {
   contentTypeId: "homepageHero",
   fields: {
-    title: EntryFieldTypes.Text,
-    subtitle: EntryFieldTypes.Text,
-    heroImage: EntryFieldTypes.AssetLink,
-    buttonText: EntryFieldTypes.Text,
-    buttonLink: EntryFieldTypes.Text, // This will be a product handle
+    heroAsset: EntryFieldTypes.AssetLink,
   }
 }
 
-// Interface for our Coupon content type
-export interface Coupon {
-  contentTypeId: "coupon",
+// CORRECT: Interface for a promo section with a single unisex link
+export interface PromoSection {
+  contentTypeId: "promoSection",
   fields: {
     title: EntryFieldTypes.Text,
-    couponCode: EntryFieldTypes.Text,
-    description: EntryFieldTypes.Text,
-    discountValue: EntryFieldTypes.Number,
-    discountType: EntryFieldTypes.Text,
-    expiryDate: EntryFieldTypes.Date,
+    image: EntryFieldTypes.AssetLink,
+    shopLink: EntryFieldTypes.Text,
+    order: EntryFieldTypes.Number,
   }
 }
 
-// Function to get the homepage hero content
+// CORRECT: Fetches the hero content
 export async function getHomepageHeroContent() {
   try {
     const entries = await contentfulClient.getEntries<HomepageHero>({
@@ -44,6 +38,22 @@ export async function getHomepageHeroContent() {
   }
 }
 
+// CORRECT: Fetches the promo sections
+export async function getHomepagePromoSections() {
+  try {
+    const entries = await contentfulClient.getEntries<PromoSection>({
+      content_type: 'promoSection',
+      order: ['fields.order']
+    });
+    return entries.items || [];
+  } catch (error) {
+    console.error('Error fetching homepage promo sections:', error);
+    return [];
+  }
+}
+
+// --- No changes needed below this line ---
+
 // Function to get active coupons
 export async function getActiveCoupons() {
   try {
@@ -55,5 +65,18 @@ export async function getActiveCoupons() {
   } catch (error) {
     console.error('Error fetching active coupons:', error);
     return [];
+  }
+}
+
+// Interface for Coupon content type
+export interface Coupon {
+  contentTypeId: "coupon",
+  fields: {
+    title: EntryFieldTypes.Text,
+    couponCode: EntryFieldTypes.Text,
+    description: EntryFieldTypes.Text,
+    discountValue: EntryFieldTypes.Number,
+    discountType: EntryFieldTypes.Text,
+    expiryDate: EntryFieldTypes.Date,
   }
 }

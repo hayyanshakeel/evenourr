@@ -1,43 +1,35 @@
 import { getHomepageHeroContent } from '@/lib/contentful';
 import { Asset } from 'contentful';
-import Image from 'next/image';
-import Link from 'next/link';
 
 export async function Hero() {
   const heroContent = await getHomepageHeroContent();
 
   if (!heroContent) {
-    // You can return a default hero or null if no content is found
     return null;
   }
 
-  const { title, subtitle, heroImage, buttonText, buttonLink } = heroContent.fields;
-  const imageUrl = (heroImage as Asset)?.fields?.file?.url;
+  const heroAsset = heroContent.fields.heroAsset as Asset;
+  
+  // Safely access nested properties
+  const file = heroAsset?.fields?.file;
+  const assetUrl = typeof file?.url === 'string' ? file.url : undefined;
+  const assetContentType = file?.contentType;
+
+  const isVideo = typeof assetContentType === 'string' && assetContentType.startsWith('video');
 
   return (
-    <section className="relative mb-4 h-[60vh] w-full bg-cover bg-center text-white">
-      {imageUrl && (
-        <Image
-          src={`https:${imageUrl}`}
-          alt={title || 'Homepage Hero Image'}
-          className="object-cover"
-          fill
-          priority
+    <section className="relative h-[calc(100vh-64px)] w-full overflow-hidden bg-black">
+      {isVideo && assetUrl ? (
+        <video
+          key={assetUrl} // Now assetUrl is guaranteed to be a string when used
+          className="absolute left-0 top-0 h-full w-full object-cover"
+          autoPlay
+          loop
+          muted
+          playsInline
+          src={`https:${assetUrl}`}
         />
-      )}
-      <div className="absolute inset-0 bg-black/50" />
-      <div className="relative z-10 flex h-full flex-col items-center justify-center text-center">
-        <h1 className="mb-4 text-4xl font-bold md:text-6xl">{title}</h1>
-        <p className="mb-8 max-w-2xl text-lg md:text-xl">{subtitle}</p>
-        {buttonText && buttonLink && (
-          <Link
-            href={`/product/${buttonLink}`}
-            className="rounded-full bg-blue-600 px-8 py-3 text-lg font-semibold transition hover:bg-blue-700"
-          >
-            {buttonText}
-          </Link>
-        )}
-      </div>
+      ) : null}
     </section>
   );
 }

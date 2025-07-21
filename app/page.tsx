@@ -1,7 +1,7 @@
-import { Carousel } from 'components/carousel';
-import { ThreeItemGrid } from 'components/grid/three-items';
 import Footer from 'components/layout/footer';
 import { Hero } from 'components/layout/hero';
+import { PromoSection } from 'components/layout/promo-section';
+import { getHomepagePromoSections } from '@/lib/contentful';
 
 export const metadata = {
   description:
@@ -11,12 +11,15 @@ export const metadata = {
   }
 };
 
-export default function HomePage() {
+export default async function HomePage() {
+  const promoSections = await getHomepagePromoSections();
+
   return (
     <>
       <Hero />
-      <ThreeItemGrid />
-      <Carousel />
+      {promoSections.map((section) => (
+        <PromoSection key={section.sys.id} item={section} />
+      ))}
       <Footer />
     </>
   );
