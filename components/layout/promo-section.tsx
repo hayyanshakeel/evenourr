@@ -3,39 +3,30 @@ import Image from 'next/image';
 import Link from 'next/link';
 import type { PromoSection as PromoSectionType } from '@/lib/contentful';
 
-const ShopButton = ({ href, children }: { href: string; children: React.ReactNode }) => (
-  <Link
-    href={href}
-    className="border border-black bg-white px-8 py-3 text-sm font-semibold uppercase tracking-wider text-black transition hover:bg-black hover:text-white dark:border-white dark:bg-black dark:text-white dark:hover:bg-white dark:hover:text-black"
-  >
-    {children}
-  </Link>
-);
-
 export function PromoSection({ item }: { item: Entry<PromoSectionType> }) {
-  // Correctly cast complex Contentful types to simple strings for React
   const title = item.fields.title as string;
   const image = item.fields.image as Asset;
   const shopLink = item.fields.shopLink as string;
   const imageUrl = image?.fields?.file?.url;
 
   return (
-    <section className="relative flex h-[calc(100vh-64px)] w-full items-center justify-center bg-neutral-100 text-black dark:bg-black dark:text-white">
-      {imageUrl && (
-        <div className="relative h-2/3 w-2/3">
-          <Image
-            src={`https:${imageUrl}`}
-            alt={title || 'Promo Image'}
-            className="object-contain"
-            fill
-            sizes="(min-width: 768px) 66vw, 100vw"
-          />
+    <section className="flex h-screen w-full flex-col items-center justify-center gap-8 bg-neutral-100 py-16 text-black dark:bg-black dark:text-white">
+      <Link href={shopLink || '#'} className="group block text-center">
+        <h2 className="mb-6 text-4xl font-bold uppercase tracking-widest transition-opacity group-hover:opacity-70 md:text-5xl">
+          {title}
+        </h2>
+        <div className="relative h-[50vh] w-screen max-w-4xl">
+          {imageUrl && (
+            <Image
+              src={`https:${imageUrl}`}
+              alt={title || 'Promo Image'}
+              className="object-contain transition-transform group-hover:scale-105"
+              fill
+              sizes="(min-width: 1024px) 50vw, 80vw"
+            />
+          )}
         </div>
-      )}
-      <div className="absolute bottom-20 z-10 flex flex-col items-center text-center">
-        <h2 className="mb-6 text-4xl font-bold uppercase tracking-widest md:text-5xl">{title}</h2>
-        {shopLink && <ShopButton href={shopLink}>Shop</ShopButton>}
-      </div>
+      </Link>
     </section>
   );
 }

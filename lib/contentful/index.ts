@@ -5,26 +5,27 @@ export const contentfulClient = createClient({
   accessToken: process.env.CONTENTFUL_ACCESS_TOKEN || '',
 });
 
-// CORRECT: Interface for a hero with a single asset (video or image)
+// FINAL INTERFACE FOR HERO
 export interface HomepageHero {
   contentTypeId: "homepageHero",
   fields: {
     heroAsset: EntryFieldTypes.AssetLink,
+    heroText: EntryFieldTypes.Text,
   }
 }
 
-// CORRECT: Interface for a promo section with a single unisex link
+// FINAL INTERFACE FOR PROMO SECTION
 export interface PromoSection {
   contentTypeId: "promoSection",
   fields: {
     title: EntryFieldTypes.Text,
     image: EntryFieldTypes.AssetLink,
-    shopLink: EntryFieldTypes.Text,
+    shopLink: EntryFieldTypes.Text, // This should be the only link field
     order: EntryFieldTypes.Number,
   }
 }
 
-// CORRECT: Fetches the hero content
+// Fetches the hero content
 export async function getHomepageHeroContent() {
   try {
     const entries = await contentfulClient.getEntries<HomepageHero>({
@@ -38,7 +39,7 @@ export async function getHomepageHeroContent() {
   }
 }
 
-// CORRECT: Fetches the promo sections
+// Fetches the promo sections
 export async function getHomepagePromoSections() {
   try {
     const entries = await contentfulClient.getEntries<PromoSection>({
