@@ -1,51 +1,46 @@
-import { NextResponse } from 'next/server';
-import { db } from '@/lib/turso';
-import { products } from '@/lib/schema';
+// app/api/products/route.ts
+import { NextRequest, NextResponse } from 'next/server';
+import { db } from '@/lib/db';
+import { products } from '@/lib/db/schema';
+import { z } from 'zod';
 
-/**
- * Handles GET requests to fetch all products.
- * This will be used by your storefront to display products.
- */
-export async function GET() {
+const CreateProductSchema = z.object({
+  name:        z.string().min(1),
+  description: z.string().optional(),
+  price:       z.number().int().positive(),
+  inventory:   z.number().int().min(0),
+  imageUrl:    z.string().url().optional(),
+});
+
+export async function POST(req: NextRequest) {
   try {
-    const allProducts = await db.select().from(products);
+    const body = await req.json();
+    const { name, description, price, inventory, imageUrl } =
+      CreateProductSchema.parse(body);
 
-    return NextResponse.json(allProducts);
-  } catch (error) {
-    console.error('Failed to fetch products:', error);
-    return NextResponse.json({ error: 'Failed to fetch products' }, { status: 500 });
-  }
-}
+    const slug = name
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, '-')
+      .replace(/^-+|-+$/g, '');
 
-/**
- * Handles POST requests to create a new product.
- * This will be used by your admin dashboard.
- */
-export async function POST(request: Request) {
-  try {
-    const body = await request.json();
-    const { title, description, price, imageUrl, inventory, handle } = body;
-
-    // Basic validation
-    if (!title || !price || !handle) {
-      return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
-    }
-
-    const newProduct = await db
+    const [newProduct] = await db
       .insert(products)
       .values({
-        title,
+        slug,
+        name,
         description,
         price,
-        imageUrl,
         inventory,
-        handle
+        imageUrl,
       })
       .returning();
 
-    return NextResponse.json(newProduct[0], { status: 201 });
-  } catch (error) {
-    console.error('Failed to create product:', error);
-    return NextResponse.json({ error: 'Failed to create product' }, { status: 500 });
+    return NextResponse.json(newProduct, { status: 201 });
+  } catch (err) {
+    console.error('Create product error:', err);
+    return NextResponse.json(
+      { error: 'Could not create product' },
+      { status: 500 }
+    );
   }
 }
