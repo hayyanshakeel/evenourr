@@ -1,242 +1,137 @@
+// app/(admin)/dashboard/page.tsx
+
 'use client';
 
 import { useEffect, useState } from 'react';
-import Header from '@/components/admin/header';
-import StatsCard from '@/components/admin/stats-card';
 import {
   CurrencyDollarIcon,
   ShoppingCartIcon,
   UserGroupIcon,
-  CubeIcon,
-  TicketIcon,
-  ClockIcon
 } from '@heroicons/react/24/outline';
+import Header from '@/components/admin/header';
 
-interface DashboardStats {
-  overview: {
-    totalRevenue: number;
-    totalOrders: number;
-    avgOrderValue: number;
-    totalProducts: number;
-    totalCustomers: number;
-    pendingOrders: number;
-    activeCoupons: number;
-  };
-  growth: {
-    revenueGrowth: string;
-    orderGrowth: string;
-  };
-  topProducts: Array<{
-    productId: number;
-    title: string;
-    totalSold: number;
-    revenue: number;
-  }>;
-  recentOrders: Array<{
-    id: number;
-    orderNumber: string;
-    customerEmail: string;
-    total: number;
-    status: string;
-    createdAt: string;
-  }>;
-  revenueByDay: Array<{
-    date: string;
-    revenue: number;
-    orderCount: number;
-  }>;
+// Define the structure of the stats data we expect
+interface Stats {
+  totalRevenue: number;
+  totalSales: number;
+  totalCustomers: number;
+  recentOrders: any[]; // Define a proper type if you have one
 }
 
-export default function DashboardPage() {
-  const [stats, setStats] = useState<DashboardStats | null>(null);
+const StatCard = ({ title, value, icon: Icon }: any) => (
+  <div className="rounded-lg border bg-white p-6 shadow-sm">
+    <div className="flex items-center justify-between">
+      <div>
+        <p className="text-sm font-medium text-gray-500">{title}</p>
+        <p className="mt-1 text-2xl font-semibold text-gray-900">{value}</p>
+      </div>
+      <div className="rounded-full bg-blue-100 p-3">
+        <Icon className="h-6 w-6 text-blue-600" />
+      </div>
+    </div>
+  </div>
+);
+
+const DashboardPage = () => {
+  const [stats, setStats] = useState<Stats | null>(null);
   const [loading, setLoading] = useState(true);
-  const [period, setPeriod] = useState('30');
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    fetchDashboardStats();
-  }, [period]);
-
-  const fetchDashboardStats = async () => {
-    try {
-      setLoading(true);
-      const response = await fetch(`/api/dashboard/stats?period=${period}`);
-      if (response.ok) {
+    const fetchStats = async () => {
+      try {
+        setLoading(true);
+        const response = await fetch('/api/dashboard/stats');
+        if (!response.ok) {
+          throw new Error('Failed to fetch dashboard data');
+        }
         const data = await response.json();
         setStats(data);
+      } catch (err: any) {
+        setError(err.message);
+      } finally {
+        setLoading(false);
       }
-    } catch (error) {
-      console.error('Failed to fetch dashboard stats:', error);
-    } finally {
-      setLoading(false);
-    }
-  };
+    };
+    fetchStats();
+  }, []);
 
-  const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat('en-US', {
+  if (loading) {
+    return (
+      <div className="flex h-full items-center justify-center">
+        <p>Loading Dashboard...</p>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="flex h-full items-center justify-center">
+        <p className="text-red-500">Error: {error}</p>
+      </div>
+    );
+  }
+
+  // Formatters for displaying numbers
+  const formatCurrency = (amount: number) =>
+    new Intl.NumberFormat('en-US', {
       style: 'currency',
       currency: 'USD',
-      minimumFractionDigits: 0,
-      maximumFractionDigits: 0
-    }).format(amount / 100);
-  };
-
-  const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString('en-US', {
-      month: 'short',
-      day: 'numeric',
-      year: 'numeric'
-    });
-  };
-
-  const getStatusColor = (status: string) => {
-    const colors: Record<string, string> = {
-      pending: 'bg-yellow-100 text-yellow-800',
-      processing: 'bg-blue-100 text-blue-800',
-      shipped: 'bg-purple-100 text-purple-800',
-      delivered: 'bg-green-100 text-green-800',
-      cancelled: 'bg-red-100 text-red-800'
-    };
-    return colors[status] || 'bg-gray-100 text-gray-800';
-  };
+    }).format(amount);
 
   return (
     <div>
-      <div className="flex items-center justify-between">
-        <Header title="Dashboard" />
-        <select
-          value={period}
-          onChange={(e) => setPeriod(e.target.value)}
-          className="rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
-        >
-          <option value="7">Last 7 days</option>
-          <option value="30">Last 30 days</option>
-          <option value="90">Last 90 days</option>
-        </select>
-      </div>
+      <Header title="Dashboard" />
 
       {/* Stats Cards */}
-      <div className="mt-8 grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4">
-        <StatsCard
+      <div className="mt-6 grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
+        <StatCard
           title="Total Revenue"
-          value={stats ? formatCurrency(stats.overview.totalRevenue) : '-'}
-          change={stats ? parseFloat(stats.growth.revenueGrowth) : undefined}
-          changeLabel="vs previous period"
+          value={formatCurrency(stats?.totalRevenue ?? 0)}
           icon={CurrencyDollarIcon}
-          trend="up"
-          loading={loading}
         />
-        <StatsCard
-          title="Total Orders"
-          value={stats?.overview.totalOrders || 0}
-          change={stats ? parseFloat(stats.growth.orderGrowth) : undefined}
-          changeLabel="vs previous period"
+        <StatCard
+          title="Sales"
+          value={`+${stats?.totalSales ?? 0}`}
           icon={ShoppingCartIcon}
-          trend="up"
-          loading={loading}
         />
-        <StatsCard
-          title="Average Order Value"
-          value={stats ? formatCurrency(stats.overview.avgOrderValue) : '-'}
-          icon={CurrencyDollarIcon}
-          loading={loading}
-        />
-        <StatsCard
-          title="Total Customers"
-          value={stats?.overview.totalCustomers || 0}
+        <StatCard
+          title="Customers"
+          value={`+${stats?.totalCustomers ?? 0}`}
           icon={UserGroupIcon}
-          loading={loading}
         />
       </div>
 
-      {/* Secondary Stats */}
-      <div className="mt-6 grid grid-cols-1 gap-6 sm:grid-cols-3">
-        <StatsCard
-          title="Active Products"
-          value={stats?.overview.totalProducts || 0}
-          icon={CubeIcon}
-          loading={loading}
-        />
-        <StatsCard
-          title="Pending Orders"
-          value={stats?.overview.pendingOrders || 0}
-          icon={ClockIcon}
-          loading={loading}
-        />
-        <StatsCard
-          title="Active Coupons"
-          value={stats?.overview.activeCoupons || 0}
-          icon={TicketIcon}
-          loading={loading}
-        />
-      </div>
-
-      {/* Top Products and Recent Orders */}
-      <div className="mt-8 grid grid-cols-1 gap-6 lg:grid-cols-2">
-        {/* Top Products */}
-        <div className="rounded-lg border bg-white p-6 shadow-sm">
-          <h3 className="text-lg font-medium text-gray-900">Top Products</h3>
-          <div className="mt-4">
-            {loading ? (
-              <div className="space-y-3">
-                {[...Array(5)].map((_, i) => (
-                  <div key={i} className="h-12 animate-pulse rounded bg-gray-200" />
-                ))}
-              </div>
-            ) : stats?.topProducts.length ? (
-              <div className="space-y-3">
-                {stats.topProducts.map((product) => (
-                  <div key={product.productId} className="flex items-center justify-between">
-                    <div className="flex-1">
-                      <p className="text-sm font-medium text-gray-900">{product.title}</p>
-                      <p className="text-sm text-gray-500">{product.totalSold} sold</p>
-                    </div>
-                    <p className="text-sm font-medium text-gray-900">
-                      {formatCurrency(product.revenue)}
-                    </p>
-                  </div>
-                ))}
-              </div>
-            ) : (
-              <p className="text-sm text-gray-500">No products sold yet</p>
-            )}
-          </div>
-        </div>
-
-        {/* Recent Orders */}
-        <div className="rounded-lg border bg-white p-6 shadow-sm">
-          <h3 className="text-lg font-medium text-gray-900">Recent Orders</h3>
-          <div className="mt-4">
-            {loading ? (
-              <div className="space-y-3">
-                {[...Array(5)].map((_, i) => (
-                  <div key={i} className="h-12 animate-pulse rounded bg-gray-200" />
-                ))}
-              </div>
-            ) : stats?.recentOrders.length ? (
-              <div className="space-y-3">
-                {stats.recentOrders.map((order) => (
-                  <div key={order.id} className="flex items-center justify-between">
-                    <div className="flex-1">
-                      <p className="text-sm font-medium text-gray-900">{order.orderNumber}</p>
-                      <p className="text-sm text-gray-500">{order.customerEmail}</p>
-                    </div>
-                    <div className="text-right">
-                      <p className="text-sm font-medium text-gray-900">
-                        {formatCurrency(order.total)}
-                      </p>
-                      <span className={`inline-flex rounded-full px-2 py-1 text-xs font-semibold ${getStatusColor(order.status)}`}>
-                        {order.status}
-                      </span>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            ) : (
-              <p className="text-sm text-gray-500">No orders yet</p>
-            )}
-          </div>
+      {/* Recent Orders Table */}
+      <div className="mt-8">
+        <h2 className="text-lg font-semibold text-gray-900">Recent Orders</h2>
+        <div className="mt-4 overflow-hidden rounded-lg border shadow-sm">
+          <table className="min-w-full divide-y divide-gray-200">
+            <thead className="bg-gray-50">
+              <tr>
+                <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">Order ID</th>
+                <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">Customer</th>
+                <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">Total</th>
+                <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">Status</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-gray-200 bg-white">
+              {stats?.recentOrders.map((order) => (
+                <tr key={order.id}>
+                  <td className="whitespace-nowrap px-6 py-4 text-sm font-medium text-gray-900">#{order.id}</td>
+                  <td className="whitespace-nowrap px-6 py-4 text-sm text-gray-500">{order.user?.name || 'Guest'}</td>
+                  <td className="whitespace-nowrap px-6 py-4 text-sm text-gray-500">{formatCurrency(order.total)}</td>
+                  <td className="whitespace-nowrap px-6 py-4 text-sm">
+                    <span className="rounded-full bg-green-100 px-2 py-1 text-xs font-semibold text-green-800">{order.status}</span>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
         </div>
       </div>
     </div>
   );
-}
+};
+
+export default DashboardPage;

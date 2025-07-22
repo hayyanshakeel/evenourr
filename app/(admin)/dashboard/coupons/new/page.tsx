@@ -1,57 +1,169 @@
 // app/(admin)/dashboard/coupons/new/page.tsx
+
 'use client';
+
 import { useState, FormEvent } from 'react';
 import { useRouter } from 'next/navigation';
+import Header from '@/components/admin/header';
 
-export default function NewCouponPage() {
+const NewCouponPage = () => {
   const router = useRouter();
-  const [code, setCode] = useState('');
-  const [type, setType] = useState<'fixed' | 'percent'>('fixed');
-  const [value, setValue] = useState('');
-  const [description, setDescription] = useState('');
-  const [minCart, setMinCart] = useState('');
-  const [maxUses, setMaxUses] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
-  async function handleSubmit(e: FormEvent) {
-    e.preventDefault();
-    if (!code || !value) {
-      alert('Code and Value are required!');
-      return;
+  // Use state to manage the data for each form input
+  const [formData, setFormData] = useState({
+    code: '',
+    description: '',
+    discountType: 'percentage', // Default to 'percentage'
+    discountValue: '',
+    usageLimit: '',
+  });
+
+  // Handler to update state when user types in an input
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
+    const { name, value } = e.target;
+    setFormData((prevData) => ({
+      ...prevData,
+      [name]: value,
+    }));
+  };
+
+  // Handler for form submission
+  const handleSubmit = async (e: FormEvent) => {
+    e.preventDefault(); // Prevent default browser form submission
+    setLoading(true);
+    setError(null);
+
+    try {
+      // Prepare the data for the API, converting numbers correctly
+      const payload = {
+        ...formData,
+        discountValue: parseInt(formData.discountValue, 10),
+        usageLimit: formData.usageLimit ? parseInt(formData.usageLimit, 10) : undefined,
+      };
+
+      const response = await fetch('/api/coupons', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(payload),
+      });
+
+      const result = await response.json();
+
+      if (!response.ok) {
+        // If API returns an error, display it
+        throw new Error(result.error || 'Failed to create coupon');
+      }
+
+      // On success, redirect back to the main coupons list
+      router.push('/dashboard/coupons');
+      router.refresh(); // Refresh the page to show the new coupon
+
+    } catch (err: any) {
+      setError(err.message);
+    } finally {
+      setLoading(false);
     }
-
-    const res = await fetch('/api/coupons', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        code: code.trim(),
-        type,
-        value: Number(value),
-        description,
-        minCart: Number(minCart) || 0,
-        maxUses: Number(maxUses) || 1,
-      }),
-    });
-
-    if (res.ok) {
-      router.push('/dashboard/coupons'); // Redirect to the coupons list page
-    } else {
-      alert(await res.text());
-    }
-  }
+  };
 
   return (
-    <form onSubmit={handleSubmit} className="flex flex-col gap-4 p-8">
-      <h1 className="text-2xl font-bold">New Coupon</h1>
-      <input placeholder="Code" required value={code} onChange={(e) => setCode(e.target.value)} />
-      <select value={type} onChange={(e) => setType(e.target.value as 'fixed' | 'percent')} required>
-        <option value="fixed">₹ Fixed</option>
-        <option value="percent">% Percent</option>
-      </select>
-      <input type="number" placeholder="Value (₹ or %)" required value={value} onChange={(e) => setValue(e.target.value)} />
-      <input type="number" placeholder="Min Cart (₹)" value={minCart} onChange={(e) => setMinCart(e.target.value)} />
-      <input type="number" placeholder="Max Uses" value={maxUses} onChange={(e) => setMaxUses(e.target.value)} />
-      <textarea placeholder="Description" value={description} onChange={(e) => setDescription(e.target.value)} />
-      <button type="submit" className="bg-green-600 text-white px-4 py-2 rounded">Create</button>
-    </form>
+    <div>
+      <Header title="Create a New Coupon" />
+      <div className="mt-8 rounded-lg border bg-white p-8 shadow-sm">
+        <form onSubmit={handleSubmit} className="space-y-6">
+          {/* Coupon Code */}
+          <div>
+            <label htmlFor="code" className="block text-sm font-medium text-gray-700">Coupon Code</label>
+            <input
+              type="text"
+              name="code"
+              id="code"
+              required
+              value={formData.code}
+              onChange={handleChange}
+              className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
+              placeholder="e.g., SUMMER25"
+            />
+          </div>
+
+          {/* Discount Type & Value */}
+          <div className="grid grid-cols-1 gap-6 sm:grid-cols-2">
+            <div>
+              <label htmlFor="discountType" className="block text-sm font-medium text-gray-700">Discount Type</label>
+              <select
+                id="discountType"
+                name="discountType"
+                required
+                value={formData.discountType}
+                onChange={handleChange}
+                className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
+              >
+                <option value="percentage">Percentage (%)</option>
+                <option value="fixed">Fixed Amount ($)</option>
+              </select>
+            </div>
+            <div>
+              <label htmlFor="discountValue" className="block text-sm font-medium text-gray-700">Discount Value</label>
+              <input
+                type="number"
+                name="discountValue"
+                id="discountValue"
+                required
+                value={formData.discountValue}
+                onChange={handleChange}
+                className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
+                placeholder={formData.discountType === 'percentage' ? "e.g., 25 for 25%" : "e.g., 1000 for $10.00"}
+              />
+            </div>
+          </div>
+
+          {/* Description */}
+          <div>
+            <label htmlFor="description" className="block text-sm font-medium text-gray-700">Description (Optional)</label>
+            <textarea
+              name="description"
+              id="description"
+              rows={3}
+              value={formData.description}
+              onChange={handleChange}
+              className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
+              placeholder="A brief description for this coupon."
+            />
+          </div>
+
+          {/* Usage Limit */}
+          <div>
+            <label htmlFor="usageLimit" className="block text-sm font-medium text-gray-700">Total Usage Limit (Optional)</label>
+            <input
+              type="number"
+              name="usageLimit"
+              id="usageLimit"
+              value={formData.usageLimit}
+              onChange={handleChange}
+              className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
+              placeholder="e.g., 100"
+            />
+            <p className="mt-2 text-xs text-gray-500">Leave blank for unlimited uses.</p>
+          </div>
+
+          {/* Submission & Error Display */}
+          <div className="border-t pt-6">
+            {error && <p className="mb-4 text-center text-sm text-red-600">{error}</p>}
+            <button
+              type="submit"
+              disabled={loading}
+              className="w-full rounded-md bg-blue-600 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-blue-500 disabled:cursor-not-allowed disabled:bg-gray-400"
+            >
+              {loading ? 'Creating...' : 'Create Coupon'}
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
   );
-}
+};
+
+export default NewCouponPage;

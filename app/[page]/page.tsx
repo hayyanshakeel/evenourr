@@ -1,45 +1,21 @@
-import type { Metadata } from 'next';
+// app/[page]/page.tsx
 
-import Prose from 'components/prose';
-import { getPage } from 'lib/shopify';
 import { notFound } from 'next/navigation';
 
-export async function generateMetadata(props: {
-  params: Promise<{ page: string }>;
-}): Promise<Metadata> {
-  const params = await props.params;
-  const page = await getPage(params.page);
+export default function Page({ params }: { params: { page: string } }) {
+  // This is a placeholder page.
+  // The original content system (Contentlayer) was not set up and causing errors.
+  // You can implement a dynamic page system here later if needed.
 
-  if (!page) return notFound();
-
-  return {
-    title: page.seo?.title || page.title,
-    description: page.seo?.description || page.bodySummary,
-    openGraph: {
-      publishedTime: page.createdAt,
-      modifiedTime: page.updatedAt,
-      type: 'article'
-    }
-  };
-}
-
-export default async function Page(props: { params: Promise<{ page: string }> }) {
-  const params = await props.params;
-  const page = await getPage(params.page);
-
-  if (!page) return notFound();
+  // For now, it will just show a "Not Found" message to prevent crashes.
+  notFound();
 
   return (
-    <>
-      <h1 className="mb-8 text-5xl font-bold">{page.title}</h1>
-      <Prose className="mb-8" html={page.body} />
-      <p className="text-sm italic">
-        {`This document was last updated on ${new Intl.DateTimeFormat(undefined, {
-          year: 'numeric',
-          month: 'long',
-          day: 'numeric'
-        }).format(new Date(page.updatedAt))}.`}
-      </p>
-    </>
+    <section>
+      <div className="container py-12">
+        <h1 className="mb-4 text-4xl font-bold">Page</h1>
+        <p>This is a dynamic page for: {params.page}</p>
+      </div>
+    </section>
   );
 }

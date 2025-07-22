@@ -1,13 +1,15 @@
 // lib/db/index.ts
-import { drizzle } from 'drizzle-orm/libsql';
-import { createClient } from '@libsql/client';
 
-console.log('TURSO_DATABASE_URL:', process.env.TURSO_DATABASE_URL);
-console.log('TURSO_AUTH_TOKEN:', process.env.TURSO_AUTH_TOKEN);
+import { createClient } from '@libsql/client';
+import { drizzle } from 'drizzle-orm/libsql';
+// Import everything from your schema file
+import * as schema from './schema';
 
 const client = createClient({
   url: process.env.TURSO_DATABASE_URL!,
   authToken: process.env.TURSO_AUTH_TOKEN!,
 });
 
-export const db = drizzle(client);
+// Pass the full schema to the drizzle function
+// This gives the 'db' object full knowledge of all your tables and relations
+export const db = drizzle(client, { schema });
