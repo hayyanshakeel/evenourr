@@ -207,3 +207,23 @@ export const storeSettings = sqliteTable('store_settings', {
   createdAt: text('created_at').default(sql`CURRENT_TIMESTAMP`),
   updatedAt: text('updated_at').default(sql`CURRENT_TIMESTAMP`)
 });
+
+// Carts table
+export const carts = sqliteTable('carts', {
+    id: integer('id').primaryKey(),
+    userId: text('user_id'), // Can be customer ID or a session ID for guests
+    status: text('status').default('active'), // active, completed, abandoned
+    createdAt: text('created_at').default(sql`CURRENT_TIMESTAMP`),
+    updatedAt: text('updated_at').default(sql`CURRENT_TIMESTAMP`),
+});
+
+// Cart items table
+export const cartItems = sqliteTable('cart_items', {
+    id: integer('id').primaryKey(),
+    cartId: integer('cart_id').notNull(),
+    productId: integer('product_id').notNull(),
+    variantId: integer('variant_id'),
+    quantity: integer('quantity').notNull(),
+    price: integer('price').notNull(), // Price at the time of adding to cart
+    createdAt: text('created_at').default(sql`CURRENT_TIMESTAMP`),
+});
