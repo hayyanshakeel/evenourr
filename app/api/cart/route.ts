@@ -10,7 +10,7 @@ type CartItem = typeof cartItems.$inferSelect;
 
 export async function GET(request: Request) {
   try {
-    const cookieStore = cookies();
+    const cookieStore = await cookies();
     const cartIdCookie = cookieStore.get('cartId');
     let cart: Cart | undefined;
 
@@ -54,7 +54,7 @@ export async function GET(request: Request) {
 
 export async function POST(request: Request) {
   try {
-    const cookieStore = cookies();
+    const cookieStore = await cookies();
     const cartIdCookie = cookieStore.get('cartId');
     let cart: Cart | undefined;
     let wasCartCreated = false;
