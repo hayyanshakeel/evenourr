@@ -1,4 +1,3 @@
-// lib/db/schema.ts
 import { sqliteTable, text, integer, real } from 'drizzle-orm/sqlite-core';
 import { relations } from 'drizzle-orm';
 
@@ -23,6 +22,8 @@ export const products = sqliteTable('products', {
   status: text('status', { enum: ['active', 'draft', 'archived'] }).default('active'),
   createdAt: timestamp('created_at').notNull(),
   updatedAt: timestamp('updated_at').notNull(),
+  imagePublicId: text('image_public_id'),
+  imageUrl: text('image_url'),
 });
 
 export const productOptions = sqliteTable('product_options', {
@@ -87,7 +88,6 @@ export const orders = sqliteTable('orders', {
   status: text('status', { enum: ['pending', 'paid', 'shipped'] }).default('pending').notNull(),
   createdAt: timestamp('created_at').notNull(),
 });
-
 
 // --- RELATIONS ---
 
