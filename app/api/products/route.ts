@@ -1,78 +1,62 @@
-// app/api/products/route.ts
-import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/db';
-import { products, productVariants } from '@/lib/db/schema';
-import { z } from 'zod';
-import { desc } from 'drizzle-orm';
-
-const CreateProductSchema = z.object({
-  name: z.string().min(1),
-  slug: z.string().min(1),
-  description: z.string().optional(),
-  price: z.number().int(),
-  status: z.enum(['active', 'draft', 'archived']),
-  variants: z.array(z.object({
-    title: z.string(),
-    price: z.number().int(),
-    inventory: z.number().int(),
-    sku: z.string().optional(),
-  })),
-});
+import { products } from '@/lib/db/schema';
+import { NextRequest, NextResponse } from 'next/server';
 
 /**
- * GET /api/products - Fetch all products
- * This is the new function that will send the product list to your dashboard.
+ * Handles GET requests to fetch all products.
+ * @returns {Promise<NextResponse>} A JSON response containing all products.
  */
-export async function GET(req: NextRequest) {
+export async function GET() {
   try {
-    const allProducts = await db.query.products.findMany({
-      orderBy: [desc(products.createdAt)],
-    });
+    const allProducts = await db.select().from(products);
     return NextResponse.json(allProducts);
   } catch (error) {
-    console.error('[PRODUCTS_GET_ERROR]', error);
-    return new NextResponse('Internal Server Error', { status: 500 });
+    console.error('Error fetching products:', error);
+    return NextResponse.json(
+      { message: 'Failed to fetch products. Please try again later.' },
+      { status: 500 }
+    );
   }
 }
 
 /**
- * POST /api/products - Create a new product
+ * Handles POST requests to create a new product.
+ * It ensures that the price is converted to a number before database insertion.
+ * @param {NextRequest} req The incoming request object.
+ * @returns {Promise<NextResponse>} A JSON response with the newly created product or an error message.
  */
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
-    const parsedData = CreateProductSchema.parse(body);
 
-    const newProduct = await db.transaction(async (tx) => {
-      const [createdProduct] = await tx.insert(products).values({
-        name: parsedData.name,
-        slug: parsedData.slug,
-        description: parsedData.description,
-        price: parsedData.price,
-        status: parsedData.status,
-      }).returning();
+    // Validate and parse the price from the request body
+    if (body.price === undefined || body.price === null) {
+        return NextResponse.json({ message: 'Price is a required field.' }, { status: 400 });
+    }
 
-      if (!createdProduct) {
-        throw new Error('Failed to create product.');
-      }
+    const priceAsNumber = parseFloat(body.price);
 
-      if (parsedData.variants.length > 0) {
-        const variantsToInsert = parsedData.variants.map(variant => ({
-          productId: createdProduct.id,
-          title: variant.title,
-          price: variant.price,
-          inventory: variant.inventory,
-          sku: variant.sku,
-        }));
-        await tx.insert(productVariants).values(variantsToInsert);
-      }
+    // Check if the conversion resulted in a valid number
+    if (isNaN(priceAsNumber)) {
+      return NextResponse.json({ message: 'Invalid price format. Price must be a number.' }, { status: 400 });
+    }
 
-      return createdProduct;
-    });
+    // Create the new product object with the numeric price
+    const newProductData = {
+      ...body,
+      price: priceAsNumber // Use the parsed number
+    };
+
+    // Insert the new product into the database
+    const [newProduct] = await db.insert(products).values(newProductData).returning();
 
     return NextResponse.json(newProduct, { status: 201 });
-  } catch (err) {
-    console.error('[PRODUCTS_POST_ERROR]', err);
-    return NextResponse.json({ error: 'Could not create product' }, { status: 500 });
+  } catch (error) {
+    console.error('Error creating product:', error);
+    // Provide a generic error message to the client
+    return NextResponse.json(
+      { message: 'Something went wrong while creating the product.' },
+      { status: 500 }
+    );
   }
 }
