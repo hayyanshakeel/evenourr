@@ -5,42 +5,21 @@ import { products } from '@/lib/db/schema';
 import { z } from 'zod';
 
 const CreateProductSchema = z.object({
-  name:        z.string().min(1),
+  name: z.string().min(1),
   description: z.string().optional(),
-  price:       z.number().int().positive(),
-  inventory:   z.number().int().min(0),
-  imageUrl:    z.string().url().optional(),
+  price: z.number().int().positive(),
+  inventory: z.number().int().min(0),
 });
 
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
-    const { name, description, price, inventory, imageUrl } =
-      CreateProductSchema.parse(body);
-
-    const slug = name
-      .toLowerCase()
-      .replace(/[^a-z0-9]+/g, '-')
-      .replace(/^-+|-+$/g, '');
-
-    const [newProduct] = await db
-      .insert(products)
-      .values({
-        slug,
-        name,
-        description,
-        price,
-        inventory,
-        imageUrl,
-      })
-      .returning();
-
+    const { name, description, price, inventory } = CreateProductSchema.parse(body);
+    const slug = name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
+    const [newProduct] = await db.insert(products).values({ slug, name, description, price, inventory }).returning();
     return NextResponse.json(newProduct, { status: 201 });
   } catch (err) {
-    console.error('Create product error:', err);
-    return NextResponse.json(
-      { error: 'Could not create product' },
-      { status: 500 }
-    );
+    console.error(err);
+    return NextResponse.json({ error: 'Could not create product' }, { status: 500 });
   }
 }
