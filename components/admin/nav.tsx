@@ -4,17 +4,21 @@ import {
   ArchiveBoxIcon,
   HomeIcon,
   ShoppingBagIcon,
-  UserGroupIcon
+  UserGroupIcon,
+  TicketIcon,
+  Cog6ToothIcon
 } from '@heroicons/react/24/outline';
 import clsx from 'clsx';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 
 const menuItems = [
-  { href: '/admin/dashboard', label: 'Dashboard', icon: HomeIcon },
-  { href: '/admin/dashboard/products', label: 'Products', icon: ShoppingBagIcon },
-  { href: '/admin/dashboard/orders', label: 'Orders', icon: ArchiveBoxIcon },
-  { href: '/admin/dashboard/customers', label: 'Customers', icon: UserGroupIcon }
+  { href: '/dashboard', label: 'Dashboard', icon: HomeIcon },
+  { href: '/dashboard/products', label: 'Products', icon: ShoppingBagIcon },
+  { href: '/dashboard/orders', label: 'Orders', icon: ArchiveBoxIcon },
+  { href: '/dashboard/customers', label: 'Customers', icon: UserGroupIcon },
+  { href: '/dashboard/coupons', label: 'Coupons', icon: TicketIcon },
+  { href: '/dashboard/settings', label: 'Settings', icon: Cog6ToothIcon }
 ];
 
 export default function Nav() {
