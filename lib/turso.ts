@@ -1,19 +1,4 @@
-import { createClient } from '@libsql/client';
-import { drizzle } from 'drizzle-orm/libsql';
+// This file is intentionally simplified to prevent conflicts.
+// The main database connection is now in /lib/db/index.ts.
 
-if (!process.env.TURSO_DATABASE_URL) {
-  throw new Error('TURSO_DATABASE_URL is not defined');
-}
-
-if (!process.env.TURSO_AUTH_TOKEN) {
-  throw new Error('TURSO_AUTH_TOKEN is not defined');
-}
-
-// Create a Turso database client
-const client = createClient({
-  url: process.env.TURSO_DATABASE_URL,
-  authToken: process.env.TURSO_AUTH_TOKEN
-});
-
-// Pass the client to Drizzle
-export const db = drizzle(client);
+export {}; // This makes it a valid module.

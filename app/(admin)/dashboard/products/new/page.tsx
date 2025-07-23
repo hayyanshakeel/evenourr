@@ -1,14 +1,10 @@
-// File: app/(admin)/dashboard/products/new/page.tsx
-
-'use client';
-
 import Header from '@/components/admin/header';
 import ProductForm from '@/components/admin/forms/product-form';
 
 export default function NewProductPage() {
   return (
     <div>
-      <Header title="Add Product" />
+      <Header title="Add New Product" />
       <div className="mt-8">
         <ProductForm />
       </div>

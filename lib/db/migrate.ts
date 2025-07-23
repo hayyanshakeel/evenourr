@@ -1,16 +1,15 @@
-import 'dotenv/config'; // Add this line at the very top
+import 'dotenv/config';
 import { migrate } from 'drizzle-orm/libsql/migrator';
-import { db, client } from './index';
+import { db } from './index'; // Correctly import the 'db' object
 
 async function main() {
   try {
-    console.log('Running migrations...');
-    await migrate(db, { migrationsFolder: './drizzle' });
-    console.log('Migrations ran successfully!');
-    client.close();
+    // This will run all pending migrations
+    await migrate(db, { migrationsFolder: 'drizzle' });
+    console.log('✅ Migrations completed successfully.');
     process.exit(0);
   } catch (error) {
-    console.error('Error running migrations:', error);
+    console.error('❌ Error during migration:', error);
     process.exit(1);
   }
 }

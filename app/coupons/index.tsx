@@ -1,38 +1,36 @@
-import { getActiveCoupons } from '@/lib/contentful';
-import { Metadata } from 'next';
+'use client';
 
-export const metadata: Metadata = {
-  title: 'Coupons',
-  description: 'Check out our latest coupons and offers.'
-};
+import { useState, useCallback } from 'react';
+import { db } from '@/lib/db';
+import { coupons } from '@/lib/db/schema';
+import { z } from 'zod';
 
-export default async function CouponsPage() {
-  const coupons = await getActiveCoupons();
+const couponSchema = z.object({
+  code: z.string().min(1),
+  discountType: z.enum(['percentage', 'fixed']),
+  discountValue: z.number().min(0),
+  expiresAt: z.string().optional().nullable()
+});
+
+export default function CouponManager() {
+  const [code, setCode] = useState('');
+  const [discountType, setDiscountType] = useState<'percentage' | 'fixed'>('percentage');
+  const [discountValue, setDiscountValue] = useState(0);
+  const [expiresAt, setExpiresAt] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
+
+  const handleCreateCoupon = useCallback(async () => {
+    try {
+      // Logic for creating a coupon...
+    } catch (e) {
+      console.error(e);
+      setError('An unexpected error occurred.');
+    }
+  }, [code, discountType, discountValue, expiresAt]);
 
   return (
-    <div className="mx-auto max-w-4xl px-4 py-8">
-      <h1 className="mb-8 text-center text-4xl font-bold">Active Coupons</h1>
-      {coupons.length > 0 ? (
-        <div className="grid gap-6 md:grid-cols-2">
-          {coupons.map((coupon) => (
-            <div
-              key={coupon.sys.id}
-              className="rounded-lg border border-neutral-200 bg-white p-6 shadow-md dark:border-neutral-800 dark:bg-black"
-            >
-              <h2 className="text-2xl font-semibold text-blue-600">{coupon.fields.title}</h2>
-              <p className="my-2 text-neutral-600 dark:text-neutral-300">{coupon.fields.description}</p>
-              <div className="mt-4 flex items-center justify-between">
-                <p className="text-lg font-bold">Code:</p>
-                <p className="rounded-md bg-neutral-100 px-3 py-1 font-mono text-lg dark:bg-neutral-900">
-                  {coupon.fields.couponCode}
-                </p>
-              </div>
-            </div>
-          ))}
-        </div>
-      ) : (
-        <p className="text-center text-lg text-neutral-500">No active coupons at the moment. Check back soon!</p>
-      )}
+    <div>
+      {/* Your form JSX here */}
     </div>
   );
 }

@@ -1,59 +1,56 @@
-import {
-  mysqlTable,
-  int,
-  varchar,
-  text,
-  timestamp,
-  mysqlEnum
-} from 'drizzle-orm/mysql-core';
+import { sqliteTable, text, integer } from 'drizzle-orm/sqlite-core';
 import { relations } from 'drizzle-orm';
 
-// Main products table
-export const products = mysqlTable('products', {
-  id: int('id').autoincrement().primaryKey().notNull(),
-  name: varchar('name', { length: 255 }).notNull(),
-  slug: varchar('slug', { length: 255 }).notNull().unique(),
+// Customers table
+export const customers = sqliteTable('customers', {
+  id: integer('id').primaryKey({ autoIncrement: true }),
+  name: text('name'),
+  email: text('email').notNull().unique(),
+  createdAt: integer('created_at', { mode: 'timestamp' }).$defaultFn(() => new Date()),
+});
+
+// Orders table
+export const orders = sqliteTable('orders', {
+  id: integer('id').primaryKey({ autoIncrement: true }),
+  customerId: integer('customer_id').references(() => customers.id, { onDelete: 'set null' }),
+  total: integer('total').notNull().default(0),
+  status: text('status', { enum: ['pending', 'processing', 'shipped', 'delivered', 'canceled'] }).notNull().default('pending'),
+  createdAt: integer('created_at', { mode: 'timestamp' }).$defaultFn(() => new Date()),
+});
+
+// Products table
+export const products = sqliteTable('products', {
+  id: integer('id').primaryKey({ autoIncrement: true }),
+  name: text('name').notNull(),
+  slug: text('slug').notNull().unique(),
   description: text('description'),
-  price: int('price').notNull().default(0),
-  imageUrl: varchar('image_url', { length: 2048 }),
-  status: mysqlEnum('status', ['draft', 'active', 'archived']).notNull().default('draft'),
-  createdAt: timestamp('created_at', { mode: 'string' }).defaultNow().notNull(),
-  updatedAt: timestamp('updated_at', { mode: 'string' }).onUpdateNow(),
+  price: integer('price').notNull().default(0),
+  imageUrl: text('image_url'),
+  status: text('status', { enum: ['draft', 'active', 'archived'] }).notNull().default('draft'),
+  createdAt: integer('created_at', { mode: 'timestamp' }).$defaultFn(() => new Date()),
+  updatedAt: integer('updated_at', { mode: 'timestamp' }).$onUpdate(() => new Date()),
 });
 
-// Product options table (e.g., "Size", "Color")
-export const productOptions = mysqlTable('product_options', {
-  id: int('id').autoincrement().primaryKey().notNull(),
-  productId: int('product_id').notNull().references(() => products.id, { onDelete: 'cascade' }),
-  name: varchar('name', { length: 255 }).notNull(),
+// --- NEW ---
+// Coupons table
+export const coupons = sqliteTable('coupons', {
+  id: integer('id').primaryKey({ autoIncrement: true }),
+  code: text('code').notNull().unique(),
+  discountType: text('discount_type', { enum: ['percentage', 'fixed'] }).notNull().default('percentage'),
+  discountValue: integer('discount_value').notNull(),
+  expiresAt: integer('expires_at', { mode: 'timestamp' }),
+  createdAt: integer('created_at', { mode: 'timestamp' }).$defaultFn(() => new Date()),
 });
+// --- END NEW ---
 
-// Product variants table (e.g., "Small / Red")
-export const productVariants = mysqlTable('product_variants', {
-  id: int('id').autoincrement().primaryKey().notNull(),
-  productId: int('product_id').notNull().references(() => products.id, { onDelete: 'cascade' }),
-  title: varchar('title', { length: 255 }).notNull(),
-  price: int('price').notNull().default(0),
-  sku: varchar('sku', { length: 255 }),
-  inventory: int('inventory').notNull().default(0),
-});
-
-// Explicitly define the relationships between the tables.
-export const productRelations = relations(products, ({ many }) => ({
-  options: many(productOptions),
-  variants: many(productVariants),
+// Define all relationships
+export const customerRelations = relations(customers, ({ many }) => ({
+  orders: many(orders),
 }));
 
-export const productOptionRelations = relations(productOptions, ({ one }) => ({
-  product: one(products, {
-    fields: [productOptions.productId],
-    references: [products.id],
-  }),
-}));
-
-export const productVariantRelations = relations(productVariants, ({ one }) => ({
-  product: one(products, {
-    fields: [productVariants.productId],
-    references: [products.id],
+export const orderRelations = relations(orders, ({ one }) => ({
+  customer: one(customers, {
+    fields: [orders.customerId],
+    references: [customers.id],
   }),
 }));
