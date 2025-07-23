@@ -1,4 +1,4 @@
-import { defineConfig } from 'drizzle-kit';
+import type { Config } from 'drizzle-kit';
 import 'dotenv/config';
 
 // Validate required environment variables
@@ -16,7 +16,7 @@ if (missingEnvVars.length > 0) {
   process.exit(1);
 }
 
-export default defineConfig({
+const config: Config = {
   schema: './lib/db/schema.ts',
   out: './drizzle',
   dialect: 'sqlite',
@@ -27,4 +27,6 @@ export default defineConfig({
   },
   verbose: true,
   strict: true
-});
+};
+
+export default config;
