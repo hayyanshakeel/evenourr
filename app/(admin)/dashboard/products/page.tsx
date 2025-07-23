@@ -52,32 +52,24 @@ const ProductsPage = () => {
 
   useEffect(() => {
     if (selectAllCheckboxRef.current) {
-      const isIndeterminate =
+      selectAllCheckboxRef.current.indeterminate =
         selectedProducts.length > 0 && selectedProducts.length < filteredProducts.length;
-      selectAllCheckboxRef.current.indeterminate = isIndeterminate;
     }
   }, [selectedProducts, filteredProducts]);
 
   const handleSelectAll = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (e.target.checked) {
-      setSelectedProducts(filteredProducts.map((p) => p.id));
-    } else {
-      setSelectedProducts([]);
-    }
+    setSelectedProducts(e.target.checked ? filteredProducts.map((p) => p.id) : []);
   };
 
   const handleSelectOne = (e: React.ChangeEvent<HTMLInputElement>, productId: number) => {
-    if (e.target.checked) {
-      setSelectedProducts((prev) => [...prev, productId]);
-    } else {
-      setSelectedProducts((prev) => prev.filter((id) => id !== productId));
-    }
+    setSelectedProducts((prev) =>
+      e.target.checked ? [...prev, productId] : prev.filter((id) => id !== productId)
+    );
   };
 
   const handleDelete = async (productIds: number[]) => {
     const actionWord = productIds.length > 1 ? 'products' : 'product';
-    if (!confirm(`Are you sure you want to delete the selected ${actionWord}? This cannot be undone.`))
-      return;
+    if (!confirm(`Are you sure you want to delete the selected ${actionWord}?`)) return;
 
     try {
       await Promise.all(productIds.map((id) => fetch(`/api/products/${id}`, { method: 'DELETE' })));
@@ -85,7 +77,7 @@ const ProductsPage = () => {
       setSelectedProducts([]);
     } catch (error) {
       console.error(error);
-      alert(`Could not delete the selected ${actionWord}.`);
+      alert(`Could not delete the ${actionWord}.`);
     }
   };
 
@@ -102,7 +94,7 @@ const ProductsPage = () => {
     return (
       <span
         className={clsx(
-          'inline-flex items-center rounded-md px-2 py-1 text-xs font-medium ring-1 ring-inset',
+          'inline-flex items-center rounded-md px-2 py-1 text-xs font-medium capitalize ring-1 ring-inset',
           styles[key] || styles.archived
         )}
       >
@@ -132,8 +124,7 @@ const ProductsPage = () => {
             onChange={(e) => handleSelectOne(e, p.id)}
             onClick={(e) => e.stopPropagation()}
           />
-        ),
-        className: 'w-12 text-center'
+        )
       },
       {
         key: 'image',
@@ -149,26 +140,23 @@ const ProductsPage = () => {
             />
           ) : (
             <div className="h-10 w-10 rounded-md bg-gray-200" />
-          ),
-        className: 'w-20'
+          )
       },
       {
         key: 'name',
         label: 'Product Name',
         render: (p: Product) => <span className="font-medium text-gray-900">{p.name}</span>
       },
-      { key: 'status', label: 'Status', render: (p: Product) => getStatusBadge(p.status), className: 'w-32' },
+      { key: 'status', label: 'Status', render: (p: Product) => getStatusBadge(p.status) },
       {
         key: 'inventory',
         label: 'Inventory',
-        render: (p: Product) => <span className="text-gray-600">{`${p.inventory || 0} in stock`}</span>,
-        className: 'w-40'
+        render: (p: Product) => <span className="text-gray-600">{`${p.inventory || 0} in stock`}</span>
       },
       {
         key: 'price',
         label: 'Price',
-        render: (p: Product) => <span className="text-gray-600">{formatCurrency(p.price)}</span>,
-        className: 'w-32'
+        render: (p: Product) => <span className="text-gray-600">{formatCurrency(p.price)}</span>
       },
       {
         key: 'actions',
@@ -196,8 +184,7 @@ const ProductsPage = () => {
               <TrashIcon className="h-4 w-4" />
             </button>
           </div>
-        ),
-        className: 'w-24'
+        )
       }
     ],
     [router, filteredProducts, selectedProducts]
@@ -226,43 +213,54 @@ const ProductsPage = () => {
 
   return (
     <div>
-      <div className="rounded-lg border bg-white shadow-sm">
-        <div className="px-4 pt-2">
-          <div className="flex items-center justify-between gap-4">
-            <div className="relative flex-1">
-              <MagnifyingGlassIcon className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" />
-              <input
-                type="text"
-                placeholder="Search products..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full rounded-md border-0 py-2 pl-10 text-gray-900 ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-blue-500 sm:text-sm"
-              />
-            </div>
+      <Header title="Products">
+        <button
+          onClick={() => router.push('/dashboard/products/new')}
+          className="inline-flex items-center gap-x-1.5 rounded-md bg-blue-600 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-blue-500"
+        >
+          <PlusIcon className="-ml-0.5 h-5 w-5" />
+          Add Product
+        </button>
+      </Header>
+
+      <div className="mt-6 rounded-lg border bg-white shadow-sm">
+        <div className="p-4">
+          <div className="relative">
+            <MagnifyingGlassIcon className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" />
+            <input
+              type="text"
+              placeholder="Search products..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="block w-full rounded-md border-0 py-2 pl-10 pr-3 text-gray-900 ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-blue-600 sm:text-sm sm:leading-6"
+            />
           </div>
-          <FilterTabs />
         </div>
 
-        {selectedProducts.length > 0 && (
-          <div className="flex h-12 items-center justify-between border-b bg-gray-50 px-4">
-            <p className="text-sm font-medium text-gray-700">{selectedProducts.length} selected</p>
-            <button
-              onClick={() => handleDelete(selectedProducts)}
-              className="inline-flex items-center gap-1.5 rounded-md px-2 py-1 text-sm font-semibold text-red-600 hover:bg-red-50"
-            >
-              <TrashIcon className="h-4 w-4" />
-              Delete selected
-            </button>
-          </div>
-        )}
+        <FilterTabs />
 
-        <DataTable
-          columns={columns}
-          data={filteredProducts}
-          loading={loading}
-          onRowClick={(p) => router.push(`/dashboard/products/${p.id}/edit`)}
-          emptyMessage="No products match your filters."
-        />
+        <div className="p-4">
+          {selectedProducts.length > 0 && (
+            <div className="mb-4 flex items-center justify-between">
+              <span className="text-sm text-gray-600">
+                {selectedProducts.length} product{selectedProducts.length > 1 ? 's' : ''} selected
+              </span>
+              <button
+                onClick={() => handleDelete(selectedProducts)}
+                className="text-sm font-medium text-red-600 hover:text-red-500"
+              >
+                Delete selected
+              </button>
+            </div>
+          )}
+
+          <DataTable
+            data={filteredProducts}
+            columns={columns}
+            loading={loading}
+            onRowClick={(product) => router.push(`/dashboard/products/${product.id}/edit`)}
+          />
+        </div>
       </div>
     </div>
   );

@@ -4,7 +4,8 @@ import ProductForm from '@/components/admin/forms/product-form';
 export default function NewProductPage() {
   return (
     <div>
-      <Header title="Add New Product" />
+      {/* The Header is now part of the layout, so we don't need it here. */}
+      {/* The title will be set automatically by the layout. */}
       <div className="mt-8">
         <ProductForm />
       </div>

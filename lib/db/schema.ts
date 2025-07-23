@@ -31,7 +31,25 @@ export const products = sqliteTable('products', {
   updatedAt: integer('updated_at', { mode: 'timestamp' }).$onUpdate(() => new Date()),
 });
 
-// --- NEW ---
+// --- ADD THESE MISSING TABLES ---
+// Product options table
+export const productOptions = sqliteTable('product_options', {
+  id: integer('id').primaryKey({ autoIncrement: true }),
+  productId: integer('product_id').notNull().references(() => products.id, { onDelete: 'cascade' }),
+  name: text('name').notNull(),
+});
+
+// Product variants table
+export const productVariants = sqliteTable('product_variants', {
+  id: integer('id').primaryKey({ autoIncrement: true }),
+  productId: integer('product_id').notNull().references(() => products.id, { onDelete: 'cascade' }),
+  title: text('title').notNull(),
+  price: integer('price').notNull().default(0),
+  sku: text('sku'),
+  inventory: integer('inventory').notNull().default(0),
+});
+// --- END ---
+
 // Coupons table
 export const coupons = sqliteTable('coupons', {
   id: integer('id').primaryKey({ autoIncrement: true }),
@@ -41,7 +59,6 @@ export const coupons = sqliteTable('coupons', {
   expiresAt: integer('expires_at', { mode: 'timestamp' }),
   createdAt: integer('created_at', { mode: 'timestamp' }).$defaultFn(() => new Date()),
 });
-// --- END NEW ---
 
 // Define all relationships
 export const customerRelations = relations(customers, ({ many }) => ({
@@ -54,3 +71,24 @@ export const orderRelations = relations(orders, ({ one }) => ({
     references: [customers.id],
   }),
 }));
+
+// --- ADD THESE MISSING RELATIONS ---
+export const productRelations = relations(products, ({ many }) => ({
+  options: many(productOptions),
+  variants: many(productVariants),
+}));
+
+export const productOptionRelations = relations(productOptions, ({ one }) => ({
+  product: one(products, {
+    fields: [productOptions.productId],
+    references: [products.id],
+  }),
+}));
+
+export const productVariantRelations = relations(productVariants, ({ one }) => ({
+  product: one(products, {
+    fields: [productVariants.productId],
+    references: [products.id],
+  }),
+}));
+// --- END ---
