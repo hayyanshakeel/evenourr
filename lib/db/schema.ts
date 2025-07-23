@@ -1,9 +1,5 @@
 import {
   mysqlTable,
-  mysqlSchema,
-  AnyMySqlColumn,
-  primaryKey,
-  unique,
   int,
   varchar,
   text,
