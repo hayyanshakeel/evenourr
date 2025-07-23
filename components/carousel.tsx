@@ -1,18 +1,38 @@
-import { getCollectionProducts } from 'lib/shopify';
+// File: components/carousel.tsx
+
 import Link from 'next/link';
-import { GridTileImage } from './grid/tile';
+import { GridTileImage } from 'components/grid/tile';
+import { db } from '@/lib/db';
+import { products as productsTable } from '@/lib/db/schema';
+import { desc } from 'drizzle-orm';
 
 export async function Carousel() {
-  // Collections that start with `hidden-*` are hidden from the search page.
-  const products = await getCollectionProducts({ collection: 'hidden-homepage-carousel' });
+  // Fetch the 8 most recent products
+  const products = await db
+    .select()
+    .from(productsTable)
+    .orderBy(desc(productsTable.createdAt))
+    .limit(8);
 
   if (!products?.length) return null;
 
-  // Purposefully duplicating products to make the carousel loop and not run out of products on wide screens.
-  const carouselProducts = [...products, ...products, ...products];
+  // Format the data to match what GridTileImage expects
+  const carouselProducts = products.map((product) => ({
+    handle: product.slug,
+    title: product.name,
+    priceRange: {
+      maxVariantPrice: {
+        amount: (product.price / 100).toString(),
+        currencyCode: 'USD'
+      }
+    },
+    featuredImage: {
+      url: product.imageUrl
+    }
+  }));
 
   return (
-    <div className="w-full overflow-x-auto pb-6 pt-1">
+    <div className=" w-full overflow-x-auto pb-6 pt-1">
       <ul className="flex animate-carousel gap-4">
         {carouselProducts.map((product, i) => (
           <li
@@ -27,7 +47,7 @@ export async function Carousel() {
                   amount: product.priceRange.maxVariantPrice.amount,
                   currencyCode: product.priceRange.maxVariantPrice.currencyCode
                 }}
-                src={product.featuredImage?.url}
+                src={product.featuredImage.url!}
                 fill
                 sizes="(min-width: 1024px) 25vw, (min-width: 768px) 33vw, 50vw"
               />

@@ -1,57 +1,64 @@
+// File: components/product/gallery.tsx
+
 'use client';
 
+import { ArrowLeftIcon, ArrowRightIcon } from '@heroicons/react/24/outline';
 import Image from 'next/image';
-import { useState } from 'react';
+import Link from 'next/link';
+import { usePathname, useSearchParams } from 'next/navigation';
+import { createUrl } from '@/lib/utils';
 
-interface GalleryProps {
-  images: { src: string; altText: string }[];
-}
+export function Gallery({ images }: { images: { src: string; altText: string }[] }) {
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
+  const imageSearchParam = searchParams.get('image');
+  const imageIndex = imageSearchParam ? parseInt(imageSearchParam) : 0;
 
-export function Gallery({ images }: GalleryProps) {
-  const [activeImageIndex, setActiveImageIndex] = useState(0);
+  const nextSearchParams = new URLSearchParams(searchParams.toString());
+  const nextImageIndex = imageIndex + 1 < images.length ? imageIndex + 1 : 0;
+  nextSearchParams.set('image', nextImageIndex.toString());
+  const nextUrl = createUrl(pathname, nextSearchParams);
 
-  if (!images.length) {
-    return null;
-  }
+  const previousSearchParams = new URLSearchParams(searchParams.toString());
+  const previousImageIndex = imageIndex === 0 ? images.length - 1 : imageIndex - 1;
+  previousSearchParams.set('image', previousImageIndex.toString());
+  const previousUrl = createUrl(pathname, previousSearchParams);
 
-  const activeImage = images[activeImageIndex];
+  const buttonClassName = 'h-full px-6 transition-all ease-in-out hover:scale-110 hover:text-black dark:hover:text-white flex items-center justify-center';
+  const mainImage = images[imageIndex];
+
+  // This is the fix: We trim the URL before using it
+  const imageUrl = mainImage?.src?.trim();
 
   return (
-    <div className="flex flex-col">
-      <div className="relative aspect-square h-full w-full max-h-[550px] overflow-hidden rounded-lg border">
-        {activeImage && (
-          <Image
-            className="h-full w-full object-contain"
-            fill
-            sizes="(min-width: 1024px) 66vw, 100vw"
-            alt={activeImage.altText}
-            src={activeImage.src}
-            priority={true}
-          />
-        )}
-      </div>
-      {images.length > 1 && (
-        <ul className="mt-4 flex items-center justify-center gap-2">
-          {images.map((image, index) => (
-            <li key={image.src} className="h-20 w-20">
-              <button
-                onClick={() => setActiveImageIndex(index)}
-                className={`h-full w-full rounded-lg border-2 overflow-hidden ${
-                  index === activeImageIndex ? 'border-blue-600' : 'border-neutral-300'
-                }`}
-              >
-                <Image
-                  src={image.src}
-                  alt={image.altText}
-                  width={80}
-                  height={80}
-                  className="h-full w-full object-cover"
-                />
-              </button>
-            </li>
-          ))}
-        </ul>
+    <div className="relative aspect-square h-full max-h-[550px] w-full overflow-hidden">
+      {/* We now use the cleaned 'imageUrl' */}
+      {imageUrl ? (
+        <Image
+          className="h-full w-full object-contain"
+          fill
+          sizes="(min-width: 1024px) 66vw, 100vw"
+          priority
+          src={imageUrl}
+          alt={mainImage?.altText || 'Product image'}
+        />
+      ) : (
+        <div className="flex h-full w-full items-center justify-center bg-neutral-800" />
       )}
+
+      {images.length > 1 ? (
+        <div className="absolute bottom-[15%] flex w-full justify-center">
+          <div className="mx-auto flex h-11 items-center rounded-full border border-white bg-neutral-50/80 text-neutral-500 backdrop-blur dark:border-black dark:bg-neutral-900/80">
+            <Link aria-label="Previous product image" href={previousUrl} className={buttonClassName} scroll={false}>
+              <ArrowLeftIcon className="h-5" />
+            </Link>
+            <div className="mx-1 h-6 w-px bg-neutral-500"></div>
+            <Link aria-label="Next product image" href={nextUrl} className={buttonClassName} scroll={false}>
+              <ArrowRightIcon className="h-5" />
+            </Link>
+          </div>
+        </div>
+      ) : null}
     </div>
   );
 }

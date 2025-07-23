@@ -1,26 +1,25 @@
-import Footer from 'components/layout/footer';
-import { Hero } from 'components/layout/hero';
-import { PromoSection } from 'components/layout/promo-section';
-import { getHomepagePromoSections } from '@/lib/contentful';
+import { Suspense } from 'react';
+import { Carousel } from '@/components/carousel';
+import { ThreeItemGrid } from '@/components/grid/three-items';
+import Footer from '@/components/layout/footer';
 
 export const metadata = {
-  description:
-    'High-performance ecommerce store built with Next.js, Vercel, and Shopify.',
+  description: 'High-performance ecommerce store built with Next.js, Vercel, and Turso.',
   openGraph: {
     type: 'website'
   }
 };
 
-export default async function HomePage() {
-  const promoSections = await getHomepagePromoSections();
-
+export default function HomePage() {
   return (
     <>
-      <Hero />
-      {promoSections.map((section) => (
-        <PromoSection key={section.sys.id} item={section} />
-      ))}
-      <Footer />
+      <ThreeItemGrid />
+      <Suspense>
+        <Carousel />
+      </Suspense>
+      <Suspense>
+        <Footer />
+      </Suspense>
     </>
   );
 }

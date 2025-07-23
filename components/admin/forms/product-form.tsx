@@ -1,7 +1,18 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
+import Image from 'next/image';
+import { useDropzone } from 'react-dropzone';
+import { ArrowUpTrayIcon } from '@heroicons/react/24/solid';
+
+// --- CONSOLE LOG FOR DEBUGGING ---
+const CLOUD_NAME = process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME;
+const UPLOAD_PRESET = process.env.NEXT_PUBLIC_CLOUDINARY_UPLOAD_PRESET;
+
+console.log('Cloudinary Cloud Name:', CLOUD_NAME);
+console.log('Cloudinary Upload Preset:', UPLOAD_PRESET);
+// ------------------------------------
 
 interface ProductFormData {
   title: string;
@@ -28,9 +39,12 @@ interface ProductFormProps {
   productId?: number;
 }
 
+
 export default function ProductForm({ initialData, productId }: ProductFormProps) {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
+  const [imageFile, setImageFile] = useState<File | null>(null);
+  const [imagePreview, setImagePreview] = useState<string | null>(initialData?.imageUrl || null);
   const [formData, setFormData] = useState<ProductFormData>({
     title: initialData?.title || '',
     handle: initialData?.handle || '',
@@ -51,10 +65,23 @@ export default function ProductForm({ initialData, productId }: ProductFormProps
     seoDescription: initialData?.seoDescription || ''
   });
 
+  const onDrop = useCallback((acceptedFiles: File[]) => {
+    if (acceptedFiles && acceptedFiles[0]) {
+      const file = acceptedFiles[0];
+      setImageFile(file);
+      setImagePreview(URL.createObjectURL(file));
+    }
+  }, []);
+
+  const { getRootProps, getInputProps, isDragActive } = useDropzone({
+    onDrop,
+    accept: { 'image/*': ['.jpeg', '.png', '.gif', '.webp'] },
+    multiple: false,
+  });
+
   const handleChange = (field: keyof ProductFormData, value: string | number) => {
     setFormData(prev => ({ ...prev, [field]: value }));
     
-    // Auto-generate handle from title
     if (field === 'title' && !productId) {
       const handle = value.toString().toLowerCase()
         .replace(/[^a-z0-9]+/g, '-')
@@ -63,13 +90,43 @@ export default function ProductForm({ initialData, productId }: ProductFormProps
     }
   };
 
+  const handleImageUpload = async (): Promise<string | null> => {
+    if (!imageFile) return formData.imageUrl;
+
+    const uploadFormData = new FormData();
+    uploadFormData.append('file', imageFile);
+    uploadFormData.append('upload_preset', UPLOAD_PRESET!);
+
+    try {
+      const response = await fetch(`https://api.cloudinary.com/v1_1/${CLOUD_NAME}/image/upload`, {
+        method: 'POST',
+        body: uploadFormData,
+      });
+
+      if (!response.ok) throw new Error('Image upload failed');
+      const data = await response.json();
+      return data.secure_url;
+    } catch (error) {
+      console.error('Failed to upload image:', error);
+      alert('Image upload failed. Please try again.');
+      return null;
+    }
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
 
     try {
+      const uploadedImageUrl = await handleImageUpload();
+      if (uploadedImageUrl === null && imageFile) {
+        setLoading(false);
+        return;
+      }
+
       const payload = {
         ...formData,
+        imageUrl: uploadedImageUrl || formData.imageUrl,
         price: Math.round(parseFloat(formData.price || '0') * 100),
         compareAtPrice: formData.compareAtPrice ? Math.round(parseFloat(formData.compareAtPrice) * 100) : null,
         cost: formData.cost ? Math.round(parseFloat(formData.cost) * 100) : null,
@@ -88,7 +145,7 @@ export default function ProductForm({ initialData, productId }: ProductFormProps
       });
 
       if (response.ok) {
-        router.push('/dashboard/products');
+        router.push('/admin/dashboard/products');
       } else {
         const error = await response.json();
         alert(error.error || 'Failed to save product');
@@ -100,14 +157,15 @@ export default function ProductForm({ initialData, productId }: ProductFormProps
       setLoading(false);
     }
   };
+  
 
   return (
     <form onSubmit={handleSubmit} className="space-y-8">
-      {/* Basic Information */}
+      {/* Basic Information Section */}
       <div className="bg-white shadow sm:rounded-lg">
         <div className="px-4 py-5 sm:p-6">
           <h3 className="text-lg font-medium leading-6 text-gray-900">Basic Information</h3>
-          <div className="mt-6 grid grid-cols-1 gap-y-6 gap-x-4 sm:grid-cols-6">
+           <div className="mt-6 grid grid-cols-1 gap-y-6 gap-x-4 sm:grid-cols-6">
             <div className="sm:col-span-4">
               <label htmlFor="title" className="block text-sm font-medium text-gray-700">
                 Product Title *
@@ -154,8 +212,48 @@ export default function ProductForm({ initialData, productId }: ProductFormProps
           </div>
         </div>
       </div>
+      
+      {/* Image Upload Section */}
+      <div className="bg-white shadow sm:rounded-lg">
+        <div className="px-4 py-5 sm:p-6">
+          <h3 className="text-lg font-medium leading-6 text-gray-900">Product Image</h3>
+          <div className="mt-6">
+            <div
+              {...getRootProps()}
+              className={`flex justify-center rounded-md border-2 border-dashed border-gray-300 px-6 pt-5 pb-6 transition-colors ${
+                isDragActive ? 'border-blue-500 bg-blue-50' : ''
+              }`}
+            >
+              <div className="space-y-1 text-center">
+                {imagePreview ? (
+                  <Image
+                    src={imagePreview}
+                    alt="Product preview"
+                    width={200}
+                    height={200}
+                    className="mx-auto h-48 w-48 object-contain rounded-md"
+                  />
+                ) : (
+                  <ArrowUpTrayIcon className="mx-auto h-12 w-12 text-gray-400" />
+                )}
+                <div className="flex text-sm text-gray-600">
+                  <label
+                    htmlFor="file-upload"
+                    className="relative cursor-pointer rounded-md bg-white font-medium text-blue-600 focus-within:outline-none focus-within:ring-2 focus-within:ring-blue-500 focus-within:ring-offset-2 hover:text-blue-500"
+                  >
+                    <span>Upload a file</span>
+                    <input {...getInputProps()} id="file-upload" />
+                  </label>
+                  <p className="pl-1">or drag and drop</p>
+                </div>
+                <p className="text-xs text-gray-500">PNG, JPG, GIF up to 10MB</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
 
-      {/* Pricing */}
+      {/* Pricing Section */}
       <div className="bg-white shadow sm:rounded-lg">
         <div className="px-4 py-5 sm:p-6">
           <h3 className="text-lg font-medium leading-6 text-gray-900">Pricing</h3>
@@ -226,201 +324,12 @@ export default function ProductForm({ initialData, productId }: ProductFormProps
           </div>
         </div>
       </div>
-
-      {/* Inventory */}
-      <div className="bg-white shadow sm:rounded-lg">
-        <div className="px-4 py-5 sm:p-6">
-          <h3 className="text-lg font-medium leading-6 text-gray-900">Inventory</h3>
-          <div className="mt-6 grid grid-cols-1 gap-y-6 gap-x-4 sm:grid-cols-6">
-            <div className="sm:col-span-2">
-              <label htmlFor="sku" className="block text-sm font-medium text-gray-700">
-                SKU
-              </label>
-              <input
-                type="text"
-                name="sku"
-                id="sku"
-                value={formData.sku}
-                onChange={(e) => handleChange('sku', e.target.value)}
-                className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
-              />
-            </div>
-
-            <div className="sm:col-span-2">
-              <label htmlFor="barcode" className="block text-sm font-medium text-gray-700">
-                Barcode
-              </label>
-              <input
-                type="text"
-                name="barcode"
-                id="barcode"
-                value={formData.barcode}
-                onChange={(e) => handleChange('barcode', e.target.value)}
-                className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
-              />
-            </div>
-
-            <div className="sm:col-span-2">
-              <label htmlFor="inventory" className="block text-sm font-medium text-gray-700">
-                Inventory Quantity
-              </label>
-              <input
-                type="number"
-                name="inventory"
-                id="inventory"
-                min="0"
-                value={formData.inventory}
-                onChange={(e) => handleChange('inventory', parseInt(e.target.value))}
-                className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
-              />
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* Additional Details */}
-      <div className="bg-white shadow sm:rounded-lg">
-        <div className="px-4 py-5 sm:p-6">
-          <h3 className="text-lg font-medium leading-6 text-gray-900">Additional Details</h3>
-          <div className="mt-6 grid grid-cols-1 gap-y-6 gap-x-4 sm:grid-cols-6">
-            <div className="sm:col-span-2">
-              <label htmlFor="weight" className="block text-sm font-medium text-gray-700">
-                Weight
-              </label>
-              <input
-                type="number"
-                name="weight"
-                id="weight"
-                min="0"
-                step="0.01"
-                value={formData.weight}
-                onChange={(e) => handleChange('weight', e.target.value)}
-                className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
-              />
-            </div>
-
-            <div className="sm:col-span-1">
-              <label htmlFor="weightUnit" className="block text-sm font-medium text-gray-700">
-                Unit
-              </label>
-              <select
-                id="weightUnit"
-                name="weightUnit"
-                value={formData.weightUnit}
-                onChange={(e) => handleChange('weightUnit', e.target.value)}
-                className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
-              >
-                <option value="kg">kg</option>
-                <option value="g">g</option>
-                <option value="lb">lb</option>
-                <option value="oz">oz</option>
-              </select>
-            </div>
-
-            <div className="sm:col-span-3">
-              <label htmlFor="vendor" className="block text-sm font-medium text-gray-700">
-                Vendor
-              </label>
-              <input
-                type="text"
-                name="vendor"
-                id="vendor"
-                value={formData.vendor}
-                onChange={(e) => handleChange('vendor', e.target.value)}
-                className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
-              />
-            </div>
-
-            <div className="sm:col-span-3">
-              <label htmlFor="status" className="block text-sm font-medium text-gray-700">
-                Status
-              </label>
-              <select
-                id="status"
-                name="status"
-                value={formData.status}
-                onChange={(e) => handleChange('status', e.target.value)}
-                className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
-              >
-                <option value="active">Active</option>
-                <option value="draft">Draft</option>
-                <option value="archived">Archived</option>
-              </select>
-            </div>
-
-            <div className="sm:col-span-3">
-              <label htmlFor="tags" className="block text-sm font-medium text-gray-700">
-                Tags (comma separated)
-              </label>
-              <input
-                type="text"
-                name="tags"
-                id="tags"
-                value={formData.tags}
-                onChange={(e) => handleChange('tags', e.target.value)}
-                placeholder="summer, sale, featured"
-                className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
-              />
-            </div>
-
-            <div className="sm:col-span-6">
-              <label htmlFor="imageUrl" className="block text-sm font-medium text-gray-700">
-                Image URL
-              </label>
-              <input
-                type="url"
-                name="imageUrl"
-                id="imageUrl"
-                value={formData.imageUrl}
-                onChange={(e) => handleChange('imageUrl', e.target.value)}
-                className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
-              />
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* SEO */}
-      <div className="bg-white shadow sm:rounded-lg">
-        <div className="px-4 py-5 sm:p-6">
-          <h3 className="text-lg font-medium leading-6 text-gray-900">Search Engine Optimization</h3>
-          <div className="mt-6 grid grid-cols-1 gap-y-6 gap-x-4 sm:grid-cols-6">
-            <div className="sm:col-span-6">
-              <label htmlFor="seoTitle" className="block text-sm font-medium text-gray-700">
-                SEO Title
-              </label>
-              <input
-                type="text"
-                name="seoTitle"
-                id="seoTitle"
-                value={formData.seoTitle}
-                onChange={(e) => handleChange('seoTitle', e.target.value)}
-                className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
-              />
-            </div>
-
-            <div className="sm:col-span-6">
-              <label htmlFor="seoDescription" className="block text-sm font-medium text-gray-700">
-                SEO Description
-              </label>
-              <textarea
-                id="seoDescription"
-                name="seoDescription"
-                rows={3}
-                value={formData.seoDescription}
-                onChange={(e) => handleChange('seoDescription', e.target.value)}
-                className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
-              />
-            </div>
-          </div>
-        </div>
-      </div>
-
+      
       {/* Actions */}
       <div className="flex justify-end gap-3">
         <button
           type="button"
-          onClick={() => router.push('/dashboard/products')}
+          onClick={() => router.back()}
           className="rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
         >
           Cancel

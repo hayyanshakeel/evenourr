@@ -1,38 +1,59 @@
-// lib/definitions.ts
+// File: lib/definitions.ts
 
+// This is the main type definition for a single product.
+// We are expanding it to include all the fields our components need.
 export type Product = {
-  id: number;
-  slug: string; // Changed from handle
-  name: string; // Changed from title
-  description: string | null;
-  price: number;
-  // This assumes your product has these relations. Adjust if necessary.
-  images?: ProductImage[];
-  variants?: ProductVariant[];
+  id: string;
+  handle: string;
+  availableForSale: boolean;
+  title: string;
+  description: string;
+  descriptionHtml: string;
+  options: ProductOption[];
+  priceRange: {
+    maxVariantPrice: Money;
+    minVariantPrice: Money;
+  };
+  variants: ProductVariant[];
+  featuredImage: Image;
+  images: Image[];
+  seo: SEO;
+  tags: string[];
+  updatedAt: string;
 };
 
-export type ProductImage = {
-  id: number;
-  productId: number;
-  url: string;
-  altText: string;
+// --- Other related types ---
+
+export type ProductOption = {
+  id: string;
+  name: string;
+  values: string[];
 };
 
 export type ProductVariant = {
-  id: number;
-  productId: number;
+  id: string;
   title: string;
-  price: number;
+  availableForSale: boolean;
+  selectedOptions: {
+    name: string;
+    value: string;
+  }[];
+  price: Money;
 };
 
-// This represents the actual shape of your product table from the schema
-export type ProductFromDB = {
-    id: number;
-    price: number;
-    name: string;
-    status: "active" | "draft" | "archived" | null;
-    description: string | null;
-    createdAt: string;
-    slug: string;
-    updatedAt: string;
+export type Money = {
+  amount: string;
+  currencyCode: string;
+};
+
+export type Image = {
+  url: string;
+  altText: string;
+  width: number;
+  height: number;
+};
+
+export type SEO = {
+  title: string;
+  description: string;
 };

@@ -1,3 +1,7 @@
+// File: components/grid/tile.tsx
+
+'use client';
+
 import clsx from 'clsx';
 import Image from 'next/image';
 import Label from '../label';
@@ -17,6 +21,10 @@ export function GridTileImage({
     position?: 'bottom' | 'center';
   };
 } & React.ComponentProps<typeof Image>) {
+  
+  // This is the fix: We trim the URL and handle cases where it might be missing.
+  const imageUrl = props.src ? String(props.src).trim() : null;
+
   return (
     <div
       className={clsx(
@@ -28,14 +36,18 @@ export function GridTileImage({
         }
       )}
     >
-      {props.src ? (
+      {/* We now use the cleaned 'imageUrl' */}
+      {imageUrl ? (
         <Image
           className={clsx('relative h-full w-full object-contain', {
             'transition duration-300 ease-in-out group-hover:scale-105': isInteractive
           })}
           {...props}
+          src={imageUrl} // Pass the cleaned URL to the Image component
         />
-      ) : null}
+      ) : (
+        <div className="h-full w-full bg-neutral-800" />
+      )}
       {label ? (
         <Label
           title={label.title}

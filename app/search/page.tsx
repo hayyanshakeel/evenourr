@@ -1,65 +1,68 @@
-// app/search/page.tsx
+// File: app/search/page.tsx
 
+import { db } from '@/lib/db';
+import { products as productsTable } from '@/lib/db/schema';
+import { desc } from 'drizzle-orm';
+
+import Grid from 'components/grid';
 import ProductGridItems from 'components/layout/product-grid-items';
 import { defaultSort, sorting } from 'lib/constants';
 
-// Define a type for your product object to satisfy TypeScript
-type Product = {
-  id: string;
-  handle: string;
-  availableForSale: boolean;
-  title: string;
-  description: string;
-  descriptionHtml: string;
-  options: any[]; // You can define a more specific type for options if needed
-  priceRange: {
-    maxVariantPrice: { amount: string; currencyCode: string };
-    minVariantPrice: { amount: string; currencyCode: string };
-  };
-  variants: any[]; // You can define a more specific type for variants if needed
-  featuredImage: {
-    url: string;
-    altText: string;
-    width: number;
-    height: number;
-  };
-  seo: {
-    title: string;
-    description: string;
-  };
-  tags: string[];
-  updatedAt: string;
-};
-
 export const metadata = {
   title: 'Search',
-  description: 'Search for products in the store.',
+  description: 'Search for products in the store.'
 };
 
 export default async function SearchPage({
-  searchParams,
+  searchParams
 }: {
   searchParams?: { [key: string]: string | string[] | undefined };
 }) {
-  const { sort, q: searchValue } = searchParams as { [key: string]: string };
+  const { sort } = searchParams as { [key: string]: string };
   const { sortKey, reverse } = sorting.find((item) => item.slug === sort) || defaultSort;
 
-  // Explicitly type the products array to fix the error
-  const products: Product[] = []; // This will be replaced with your API call
+  // Fetch all products from your Turso database
+  const rawProducts = await db
+    .select()
+    .from(productsTable)
+    .orderBy(reverse ? desc(productsTable.createdAt) : productsTable.createdAt);
+
+  // Format the data to match what the frontend components expect
+  const formattedProducts = rawProducts.map((product) => ({
+    handle: product.slug,
+    title: product.name,
+    priceRange: {
+      maxVariantPrice: {
+        amount: (product.price / 100).toString(),
+        currencyCode: 'USD'
+      }
+    },
+    featuredImage: {
+      url: product.imageUrl
+    }
+  }));
+
+  const resultsText = formattedProducts.length > 1 ? 'results' : 'result';
 
   return (
     <>
-      {searchValue ? (
-        <p className="mb-4">
-          {products.length === 0
-            ? 'There are no products that match '
-            : `Showing ${products.length} results for `}
-          <span className="font-bold">&quot;{searchValue}&quot;</span>
-        </p>
+      {formattedProducts.length > 0 ? (
+        <div className="mb-4">
+          <p className="text-sm">
+            Showing {formattedProducts.length} {resultsText}.
+          </p>
+        </div>
       ) : null}
-      {products.length > 0 ? (
-        <ProductGridItems products={products} />
-      ) : null}
+      {formattedProducts.length > 0 ? (
+        <Grid className="grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
+          <ProductGridItems products={formattedProducts as any} />
+        </Grid>
+      ) : (
+        <div className="mx-auto flex max-w-4xl flex-col items-center justify-center gap-y-4 px-4 py-24">
+          <h2 className="text-2xl font-bold">No products found</h2>
+          <p>We could not find any products. Try searching for something else.</p>
+        </div>
+      )}
     </>
   );
 }

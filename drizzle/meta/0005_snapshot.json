@@ -1,8 +1,8 @@
 {
   "version": "6",
   "dialect": "sqlite",
-  "id": "bc60ee87-c545-48ce-8bf6-c2f8d9331f06",
-  "prevId": "25303343-126d-44c9-bf4f-69fecef07ce8",
+  "id": "25303343-126d-44c9-bf4f-69fecef07ce8",
+  "prevId": "9296e7c4-3dcf-46c6-8e06-f4b48f7c34ce",
   "tables": {
     "carts": {
       "name": "carts",
@@ -34,7 +34,7 @@
           "primaryKey": false,
           "notNull": true,
           "autoincrement": false,
-          "default": "'2025-07-22T16:39:23.474Z'"
+          "default": "'2025-07-22T16:35:17.216Z'"
         }
       },
       "indexes": {},
@@ -86,7 +86,7 @@
           "primaryKey": false,
           "notNull": true,
           "autoincrement": false,
-          "default": "'2025-07-22T16:39:23.474Z'"
+          "default": "'2025-07-22T16:35:17.216Z'"
         }
       },
       "indexes": {
@@ -169,7 +169,7 @@
           "primaryKey": false,
           "notNull": true,
           "autoincrement": false,
-          "default": "'2025-07-22T16:39:23.474Z'"
+          "default": "'2025-07-22T16:35:17.216Z'"
         }
       },
       "indexes": {
@@ -231,7 +231,7 @@
           "primaryKey": false,
           "notNull": true,
           "autoincrement": false,
-          "default": "'2025-07-22T16:39:23.474Z'"
+          "default": "'2025-07-22T16:35:17.216Z'"
         }
       },
       "indexes": {
@@ -285,7 +285,7 @@
           "primaryKey": false,
           "notNull": true,
           "autoincrement": false,
-          "default": "'2025-07-22T16:39:23.474Z'"
+          "default": "'2025-07-22T16:35:17.217Z'"
         }
       },
       "indexes": {},
@@ -469,7 +469,7 @@
           "primaryKey": false,
           "notNull": true,
           "autoincrement": false,
-          "default": "'2025-07-22T16:39:23.474Z'"
+          "default": "'2025-07-22T16:35:17.216Z'"
         },
         "updated_at": {
           "name": "updated_at",
@@ -477,7 +477,7 @@
           "primaryKey": false,
           "notNull": true,
           "autoincrement": false,
-          "default": "'2025-07-22T16:39:23.474Z'"
+          "default": "'2025-07-22T16:35:17.216Z'"
         },
         "image_public_id": {
           "name": "image_public_id",
@@ -587,7 +587,7 @@
           "primaryKey": false,
           "notNull": true,
           "autoincrement": false,
-          "default": "'2025-07-22T16:39:23.471Z'"
+          "default": "'2025-07-22T16:35:17.215Z'"
         }
       },
       "indexes": {

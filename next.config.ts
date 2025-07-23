@@ -1,17 +1,18 @@
-export default {
-  experimental: {
-    ppr: true,
-    inlineCss: true,
-    useCache: true
-  },
+// File: next.config.ts
+
+/** @type {import('next').NextConfig} */
+const nextConfig = {
+  // This 'images' block is what we are adding
   images: {
-    formats: ['image/avif', 'image/webp'],
     remotePatterns: [
       {
         protocol: 'https',
-        hostname: 'cdn.shopify.com',
-        pathname: '/s/files/**'
-      }
-    ]
-  }
+        hostname: 'res.cloudinary.com',
+        port: '',
+        pathname: '/**',
+      },
+    ],
+  },
 };
+
+export default nextConfig;
