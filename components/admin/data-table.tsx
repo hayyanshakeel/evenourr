@@ -48,8 +48,8 @@ export default function DataTable<T extends { id: any }>({
               <th
                 key={col.key}
                 scope="col"
-                // Apply the className to the header as well
-                className={`px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500 ${col.className || ''}`}
+                // Apply the className to the header
+                className={`px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500 ${col.className || ''}`}
               >
                 {col.label}
               </th>
@@ -67,7 +67,7 @@ export default function DataTable<T extends { id: any }>({
                 <td 
                   key={col.key} 
                   // Apply the className to the cell
-                  className={`whitespace-nowrap px-6 py-4 text-sm text-gray-600 ${col.className || ''}`}
+                  className={`whitespace-nowrap px-4 py-4 text-sm text-gray-600 ${col.className || ''}`}
                 >
                   {col.render(item)}
                 </td>

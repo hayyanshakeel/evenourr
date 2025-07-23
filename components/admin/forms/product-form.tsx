@@ -1,213 +1,158 @@
 'use client';
 
-import { useState, useCallback, useEffect } from 'react';
+import { useState, FormEvent } from 'react';
 import { useRouter } from 'next/navigation';
-import Image from 'next/image';
-import { useDropzone } from 'react-dropzone';
-import { ArrowUpTrayIcon } from '@heroicons/react/24/solid';
-
-const CLOUD_NAME = process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME;
-const UPLOAD_PRESET = process.env.NEXT_PUBLIC_CLOUDINARY_UPLOAD_PRESET;
+import { Product } from '@/lib/types';
 
 interface ProductFormProps {
-  initialData?: any;
-  productId?: number;
+  product?: Product;
 }
 
-export default function ProductForm({ initialData, productId }: ProductFormProps) {
+export default function ProductForm({ product }: ProductFormProps) {
   const router = useRouter();
-  const [loading, setLoading] = useState(false);
+  const [name, setName] = useState(product?.name || '');
+  const [price, setPrice] = useState(product?.price?.toString() || '');
+  const [inventory, setInventory] = useState(product?.inventory?.toString() || '');
+  const [status, setStatus] = useState(product?.status || 'draft');
   const [imageFile, setImageFile] = useState<File | null>(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
-  const [product, setProduct] = useState({
-    name: initialData?.name || '',
-    slug: initialData?.slug || '',
-    description: initialData?.description || '',
-    status: initialData?.status || 'active',
-    imageUrl: initialData?.imageUrl || null,
-  });
-
-  const [options, setOptions] = useState(initialData?.options || []);
-  const [variants, setVariants] = useState(initialData?.variants || []);
-
-  const onDrop = useCallback((acceptedFiles: File[]) => {
-    if (acceptedFiles[0]) {
-      const file = acceptedFiles[0];
-      setImageFile(file);
-      setProduct((p) => ({ ...p, imageUrl: URL.createObjectURL(file) }));
-    }
-  }, []);
-
-  const { getRootProps, getInputProps } = useDropzone({
-    onDrop,
-    accept: { 'image/*': [] },
-    multiple: false,
-  });
-
-  useEffect(() => {
-    if (options.length === 0) {
-      if (variants.length === 0 || variants.some((v: any) => v.title !== 'Default Title')) {
-        setVariants([{ title: 'Default Title', price: '0.00', inventory: '0', sku: '' }]);
-      }
-      return;
-    }
-
-    const generateCombinations = (opts: any[]): string[][] => {
-      if (opts.length === 0) return [[]];
-      const first = opts[0];
-      const rest = opts.slice(1);
-      const combs = generateCombinations(rest);
-      return first.values.flatMap((v: string) => combs.map((c: string[]) => [v, ...c]));
-    };
-
-    const combinations = generateCombinations(options.filter((o: any) => o.values.length > 0));
-    const newVariants = combinations.map((combo: string[]) => {
-      const title = combo.join(' / ');
-      const existingVariant = variants.find((v: any) => v.title === title);
-      return {
-        title,
-        price: existingVariant?.price || '0.00',
-        inventory: existingVariant?.inventory || '0',
-        sku: existingVariant?.sku || '',
-      };
-    });
-    setVariants(newVariants);
-  }, [options, variants]);
-
-  const handleProductChange = (field: keyof typeof product, value: string) => {
-    setProduct((p) => ({ ...p, [field]: value }));
-    if (field === 'name' && !productId) {
-      const slug = value.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
-      setProduct((p) => ({ ...p, slug }));
-    }
-  };
-
-  const addOption = () => setOptions([...options, { name: '', values: [] }]);
-  const removeOption = (index: number) => setOptions(options.filter((_: any, i: number) => i !== index));
-  const updateOptionName = (index: number, name: string) => {
-    const newOptions = [...options];
-    newOptions[index].name = name;
-    setOptions(newOptions);
-  };
-  const updateOptionValues = (index: number, values: string[]) => {
-    const newOptions = [...options];
-    newOptions[index].values = values;
-    setOptions(newOptions);
-  };
-
-  const handleVariantChange = (index: number, field: string, value: string) => {
-    const newVariants = [...variants];
-    newVariants[index][field] = value;
-    setVariants(newVariants);
-  };
-
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
-    setLoading(true);
-
-    let uploadedImageUrl = product.imageUrl;
-    if (imageFile) {
-      const formData = new FormData();
-      formData.append('file', imageFile);
-      formData.append('upload_preset', UPLOAD_PRESET!);
-      const response = await fetch(`https://api.cloudinary.com/v1_1/${CLOUD_NAME}/image/upload`, {
-        method: 'POST',
-        body: formData,
-      });
-      if (!response.ok) {
-        alert('Image upload failed.');
-        setLoading(false);
+    if (!imageFile && !product) {
+        setError('An image is required for new products.');
         return;
-      }
-      const data = await response.json();
-      uploadedImageUrl = data.secure_url;
     }
+    
+    setIsSubmitting(true);
+    setError(null);
+
+    const formData = new FormData();
+    formData.append('name', name);
+    formData.append('price', price);
+    formData.append('inventory', inventory);
+    formData.append('status', status);
+    if (imageFile) {
+        formData.append('image', imageFile);
+    }
+    
+    const method = product ? 'PUT' : 'POST';
+    const url = product ? `/api/products/${product.id}` : '/api/products';
 
     try {
-      const payload = {
-        product: { ...product, imageUrl: uploadedImageUrl },
-        options,
-        variants,
-      };
-
-      const url = productId ? `/api/products/${productId}` : '/api/products';
-      const method = productId ? 'PATCH' : 'POST';
-
       const response = await fetch(url, {
         method,
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload),
+        body: formData, // Use FormData instead of JSON
       });
 
-      if (response.ok) {
-        // --- THIS IS THE FIX ---
-        // Force a full page reload to bypass the browser cache
-        window.location.href = '/dashboard/products';
-      } else {
-        const error = await response.json();
-        alert(error.message || 'Failed to save product');
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Something went wrong');
       }
-    } catch (error) {
-      alert('An unexpected error occurred.');
+
+      router.push('/dashboard/products');
+      router.refresh();
+
+    } catch (err: any) {
+      setError(err.message);
     } finally {
-      setLoading(false);
+      setIsSubmitting(false);
     }
   };
 
   return (
-    <form onSubmit={handleSubmit}>
-      <div className="grid grid-cols-3 gap-8">
-        {/* Left Column */}
-        <div className="col-span-2 space-y-8">
-          <div className="rounded-lg border bg-white p-6 shadow-sm">
-            <input type="text" placeholder="Product Title" value={product.name} onChange={(e) => handleProductChange('name', e.target.value)} className="w-full border-none text-xl font-medium focus:ring-0" />
-            <hr className="my-4" />
-            <textarea placeholder="Description" rows={5} value={product.description} onChange={(e) => handleProductChange('description', e.target.value)} className="w-full border-none focus:ring-0" />
-          </div>
-          <div className="rounded-lg border bg-white p-6 shadow-sm">
-            <h3 className="text-lg font-medium">Media</h3>
-            <div {...getRootProps()} className="mt-4 flex cursor-pointer justify-center rounded-md border-2 border-dashed border-gray-300 px-6 py-10">
-              <div className="text-center">
-                {product.imageUrl ? <Image src={product.imageUrl} alt="Preview" width={100} height={100} className="mx-auto" /> : <ArrowUpTrayIcon className="mx-auto h-12 w-12 text-gray-400" />}
-                <p className="mt-2 text-sm text-gray-600">Drag & drop or <span className="text-blue-600">click to upload</span></p>
-                <input {...getInputProps()} className="hidden" />
-              </div>
-            </div>
-          </div>
-          <div className="rounded-lg border bg-white p-6 shadow-sm">
-            <h3 className="text-lg font-medium">Variants</h3>
-            {options.map((opt: any, index: number) => (
-              <div key={index} className="mt-4 rounded border p-4">
-                <div className="flex justify-between">
-                  <label className="text-sm font-medium">Option name</label>
-                  <button type="button" onClick={() => removeOption(index)} className="text-sm text-red-600">Remove</button>
-                </div>
-                <input type="text" value={opt.name} onChange={(e) => updateOptionName(index, e.target.value)} className="mt-1 block w-full rounded-md border-gray-300 shadow-sm" />
-                <label className="mt-2 block text-sm font-medium">Option values</label>
-                <input type="text" placeholder="Comma-separated values, e.g., Red, Blue" value={opt.values.join(', ')} onChange={(e) => updateOptionValues(index, e.target.value.split(',').map((s) => s.trim()))} className="mt-1 block w-full rounded-md border-gray-300 shadow-sm" />
-              </div>
-            ))}
-            <button type="button" onClick={addOption} className="mt-4 text-sm font-medium text-blue-600">+ Add another option</button>
-            <hr className="my-4" />
-            {variants.length > 0 && (
-              <table className="min-w-full">
-                <thead><tr><th className="py-2 text-left text-xs font-medium uppercase text-gray-500">Variant</th><th className="py-2 text-left text-xs font-medium uppercase text-gray-500">Price</th><th className="py-2 text-left text-xs font-medium uppercase text-gray-500">Available</th></tr></thead>
-                <tbody>{variants.map((variant: any, index: number) => (<tr key={index}><td className="py-2 pr-2">{variant.title}</td><td className="py-2 px-2"><input type="text" value={variant.price} onChange={(e) => handleVariantChange(index, 'price', e.target.value)} className="w-full rounded border-gray-300" /></td><td className="py-2 pl-2"><input type="text" value={variant.inventory} onChange={(e) => handleVariantChange(index, 'inventory', e.target.value)} className="w-full rounded border-gray-300" /></td></tr>))}</tbody>
-              </table>
-            )}
-          </div>
+    <form onSubmit={handleSubmit} className="space-y-6 rounded-lg border bg-white p-6 shadow-sm">
+      {error && <div className="rounded-md bg-red-50 p-4 text-sm text-red-700">{error}</div>}
+
+      <div>
+        <label htmlFor="name" className="block text-sm font-medium text-gray-700">
+          Product Name
+        </label>
+        <input
+          type="text"
+          id="name"
+          value={name}
+          onChange={(e) => setName(e.target.value)}
+          className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+          required
+        />
+      </div>
+
+      <div>
+        <label htmlFor="image" className="block text-sm font-medium text-gray-700">
+          Product Image
+        </label>
+        <input
+          type="file"
+          id="image"
+          // This line is corrected to handle the potential undefined case
+          onChange={(e) => setImageFile(e.target.files?.[0] || null)}
+          className="mt-1 block w-full text-sm text-gray-500 file:mr-4 file:rounded-md file:border-0 file:bg-blue-50 file:px-4 file:py-2 file:text-sm file:font-semibold file:text-blue-700 hover:file:bg-blue-100"
+          accept="image/*"
+        />
+      </div>
+
+      <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
+        <div>
+          <label htmlFor="price" className="block text-sm font-medium text-gray-700">
+            Price
+          </label>
+          <input
+            type="number"
+            id="price"
+            value={price}
+            onChange={(e) => setPrice(e.target.value)}
+            className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+            required
+            step="0.01"
+          />
         </div>
-        {/* Right Column */}
-        <div className="col-span-1 space-y-8">
-          <div className="rounded-lg border bg-white p-6 shadow-sm">
-            <h3 className="text-lg font-medium">Status</h3>
-            <select value={product.status} onChange={(e) => handleProductChange('status', e.target.value)} className="mt-2 block w-full rounded-md border-gray-300 shadow-sm"><option value="active">Active</option><option value="draft">Draft</option></select>
-          </div>
+        <div>
+          <label htmlFor="inventory" className="block text-sm font-medium text-gray-700">
+            Inventory
+          </label>
+          <input
+            type="number"
+            id="inventory"
+            value={inventory}
+            onChange={(e) => setInventory(e.target.value)}
+            className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+          />
         </div>
       </div>
-      <div className="mt-8 flex justify-end gap-4">
-        <button type="button" className="rounded-md bg-gray-200 px-4 py-2 text-sm font-medium" onClick={() => router.back()}>Discard</button>
-        <button type="submit" disabled={loading} className="rounded-md bg-green-600 px-4 py-2 text-sm font-medium text-white disabled:opacity-50">{loading ? 'Saving...' : 'Save'}</button>
+
+      <div>
+        <label htmlFor="status" className="block text-sm font-medium text-gray-700">
+          Status
+        </label>
+        <select
+          id="status"
+          value={status}
+          onChange={(e) => setStatus(e.target.value as 'draft' | 'active' | 'archived')}
+          className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+        >
+          <option value="draft">Draft</option>
+          <option value="active">Active</option>
+          <option value="archived">Archived</option>
+        </select>
+      </div>
+
+      <div className="flex justify-end gap-4">
+        <button
+          type="button"
+          onClick={() => router.back()}
+          className="rounded-md border bg-white px-4 py-2 text-sm font-semibold text-gray-700 shadow-sm hover:bg-gray-50"
+        >
+          Cancel
+        </button>
+        <button
+          type="submit"
+          disabled={isSubmitting}
+          className="rounded-md bg-blue-600 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-blue-500 disabled:opacity-50"
+        >
+          {isSubmitting ? 'Saving...' : 'Save Product'}
+        </button>
       </div>
     </form>
   );

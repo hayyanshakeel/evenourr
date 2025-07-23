@@ -7,6 +7,11 @@ import Header from '@/components/admin/header';
 
 // A helper function to get the page title from the URL path
 const getTitleFromPath = (path: string): string => {
+  // Check if we are on the main products page
+  if (path === '/dashboard/products') {
+    return ''; // Return an empty string to hide the title
+  }
+  
   const parts = path.split('/').filter(Boolean);
   
   if (parts.length < 2) {
@@ -35,6 +40,7 @@ export default function AdminLayout({ children }: { children: ReactNode }) {
       <Nav isNavOpen={isNavOpen} setIsNavOpen={setIsNavOpen} />
 
       <div className="flex flex-1 flex-col md:ml-64">
+        {/* Pass the title to the Header component */}
         <Header title={pageTitle} onMenuClick={() => setIsNavOpen(true)} />
         <main className="flex-1 p-4 sm:p-6">{children}</main>
       </div>

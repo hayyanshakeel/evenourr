@@ -1,48 +1,28 @@
-import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/db';
-import { coupons } from '@/lib/db/schema';
-import { z } from 'zod';
-import { desc } from 'drizzle-orm';
+import { coupons } from '@/lib/db/schema'; // Corrected import
+import { eq } from 'drizzle-orm';
+import { NextResponse } from 'next/server';
 
-const couponSchema = z.object({
-  code: z.string().min(1),
-  discountType: z.enum(['percentage', 'fixed']),
-  discountValue: z.number().min(0),
-  expiresAt: z.string().optional().nullable(),
-});
+export async function GET(request: Request) {
+    const { searchParams } = new URL(request.url);
+    const code = searchParams.get('code');
 
-export async function GET() {
-  try {
-    const allCoupons = await db.query.coupons.findMany({
-      orderBy: [desc(coupons.createdAt)]
-    });
-    return NextResponse.json(allCoupons);
-  } catch (error) {
-    console.error('Failed to fetch coupons:', error);
-    return NextResponse.json({ message: 'Failed to fetch coupons' }, { status: 500 });
-  }
-}
-
-export async function POST(req: NextRequest) {
-  try {
-    const body = await req.json();
-    const validation = couponSchema.safeParse(body);
-    if (!validation.success) {
-      return NextResponse.json(validation.error.errors, { status: 400 });
+    if (!code) {
+        return NextResponse.json({ error: 'Coupon code is required' }, { status: 400 });
     }
-    const { code, discountType, discountValue, expiresAt } = validation.data;
-    const [newCoupon] = await db
-      .insert(coupons)
-      .values({
-        code,
-        discountType,
-        discountValue,
-        expiresAt: expiresAt ? new Date(expiresAt) : null,
-      })
-      .returning();
-    return NextResponse.json(newCoupon, { status: 201 });
-  } catch (error) {
-    console.error('Failed to create coupon:', error);
-    return NextResponse.json({ message: 'Failed to create coupon' }, { status: 500 });
-  }
+
+    try {
+        const coupon = await db.query.coupons.findFirst({
+            where: eq(coupons.code, code),
+        });
+
+        if (!coupon) {
+            return NextResponse.json({ error: 'Invalid coupon code' }, { status: 404 });
+        }
+
+        return NextResponse.json(coupon);
+    } catch (error) {
+        console.error('Error fetching coupon:', error);
+        return NextResponse.json({ error: 'Failed to validate coupon' }, { status: 500 });
+    }
 }

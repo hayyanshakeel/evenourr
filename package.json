@@ -15,6 +15,7 @@
     "@headlessui/react": "^2.2.0",
     "@heroicons/react": "^2.2.0",
     "@libsql/client": "^0.10.0",
+    "@paralleldrive/cuid2": "^2.2.2",
     "cloudinary": "^2.7.0",
     "clsx": "^2.1.1",
     "contentful": "^10.12.2",

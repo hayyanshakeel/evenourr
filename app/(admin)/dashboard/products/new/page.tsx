@@ -1,12 +1,12 @@
 import Header from '@/components/admin/header';
+// Corrected import path
 import ProductForm from '@/components/admin/forms/product-form';
 
 export default function NewProductPage() {
   return (
     <div>
-      {/* The Header is now part of the layout, so we don't need it here. */}
-      {/* The title will be set automatically by the layout. */}
-      <div className="mt-8">
+      <Header title="Add New Product" />
+      <div className="mt-6">
         <ProductForm />
       </div>
     </div>

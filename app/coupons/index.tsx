@@ -1,36 +1,43 @@
 'use client';
 
-import { useState, useCallback } from 'react';
-import { db } from '@/lib/db';
-import { coupons } from '@/lib/db/schema';
-import { z } from 'zod';
+import { useEffect, useState } from 'react';
+import { coupons as couponSchema } from '@/lib/db/schema'; // Import with alias
 
-const couponSchema = z.object({
-  code: z.string().min(1),
-  discountType: z.enum(['percentage', 'fixed']),
-  discountValue: z.number().min(0),
-  expiresAt: z.string().optional().nullable()
-});
+// Define the type based on your schema
+type Coupon = typeof couponSchema.$inferSelect;
 
-export default function CouponManager() {
-  const [code, setCode] = useState('');
-  const [discountType, setDiscountType] = useState<'percentage' | 'fixed'>('percentage');
-  const [discountValue, setDiscountValue] = useState(0);
-  const [expiresAt, setExpiresAt] = useState<string | null>(null);
-  const [error, setError] = useState<string | null>(null);
+export default function CouponsList() {
+    const [coupons, setCoupons] = useState<Coupon[]>([]);
+    const [loading, setLoading] = useState(true);
 
-  const handleCreateCoupon = useCallback(async () => {
-    try {
-      // Logic for creating a coupon...
-    } catch (e) {
-      console.error(e);
-      setError('An unexpected error occurred.');
-    }
-  }, [code, discountType, discountValue, expiresAt]);
+    useEffect(() => {
+        const fetchCoupons = async () => {
+            try {
+                // This would likely be an API call in a real app
+                // For now, it's just showing how to use the type
+                // const response = await fetch('/api/coupons/all'); 
+                // const data = await response.json();
+                // setCoupons(data);
+            } catch (error) {
+                console.error('Failed to fetch coupons', error);
+            } finally {
+                setLoading(false);
+            }
+        };
 
-  return (
-    <div>
-      {/* Your form JSX here */}
-    </div>
-  );
+        fetchCoupons();
+    }, []);
+
+    if (loading) return <p>Loading coupons...</p>;
+
+    return (
+        <div>
+            <h2>All Coupons</h2>
+            <ul>
+                {coupons.map((coupon) => (
+                    <li key={coupon.id}>{coupon.code}</li>
+                ))}
+            </ul>
+        </div>
+    );
 }

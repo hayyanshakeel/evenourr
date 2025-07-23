@@ -1,28 +1,40 @@
-import { NextResponse } from 'next/server';
 import { db } from '@/lib/db';
-import { revalidatePath } from 'next/cache';
+import { products } from '@/lib/db/schema';
+import { NextResponse } from 'next/server';
+import { uploadToCloudinary } from '@/lib/cloudinary';
 
-export async function GET() {
-  console.log('--- [API] Received GET request for /api/products ---');
+export async function POST(request: Request) {
   try {
-    const allProducts = await db.query.products.findMany({
-      orderBy: (products, { desc }) => [desc(products.createdAt)],
-    });
+    const formData = await request.formData();
+    const name = formData.get('name') as string;
+    const price = parseFloat(formData.get('price') as string);
+    const inventory = parseInt(formData.get('inventory') as string, 10) || 0;
+    const status = formData.get('status') as string;
+    const imageFile = formData.get('image') as File;
 
-    console.log(`--- [API] Found ${allProducts.length} products in the database. ---`);
-    // Uncomment the line below to see the actual data in your terminal
-    // console.log(allProducts);
+    if (!name || isNaN(price) || !imageFile) {
+      return NextResponse.json({ error: 'Name, a valid price, and image are required' }, { status: 400 });
+    }
 
-    return NextResponse.json(allProducts);
+    const imageUrl = await uploadToCloudinary(imageFile);
+    if (!imageUrl) {
+        return NextResponse.json({ error: 'Image upload failed' }, { status: 500 });
+    }
+
+    const newProduct = await db
+      .insert(products)
+      .values({
+        name,
+        price,
+        inventory,
+        status: status as 'draft' | 'active' | 'archived', // Correctly typed
+        imageUrl,
+      })
+      .returning();
+
+    return NextResponse.json(newProduct[0], { status: 201 });
   } catch (error) {
-    console.error('--- [API] CRITICAL ERROR fetching products: ---', error);
-    return NextResponse.json({ message: 'Failed to fetch products' }, { status: 500 });
+    console.error('Error creating product:', error);
+    return NextResponse.json({ error: 'Failed to create product' }, { status: 500 });
   }
-}
-
-// Keep your POST function as it is, with the revalidatePath call.
-export async function POST(req: Request) {
-    // ... your existing POST logic ...
-    revalidatePath('/dashboard/products');
-    // ...
 }

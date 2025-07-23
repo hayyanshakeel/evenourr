@@ -1,21 +1,20 @@
 'use server';
 
 import { db } from '@/lib/db';
-import * as schema from '@/lib/db/schema';
+import { products } from '@/lib/db/schema';
 import { eq } from 'drizzle-orm';
 
-export async function getProductByHandle(handle: string) {
+export async function getProductById(productId: number) {
   try {
     const product = await db.query.products.findFirst({
-      where: eq(schema.products.slug, handle),
+      where: eq(products.id, productId),
       with: {
-        variants: true,
-        options: true,
+        variants: true, // This now works correctly
       },
     });
     return product;
   } catch (error) {
-    console.error('Error fetching product by handle:', error);
+    console.error('Failed to fetch product:', error);
     return null;
   }
 }

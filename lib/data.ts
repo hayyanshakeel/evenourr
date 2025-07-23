@@ -1,37 +1,18 @@
-// lib/data.ts
 import { db } from '@/lib/db';
-import { products } from '@/lib/db/schema';
-import { eq } from 'drizzle-orm';
-import 'server-only';
+import { products } from './db/schema';
+import { desc } from 'drizzle-orm';
 
-export async function getProductByHandle(handle: string) {
+export async function getAllProducts() {
   try {
-    // Correctly query by slug
-    const productData = await db.query.products.findFirst({
-      where: eq(products.slug, handle),
+    const allProducts = await db.query.products.findMany({
       with: {
-        // These relations must be defined in your drizzle schema to work
-        variants: true,
-        // Assuming 'images' is a valid relation name on your products table
-        // If not, you will need to query for images separately
-      }
+        variants: true, // This now works correctly
+      },
+      orderBy: [desc(products.createdAt)],
     });
-    return productData;
+    return allProducts;
   } catch (error) {
-    console.error('Database Error:', error);
-    throw new Error('Failed to fetch product.');
-  }
-}
-
-export async function getRelatedProducts(productId: number) {
-  try {
-    const related = await db.query.products.findMany({
-      limit: 5,
-      where: (products, { ne }) => ne(products.id, productId)
-    });
-    return related;
-  } catch (error) {
-    console.error('Database Error:', error);
+    console.error('Failed to fetch all products:', error);
     return [];
   }
 }

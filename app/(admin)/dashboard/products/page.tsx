@@ -4,7 +4,12 @@ import { useEffect, useState, useMemo, useCallback, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import Header from '@/components/admin/header';
 import DataTable from '@/components/admin/data-table';
-import { PlusIcon, PencilIcon, TrashIcon, MagnifyingGlassIcon } from '@heroicons/react/24/outline';
+import {
+  PlusIcon,
+  PencilIcon,
+  TrashIcon,
+  MagnifyingGlassIcon
+} from '@heroicons/react/24/outline';
 import Image from 'next/image';
 import clsx from 'clsx';
 
@@ -15,6 +20,9 @@ interface Product {
   price: number;
   inventory: number;
   imageUrl: string | null;
+  category: string;
+  variants: number;
+  channels: number;
 }
 
 const ProductsPage = () => {
@@ -32,7 +40,14 @@ const ProductsPage = () => {
       const response = await fetch('/api/products');
       if (!response.ok) throw new Error('Failed to fetch products');
       const data = await response.json();
-      setProducts(data);
+      // Add mock data for new columns
+      const productsWithMockData = data.map((p: any) => ({
+        ...p,
+        category: 'Tank Tops',
+        variants: 6,
+        channels: 2
+      }));
+      setProducts(productsWithMockData);
     } catch (error) {
       console.error(error);
     } finally {
@@ -81,9 +96,6 @@ const ProductsPage = () => {
     }
   };
 
-  const formatCurrency = (amount: number) =>
-    new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(amount / 100);
-
   const getStatusBadge = (status: string) => {
     const styles = {
       active: 'bg-green-100 text-green-700 ring-green-600/20',
@@ -124,51 +136,60 @@ const ProductsPage = () => {
             onChange={(e) => handleSelectOne(e, p.id)}
             onClick={(e) => e.stopPropagation()}
           />
+        ),
+        className: 'w-12' // Make checkbox column smaller
+      },
+      {
+        key: 'product',
+        label: 'Product',
+        render: (p: Product) => (
+          <div className="flex items-center gap-3">
+            {p.imageUrl ? (
+              <Image
+                src={p.imageUrl}
+                alt={p.name}
+                width={40}
+                height={40}
+                className="h-10 w-10 rounded-md object-cover"
+              />
+            ) : (
+              <div className="h-10 w-10 rounded-md bg-gray-200" />
+            )}
+            <span className="font-medium text-gray-900">{p.name}</span>
+          </div>
         )
-      },
-      {
-        key: 'image',
-        label: 'Image',
-        render: (p: Product) =>
-          p.imageUrl ? (
-            <Image
-              src={p.imageUrl}
-              alt={p.name}
-              width={40}
-              height={40}
-              className="h-10 w-10 rounded-md object-cover"
-            />
-          ) : (
-            <div className="h-10 w-10 rounded-md bg-gray-200" />
-          )
-      },
-      {
-        key: 'name',
-        label: 'Product Name',
-        render: (p: Product) => <span className="font-medium text-gray-900">{p.name}</span>
       },
       { key: 'status', label: 'Status', render: (p: Product) => getStatusBadge(p.status) },
       {
         key: 'inventory',
         label: 'Inventory',
-        render: (p: Product) => <span className="text-gray-600">{`${p.inventory || 0} in stock`}</span>
+        render: (p: Product) => (
+          <span className="text-gray-600">{`${
+            p.inventory || 0
+          } in stock for ${p.variants} variants`}</span>
+        )
       },
       {
-        key: 'price',
-        label: 'Price',
-        render: (p: Product) => <span className="text-gray-600">{formatCurrency(p.price)}</span>
+        key: 'category',
+        label: 'Category',
+        render: (p: Product) => <span className="text-gray-600">{p.category}</span>
+      },
+      {
+        key: 'channels',
+        label: 'Channels',
+        render: (p: Product) => <span className="text-gray-600">{p.channels}</span>
       },
       {
         key: 'actions',
         label: '',
         render: (p: Product) => (
-          <div className="flex items-center justify-end gap-2">
+          <div className="flex items-center justify-end gap-2 text-gray-400">
             <button
               onClick={(e) => {
                 e.stopPropagation();
                 router.push(`/dashboard/products/${p.id}/edit`);
               }}
-              className="rounded p-1 text-gray-400 hover:text-gray-700"
+              className="hover:text-gray-700"
               title="Edit Product"
             >
               <PencilIcon className="h-4 w-4" />
@@ -178,20 +199,21 @@ const ProductsPage = () => {
                 e.stopPropagation();
                 handleDelete([p.id]);
               }}
-              className="rounded p-1 text-gray-400 hover:text-red-600"
+              className="hover:text-red-600"
               title="Delete Product"
             >
               <TrashIcon className="h-4 w-4" />
             </button>
           </div>
-        )
+        ),
+        className: 'w-20'
       }
     ],
     [router, filteredProducts, selectedProducts]
   );
 
   const FilterTabs = () => (
-    <div className="border-b border-gray-200">
+    <div className="border-b border-gray-200 px-4"> {/* Add padding here */}
       <nav className="-mb-px flex space-x-6" aria-label="Tabs">
         {['All', 'Active', 'Draft', 'Archived'].map((tab) => (
           <button
@@ -214,13 +236,21 @@ const ProductsPage = () => {
   return (
     <div>
       <Header title="Products">
-        <button
-          onClick={() => router.push('/dashboard/products/new')}
-          className="inline-flex items-center gap-x-1.5 rounded-md bg-blue-600 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-blue-500"
-        >
-          <PlusIcon className="-ml-0.5 h-5 w-5" />
-          Add Product
-        </button>
+        <div className="flex items-center gap-2">
+          <button className="rounded-md border bg-white px-3 py-2 text-sm font-semibold text-gray-700 shadow-sm hover:bg-gray-50">
+            Export
+          </button>
+          <button className="rounded-md border bg-white px-3 py-2 text-sm font-semibold text-gray-700 shadow-sm hover:bg-gray-50">
+            Import
+          </button>
+          <button
+            onClick={() => router.push('/dashboard/products/new')}
+            className="inline-flex items-center gap-x-1.5 rounded-md bg-blue-600 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-blue-500"
+          >
+            <PlusIcon className="-ml-0.5 h-5 w-5" />
+            Add Product
+          </button>
+        </div>
       </Header>
 
       <div className="mt-6 rounded-lg border bg-white shadow-sm">
@@ -239,21 +269,7 @@ const ProductsPage = () => {
 
         <FilterTabs />
 
-        <div className="p-4">
-          {selectedProducts.length > 0 && (
-            <div className="mb-4 flex items-center justify-between">
-              <span className="text-sm text-gray-600">
-                {selectedProducts.length} product{selectedProducts.length > 1 ? 's' : ''} selected
-              </span>
-              <button
-                onClick={() => handleDelete(selectedProducts)}
-                className="text-sm font-medium text-red-600 hover:text-red-500"
-              >
-                Delete selected
-              </button>
-            </div>
-          )}
-
+        <div className="overflow-x-auto">
           <DataTable
             data={filteredProducts}
             columns={columns}
