@@ -42,8 +42,6 @@ export const productVariants = mysqlTable('product_variants', {
   inventory: int('inventory').notNull().default(0),
 });
 
-
-// --- THIS IS THE FIX ---
 // Explicitly define the relationships between the tables.
 export const productRelations = relations(products, ({ many }) => ({
   options: many(productOptions),

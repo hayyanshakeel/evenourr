@@ -1,17 +1,13 @@
 import { defineConfig } from 'drizzle-kit';
-import dotenv from 'dotenv';
-
-// This line is essential
-dotenv.config({ path: '.env.local' });
 
 export default defineConfig({
-  // Ensure this path is correct
   schema: './lib/db/schema.ts',
   out: './drizzle',
   dialect: 'sqlite',
   driver: 'turso',
   dbCredentials: {
-    url: process.env.TURSO_DATABASE_URL!,
-    authToken: process.env.TURSO_AUTH_TOKEN!
+    // We are temporarily hardcoding the credentials to force a connection.
+    url: "libsql://evenour-evenour.aws-ap-south-1.turso.io",
+    authToken: "eyJhbGciOiJFZERTQSIsInR5cCI6IkpXVCJ9.eyJhIjoicnciLCJpYXQiOjE3NTMyNjg2NTYsImlkIjoiYmQzNjFhY2EtZjg3ZS00ZjVkLTg1NzItN2Y3OWUwMmJkZjhiIiwicmlkIjoiYmE4ODY5M2UtYmU5Ni00N2ZjLTk2ZGEtY2Y5MWQwZDUwYTc5In0.k9ypowNmkh4-9i7Wh6Sq5cVckufsBBq1HyG2v9vxFDeM9DMAr5IsZoX4QEKBh_TGSSDvDSSL0rCUZegFIdwEBw"
   }
 });
