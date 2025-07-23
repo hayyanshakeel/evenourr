@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { db } from '@/lib/turso';
+import { db } from '@/lib/db';
 import { cartItems } from '@/lib/schema';
 import { eq } from 'drizzle-orm';
 

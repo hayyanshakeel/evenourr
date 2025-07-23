@@ -8,9 +8,6 @@ export async function getProductById(productId: number) {
   try {
     const product = await db.query.products.findFirst({
       where: eq(products.id, productId),
-      with: {
-        variants: true, // This now works correctly
-      },
     });
     return product;
   } catch (error) {

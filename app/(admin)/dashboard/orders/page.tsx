@@ -24,7 +24,7 @@ export default function OrdersPage() {
         const response = await fetch('/api/orders');
         if (response.ok) {
           const data = await response.json();
-          setOrders(data.orders);
+          setOrders(data);
         } else {
           console.error('API response was not ok.');
         }

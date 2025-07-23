@@ -11,7 +11,7 @@ export async function generateMetadata({
 }: {
   params: { handle: string };
 }): Promise<Metadata> {
-  const handle = params?.handle;
+  const { handle } = await params;
   if (!handle) return notFound();
 
   const product = await db.query.products.findFirst({ where: eq(products.slug, handle) });
@@ -26,14 +26,11 @@ export async function generateMetadata({
 
 // --- Corrected Page Component ---
 export default async function ProductPage({ params }: { params: { handle:string } }) {
-  const handle = params?.handle;
+  const { handle } = await params;
   if (!handle) return notFound();
 
   const productData = await db.query.products.findFirst({
     where: eq(products.slug, handle),
-    with: {
-      variants: true,
-    },
   });
 
   if (!productData) {
