@@ -1,21 +1,17 @@
-// drizzle.config.ts
-
 import { defineConfig } from 'drizzle-kit';
+import dotenv from 'dotenv';
+
+// This line is essential
+dotenv.config({ path: '.env.local' });
 
 export default defineConfig({
-  // Specifies the dialect is SQLite for Turso
-  dialect: 'sqlite',
-
-  // Explicitly points to your one and only schema file
+  // Ensure this path is correct
   schema: './lib/db/schema.ts',
-
-  // The directory where migration files will be generated
   out: './drizzle',
-
-  // Configuration for connecting to your Turso database
+  dialect: 'sqlite',
   driver: 'turso',
   dbCredentials: {
     url: process.env.TURSO_DATABASE_URL!,
-    authToken: process.env.TURSO_AUTH_TOKEN!,
-  },
+    authToken: process.env.TURSO_AUTH_TOKEN!
+  }
 });

@@ -1,59 +1,100 @@
-// File: app/api/products/route.ts
-
 import { db } from '@/lib/db';
-import { products } from '@/lib/db/schema';
+// This is the line that fixes the errors
+import { products, productOptions, productVariants } from '@/lib/db/schema';
 import { NextRequest, NextResponse } from 'next/server';
-import { revalidatePath } from 'next/cache'; // 1. Make sure this import is here
+import { revalidatePath } from 'next/cache';
 
-// (Your ProductStatus type and GET function remain the same)
-type ProductStatus = 'active' | 'draft' | 'archived';
-
+// Updated GET function with better error logging
 export async function GET() {
   try {
-    const allProducts = await db.select().from(products);
+    const allProducts = await db.query.products.findMany({
+      with: {
+        options: true,
+        variants: true
+      },
+      orderBy: (products, { desc }) => [desc(products.createdAt)]
+    });
     return NextResponse.json(allProducts);
   } catch (error) {
-    console.error('Error fetching products:', error);
+    const errorMessage = error instanceof Error ? error.message : 'An unknown error occurred';
+    console.error('Error fetching products from database:', {
+      error,
+      errorMessage,
+      stack: error instanceof Error ? error.stack : undefined
+    });
     return NextResponse.json(
-      { message: 'Failed to fetch products. Please try again later.' },
+      { message: 'Failed to fetch products.', error: errorMessage },
       { status: 500 }
     );
   }
 }
 
+// Updated POST function
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
+    const { product, options, variants } = body;
 
-    const newProductData = {
-      name: body.title?.trim(),
-      slug: body.handle?.trim(),
-      description: body.description?.trim() || null,
-      price: parseInt(body.price, 10),
-      status: (body.status as ProductStatus) || 'active',
-      imageUrl: body.imageUrl || null,
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
-      imagePublicId: null,
-    };
-
-    if (!newProductData.name || !newProductData.slug || isNaN(newProductData.price)) {
-      return NextResponse.json({ message: 'Missing required fields' }, { status: 400 });
+    if (!product || !product.name || !product.slug) {
+      return NextResponse.json({ message: 'Missing required product fields' }, { status: 400 });
     }
 
-    await db.insert(products).values(newProductData);
+    const newProduct = await db.transaction(async (tx) => {
+      const [insertedProduct] = await tx
+        .insert(products)
+        .values({
+          name: product.name,
+          slug: product.slug,
+          description: product.description,
+          price: variants[0]?.price ? Math.round(parseFloat(variants[0].price) * 100) : 0,
+          status: product.status,
+          imageUrl: product.imageUrl
+        })
+        .returning();
 
-    // 2. These lines force the cache to clear for your storefront
-    revalidatePath('/');          // Clears the cache for the homepage
-    revalidatePath('/products');  // Clears the cache for a /products page
-    revalidatePath('/product');   // A fallback for paths like /product/[slug]
+      if (!insertedProduct) {
+        throw new Error('Failed to create product.');
+      }
 
-    return NextResponse.json({ message: 'Product created successfully!' }, { status: 201 });
+      const productId = insertedProduct.id;
 
+      if (options && options.length > 0) {
+        await tx.insert(productOptions).values(
+          options.map((opt: { name: string }) => ({
+            productId: productId,
+            name: opt.name
+          }))
+        );
+      }
+
+      if (variants && variants.length > 0) {
+        await tx.insert(productVariants).values(
+          variants.map((variant: any) => ({
+            productId: productId,
+            title: variant.title,
+            price: variant.price ? Math.round(parseFloat(variant.price) * 100) : 0,
+            inventory: variant.inventory ? parseInt(variant.inventory, 10) : 0,
+            sku: variant.sku
+          }))
+        );
+      }
+
+      return insertedProduct;
+    });
+
+    revalidatePath('/');
+    revalidatePath('/product');
+
+    return NextResponse.json(newProduct, { status: 201 });
   } catch (error) {
-    console.error('DATABASE INSERT FAILED:', error);
+    const errorMessage = error instanceof Error ? error.message : 'An unknown error occurred';
+    console.error('DATABASE INSERT FAILED:', {
+      error,
+      errorMessage,
+      stack: error instanceof Error ? error.stack : undefined
+    });
     return NextResponse.json(
-      { message: 'Database operation failed.', error: String(error) },
+      { message: 'Database operation failed.', error: errorMessage },
       { status: 500 }
     );
   }

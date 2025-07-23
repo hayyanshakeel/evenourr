@@ -25,6 +25,8 @@ export function ProductDescription({ product }: { product: Product }) {
       setSelectedVariantId(variant.id);
     } else if (product.variants.length === 1) {
       setSelectedVariantId(product.variants[0]?.id);
+    } else {
+      setSelectedVariantId(undefined);
     }
   }, [searchParams, product.variants, setSelectedVariantId]);
 
@@ -39,8 +41,9 @@ export function ProductDescription({ product }: { product: Product }) {
           />
         </div>
       </div>
-
-      <VariantSelector variants={product.variants} />
+      
+      {/* This is the line we're changing */}
+      <VariantSelector options={product.options} variants={product.variants} />
 
       {product.descriptionHtml ? (
         <Prose
@@ -49,10 +52,6 @@ export function ProductDescription({ product }: { product: Product }) {
         />
       ) : null}
 
-      {/* This is the fix:
-        - We convert selectedVariantId from a string to a number using parseInt().
-        - We also handle the case where it might be undefined.
-      */}
       <AddToCart
         availableForSale={product.availableForSale}
         selectedVariantId={selectedVariantId ? parseInt(selectedVariantId, 10) : undefined}

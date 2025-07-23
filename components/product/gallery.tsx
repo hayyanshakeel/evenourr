@@ -7,8 +7,9 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { usePathname, useSearchParams } from 'next/navigation';
 import { createUrl } from '@/lib/utils';
+import { Image as ImageType } from '@/lib/definitions'; // Import the correct Image type
 
-export function Gallery({ images }: { images: { src: string; altText: string }[] }) {
+export function Gallery({ images }: { images: ImageType[] }) { // Use the imported ImageType
   const pathname = usePathname();
   const searchParams = useSearchParams();
   const imageSearchParam = searchParams.get('image');
@@ -27,8 +28,8 @@ export function Gallery({ images }: { images: { src: string; altText: string }[]
   const buttonClassName = 'h-full px-6 transition-all ease-in-out hover:scale-110 hover:text-black dark:hover:text-white flex items-center justify-center';
   const mainImage = images[imageIndex];
 
-  // This is the fix: We trim the URL before using it
-  const imageUrl = mainImage?.src?.trim();
+  // This is the fix: We trim the URL and handle cases where it might be missing
+  const imageUrl = mainImage?.url?.trim(); // Changed from .src to .url
 
   return (
     <div className="relative aspect-square h-full max-h-[550px] w-full overflow-hidden">

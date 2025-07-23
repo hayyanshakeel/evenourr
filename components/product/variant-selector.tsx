@@ -2,49 +2,86 @@
 
 'use client';
 
-import { ProductVariant } from '@/lib/definitions';
+import { ProductOption, ProductVariant } from '@/lib/definitions';
+import { createUrl } from '@/lib/utils';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
-import { createUrl } from 'lib/utils'; // Assuming you have this utility function
+import { useMemo } from 'react';
+import clsx from 'clsx';
 
-// This is a basic variant selector. You can expand it with more complex logic.
-// For now, it just shows buttons for each variant.
-export function VariantSelector({ variants }: { variants: ProductVariant[] }) {
+type Combination = {
+  id: string;
+  availableForSale: boolean;
+  [key: string]: string | boolean; // e.g. { color: 'Red', size: 'S', availableForSale: true }
+};
+
+export function VariantSelector({
+  options,
+  variants
+}: {
+  options: ProductOption[];
+  variants: ProductVariant[];
+}) {
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
 
-  const handleVariantChange = (variantId: number) => {
-    const newSearchParams = new URLSearchParams(searchParams.toString());
-    newSearchParams.set('variant', variantId.toString());
-    const newUrl = createUrl(pathname, newSearchParams);
-    router.replace(newUrl, { scroll: false });
-  };
+  const combinations: Combination[] = useMemo(() => {
+    return variants.map((variant) => ({
+      id: variant.id,
+      availableForSale: variant.availableForSale,
+      ...variant.selectedOptions.reduce(
+        (accumulator, option) => ({ ...accumulator, [option.name.toLowerCase()]: option.value }),
+        {}
+      )
+    }));
+  }, [variants]);
 
-  if (!variants || variants.length === 0) {
-    return null;
-  }
+  return options.map((option) => (
+    <dl className="mb-8" key={option.name}>
+      <dt className="mb-4 text-sm uppercase tracking-wide">{option.name}</dt>
+      <dd className="flex flex-wrap gap-3">
+        {option.values.map((value) => {
+          const optionNameLowerCase = option.name.toLowerCase();
+          const optionSearchParams = new URLSearchParams(searchParams.toString());
+          optionSearchParams.set(optionNameLowerCase, value);
+          const optionUrl = createUrl(pathname, optionSearchParams);
 
-  const currentVariantId = searchParams.get('variant');
+          const isActive = searchParams.get(optionNameLowerCase) === value;
 
-  return (
-    <div className="mb-4">
-      <h3 className="mb-2 text-sm font-medium uppercase tracking-wide">Variants</h3>
-      <div className="flex flex-wrap gap-2">
-        {variants.map((variant) => {
-          const isActive = currentVariantId === variant.id.toString();
+          // Filter combinations to see which are available for the current option value
+          const filteredForAvailability = combinations.filter(
+            (combination) => combination[optionNameLowerCase] === value
+          );
+          
+          const isAvailable = filteredForAvailability.some(
+            (combination) => combination.availableForSale
+          );
+          
+          const isDisabled = !isAvailable;
+
           return (
             <button
-              key={variant.id}
-              onClick={() => handleVariantChange(variant.id)}
-              className={`flex min-w-[48px] items-center justify-center rounded-full border bg-neutral-100 px-3 py-2 text-sm
-                ${isActive ? 'ring-2 ring-blue-600' : ''}
-              `}
+              key={value}
+              aria-disabled={isDisabled}
+              disabled={isDisabled}
+              onClick={() => {
+                router.replace(optionUrl, { scroll: false });
+              }}
+              title={`${option.name} ${value}${!isAvailable ? ' (Out of Stock)' : ''}`}
+              className={clsx(
+                'flex min-w-[48px] items-center justify-center rounded-full border bg-neutral-100 px-4 py-2 text-sm transition-all duration-200',
+                {
+                  'cursor-not-allowed opacity-50': isDisabled,
+                  'ring-2 ring-blue-600': isActive,
+                  'hover:border-blue-600': !isDisabled
+                }
+              )}
             >
-              {variant.title}
+              {value}
             </button>
           );
         })}
-      </div>
-    </div>
-  );
+      </dd>
+    </dl>
+  ));
 }

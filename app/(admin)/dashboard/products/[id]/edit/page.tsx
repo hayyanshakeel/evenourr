@@ -12,30 +12,28 @@ export default function EditProductPage() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    const fetchProduct = async () => {
+      if (isNaN(productId)) return;
+      try {
+        const response = await fetch(`/api/products/${productId}`);
+        if (response.ok) {
+          const data = await response.json();
+          setProduct(data);
+        }
+      } catch (error) {
+        console.error('Failed to fetch product:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
     fetchProduct();
   }, [productId]);
-
-  const fetchProduct = async () => {
-    try {
-      const response = await fetch(`/api/products/${productId}`);
-      if (response.ok) {
-        const data = await response.json();
-        setProduct(data);
-      }
-    } catch (error) {
-      console.error('Failed to fetch product:', error);
-    } finally {
-      setLoading(false);
-    }
-  };
 
   if (loading) {
     return (
       <div>
         <Header title="Edit Product" />
-        <div className="mt-8 flex justify-center">
-          <div className="h-8 w-8 animate-spin rounded-full border-b-2 border-blue-600"></div>
-        </div>
+        <div className="mt-8 text-center">Loading...</div>
       </div>
     );
   }
@@ -44,14 +42,13 @@ export default function EditProductPage() {
     return (
       <div>
         <Header title="Edit Product" />
-        <div className="mt-8 text-center text-gray-500">Product not found</div>
+        <div className="mt-8 text-center text-gray-500">Product not found.</div>
       </div>
     );
   }
 
   return (
     <div>
-      <Header title="Edit Product" />
       <div className="mt-8">
         <ProductForm initialData={product} productId={productId} />
       </div>
