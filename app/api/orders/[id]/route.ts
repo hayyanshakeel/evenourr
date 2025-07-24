@@ -1,7 +1,5 @@
 import { NextResponse } from 'next/server';
-import { db } from '@/lib/turso';
-import { orders, orderItems } from '@/lib/schema';
-import { eq } from 'drizzle-orm';
+import { prisma } from '@/lib/db';
 
 /**
  * GET /api/orders/[id] - Fetch a single order by ID
@@ -18,28 +16,22 @@ export async function GET(
     }
 
     // Fetch order
-    const orderResult = await db
-      .select()
-      .from(orders)
-      .where(eq(orders.id, orderId))
-      .limit(1);
+    const order = await prisma.order.findUnique({
+      where: { id: orderId },
+      include: {
+        orderItems: {
+          include: {
+            product: true
+          }
+        }
+      }
+    });
 
-    if (orderResult.length === 0) {
+    if (!order) {
       return NextResponse.json({ error: 'Order not found' }, { status: 404 });
     }
 
-    const order = orderResult[0];
-
-    // Fetch order items
-    const items = await db
-      .select()
-      .from(orderItems)
-      .where(eq(orderItems.orderId, orderId));
-
-    return NextResponse.json({
-      ...order,
-      items
-    });
+    return NextResponse.json(order);
   } catch (error) {
     console.error('Failed to fetch order:', error);
     return NextResponse.json({ error: 'Failed to fetch order' }, { status: 500 });
@@ -62,20 +54,16 @@ export async function PATCH(
     }
 
     // Check if order exists
-    const existingOrder = await db
-      .select()
-      .from(orders)
-      .where(eq(orders.id, orderId))
-      .limit(1);
+    const existingOrder = await prisma.order.findUnique({
+      where: { id: orderId }
+    });
 
-    if (existingOrder.length === 0) {
+    if (!existingOrder) {
       return NextResponse.json({ error: 'Order not found' }, { status: 404 });
     }
 
     // Update order
-    const updatedFields: any = {
-      updatedAt: new Date().toISOString()
-    };
+    const updatedFields: any = {};
 
     // Only update provided fields
     const allowedFields = [
@@ -96,35 +84,31 @@ export async function PATCH(
     }
 
     // Handle special date fields
-    const currentOrder = existingOrder[0]!;
-    if (body.status === 'cancelled' && !currentOrder.cancelledAt) {
-      updatedFields.cancelledAt = new Date().toISOString();
+    if (body.status === 'cancelled' && !existingOrder.cancelledAt) {
+      updatedFields.cancelledAt = new Date();
     }
 
-    if (body.status === 'delivered' && !currentOrder.closedAt) {
-      updatedFields.closedAt = new Date().toISOString();
+    if (body.status === 'delivered' && !existingOrder.closedAt) {
+      updatedFields.closedAt = new Date();
     }
 
-    if (body.status === 'processing' && !currentOrder.processedAt) {
-      updatedFields.processedAt = new Date().toISOString();
+    if (body.status === 'processing' && !existingOrder.processedAt) {
+      updatedFields.processedAt = new Date();
     }
 
-    const updatedOrder = await db
-      .update(orders)
-      .set(updatedFields)
-      .where(eq(orders.id, orderId))
-      .returning();
-
-    // Fetch order items
-    const items = await db
-      .select()
-      .from(orderItems)
-      .where(eq(orderItems.orderId, orderId));
-
-    return NextResponse.json({
-      ...updatedOrder[0],
-      items
+    const updatedOrder = await prisma.order.update({
+      where: { id: orderId },
+      data: updatedFields,
+      include: {
+        orderItems: {
+          include: {
+            product: true
+          }
+        }
+      }
     });
+
+    return NextResponse.json(updatedOrder);
   } catch (error) {
     console.error('Failed to update order:', error);
     return NextResponse.json({ error: 'Failed to update order' }, { status: 500 });

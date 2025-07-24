@@ -1,10 +1,10 @@
+import { prisma } from '@/lib/db';
 import { NextResponse } from 'next/server';
-import { db } from '@/lib/db';
 
 export async function GET() {
   try {
-    const allCustomers = await db.query.customers.findMany({
-      orderBy: (customers, { desc }) => [desc(customers.createdAt)],
+    const allCustomers = await prisma.customers.findMany({
+      orderBy: { createdAt: 'desc' }
     });
     return NextResponse.json(allCustomers);
   } catch (error) {

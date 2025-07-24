@@ -1,16 +1,15 @@
-import { db } from '@/lib/db';
-import { products } from './db/schema';
-import { desc } from 'drizzle-orm';
+// lib/data.ts
+import { prisma } from '@/lib/db';
 
 export async function getAllProducts() {
   try {
-    const allProducts = await db.query.products.findMany({
-      with: {
-        variants: true, // This now works correctly
+    return await prisma.product.findMany({
+      include: {
+        // if you have a Variant model, include it
+        // variants: true,
       },
-      orderBy: [desc(products.createdAt)],
+      orderBy: { createdAt: 'desc' },
     });
-    return allProducts;
   } catch (error) {
     console.error('Failed to fetch all products:', error);
     return [];

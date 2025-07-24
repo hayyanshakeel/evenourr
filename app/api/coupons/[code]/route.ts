@@ -1,7 +1,5 @@
+import { prisma } from '@/lib/db';
 import { NextRequest, NextResponse } from 'next/server';
-import { db } from '@/lib/db';
-import { coupons } from '@/lib/db/schema';
-import { eq } from 'drizzle-orm';
 
 // This explicitly tells Next.js to treat the route as dynamic
 export const dynamic = 'force-dynamic';
@@ -13,9 +11,7 @@ export async function GET(
 ) {
   try {
     const couponCode = params.code.toUpperCase();
-    const coupon = await db.query.coupons.findFirst({
-      where: eq(coupons.code, couponCode),
-    });
+    const coupon = await prisma.coupons.findFirst({ where: { code: couponCode } });
 
     if (!coupon) {
       return new NextResponse(JSON.stringify({ error: 'Coupon not found' }), {
@@ -45,10 +41,10 @@ export async function PATCH(
   try {
     const body = await request.json();
     const couponCode = params.code.toUpperCase();
-    const updated = await db
-      .update(coupons)
+    const updated = await prisma
+      .update(prisma.coupons)
       .set(body)
-      .where(eq(coupons.code, couponCode))
+      .where({ code: couponCode })
       .returning();
 
     if (updated.length === 0) {
@@ -69,12 +65,9 @@ export async function DELETE(
 ) {
   try {
     const couponCode = params.code.toUpperCase();
-    const deleted = await db
-      .delete(coupons)
-      .where(eq(coupons.code, couponCode))
-      .returning({ id: coupons.id });
+    const deleted = await prisma.coupons.deleteMany({ where: { code: couponCode } });
 
-    if (deleted.length === 0) {
+    if (deleted.count === 0) {
       return new NextResponse(JSON.stringify({ error: 'Coupon not found' }), { status: 404 });
     }
 

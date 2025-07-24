@@ -1,7 +1,5 @@
+import { prisma } from '@/lib/db';
 import { NextRequest, NextResponse } from 'next/server';
-import { db } from '@/lib/db';
-import { carts, cartItems } from '@/lib/db/schema';
-import { eq, and } from 'drizzle-orm';
 import admin from 'firebase-admin';
 import type { Product } from '@/lib/types';
 
@@ -56,24 +54,15 @@ export async function GET(req: NextRequest) {
         return NextResponse.json({ error: 'Unauthorized: Invalid or missing token' }, { status: 401 });
     }
 
-    const cart = await db.query.carts.findFirst({
-        where: eq(carts.userId, userId)
-    });
-
+    const cart = await prisma.carts.findFirst({ where: { userId } });
     if (!cart) {
         return NextResponse.json({ items: [] });
     }
 
-    const items = await db.query.cartItems.findMany({
-        where: eq(cartItems.cartId, cart.id),
-        with: {
-            product: true
-        }
+    const items = await prisma.cartItems.findMany({
+        where: { cartId: cart.id },
+        include: { product: true }
     });
-
-    if (!items) {
-        return NextResponse.json({ items: [] });
-    }
 
     const responseItems = items.map(item => ({
         productId: item.productId,
@@ -97,43 +86,30 @@ export async function POST(req: NextRequest) {
         return NextResponse.json({ error: 'Unauthorized: Invalid or missing token' }, { status: 401 });
     }
 
-    const { productId, quantity }: CartItemInput = await req.json();
+    const { productId, quantity } = await req.json();
 
-    // Find the user's cart
-    let cart = await db.query.carts.findFirst({
-        where: eq(carts.userId, userId),
-    });
-
-    // If the user doesn't have a cart, create one
+    let cart = await prisma.carts.findFirst({ where: { userId } });
     if (!cart) {
-        const newCartResult = await db.insert(carts).values({ userId }).returning();
-        cart = newCartResult[0];
+        cart = await prisma.carts.create({ data: { userId } });
         if (!cart) {
-             return NextResponse.json({ error: 'Failed to create cart' }, { status: 500 });
+            return NextResponse.json({ error: 'Failed to create cart' }, { status: 500 });
         }
     }
 
-    // Check if the item already exists in the cart
-    const existingItem = await db.query.cartItems.findFirst({
-        where: and(
-            eq(cartItems.cartId, cart.id),
-            eq(cartItems.productId, productId)
-        )
+    const existingItem = await prisma.cartItems.findFirst({
+        where: { cartId: cart.id, productId }
     });
 
     if (existingItem) {
-        // If it exists, update the quantity
-        await db.update(cartItems)
-            .set({ quantity: existingItem.quantity + quantity })
-            .where(eq(cartItems.id, existingItem.id));
+        await prisma.cartItems.update({
+            where: { id: existingItem.id },
+            data: { quantity: existingItem.quantity + quantity }
+        });
     } else {
-        // If it doesn't exist, add it as a new item
-        await db.insert(cartItems).values({
-            cartId: cart.id,
-            productId,
-            quantity
+        await prisma.cartItems.create({
+            data: { cartId: cart.id, productId, quantity }
         });
     }
-    
+
     return NextResponse.json({ success: true, message: 'Cart updated' });
 }
