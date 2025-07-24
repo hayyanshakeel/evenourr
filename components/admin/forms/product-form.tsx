@@ -9,9 +9,10 @@ import { PhotoIcon } from '@heroicons/react/24/outline';
 // 'initialData' is used when editing an existing product.
 interface ProductFormProps {
   initialData?: Product;
+  productId?: number;
 }
 
-export default function ProductForm({ initialData }: ProductFormProps) {
+export default function ProductForm({ initialData, productId }: ProductFormProps) {
   const router = useRouter();
   
   // State for form fields, initialized with existing data if available.

@@ -6,7 +6,7 @@ import { prisma } from '@/lib/db';
 
 async function ThreeItemGridItems() {
   // Fetch the 3 most recent products
-  const homepageItems = await prisma.products.findMany({
+  const homepageItems = await prisma.product.findMany({
     orderBy: { createdAt: 'desc' },
     take: 3
   });
@@ -14,12 +14,12 @@ async function ThreeItemGridItems() {
   if (!homepageItems || homepageItems.length < 3) return null;
 
   // Format the data for display
-  const [firstProduct, secondProduct, thirdProduct] = homepageItems.map((item: typeof homepageItems[number]) => ({
+  const [firstProduct, secondProduct, thirdProduct] = homepageItems.map((item: any) => ({
     handle: item.slug,
     title: item.name,
     priceRange: {
       maxVariantPrice: {
-        amount: (item.price / 100).toString(),
+        amount: item.price.toString(),
         currencyCode: 'USD'
       }
     },

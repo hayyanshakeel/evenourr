@@ -6,7 +6,7 @@ import { prisma } from '@/lib/db';
 
 export async function Carousel() {
   // Fetch the 8 most recent products
-  const products = await prisma.products.findMany({
+  const products = await prisma.product.findMany({
     orderBy: { createdAt: 'desc' },
     take: 8
   });
@@ -14,12 +14,12 @@ export async function Carousel() {
   if (!products?.length) return null;
 
   // Format the data to match what GridTileImage expects
-  const carouselProducts = products.map((product) => ({
+  const carouselProducts = products.map((product: any) => ({
     handle: product.slug,
     title: product.name,
     priceRange: {
       maxVariantPrice: {
-        amount: (product.price / 100).toString(),
+        amount: product.price.toString(),
         currencyCode: 'USD'
       }
     },
@@ -31,7 +31,7 @@ export async function Carousel() {
   return (
     <div className=" w-full overflow-x-auto pb-6 pt-1">
       <ul className="flex animate-carousel gap-4">
-        {carouselProducts.map((product, i) => (
+        {carouselProducts.map((product: any, i: number) => (
           <li
             key={`${product.handle}${i}`}
             className="relative aspect-square h-[30vh] max-h-[275px] w-2/3 max-w-[475px] flex-none md:w-1/3"

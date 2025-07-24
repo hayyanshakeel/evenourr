@@ -1,2 +1,2 @@
-// Re-export the Prisma client from the main db file
-export { default as prisma } from '../db';
+// Re-export everything from the main db file
+export { default, prisma } from '../db';

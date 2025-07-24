@@ -1,17 +1,10 @@
 import 'dotenv/config';
-import { migrate } from 'drizzle-orm/libsql/migrator';
-import { db } from './index'; // Correctly import the 'db' object
+// Migration functionality has been moved to Prisma
+// Use: npx prisma migrate dev or npx prisma db push
 
-async function main() {
-  try {
-    // This will run all pending migrations
-    await migrate(db, { migrationsFolder: 'drizzle' });
-    console.log('✅ Migrations completed successfully.');
-    process.exit(0);
-  } catch (error) {
-    console.error('❌ Error during migration:', error);
-    process.exit(1);
-  }
-}
+console.log('Please use Prisma CLI for migrations:');
+console.log('  npx prisma migrate dev    # For development migrations');
+console.log('  npx prisma db push        # For prototype/development');
+console.log('  npx prisma migrate deploy # For production');
 
-main();
+process.exit(0);
