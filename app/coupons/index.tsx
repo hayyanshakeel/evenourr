@@ -1,10 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { coupons as couponSchema } from '@/lib/db/schema'; // Import with alias
-
-// Define the type based on your schema
-type Coupon = typeof couponSchema.$inferSelect;
+import { Coupon } from '@/lib/mock-prisma-types';
 
 export default function CouponsList() {
     const [coupons, setCoupons] = useState<Coupon[]>([]);

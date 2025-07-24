@@ -24,7 +24,7 @@ export default async function SearchPage({
     title: product.name,
     priceRange: {
       maxVariantPrice: {
-        amount: (product.price / 100).toString(),
+        amount: product.price.toString(),
         currencyCode: 'USD'
       }
     },
