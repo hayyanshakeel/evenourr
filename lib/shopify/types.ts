@@ -10,6 +10,10 @@ export interface Product {
   title: string;
   description: string;
   images: any[];
+  featuredImage: {
+    url: string;
+    altText?: string;
+  };
   priceRange: {
     maxVariantPrice: {
       amount: string;
