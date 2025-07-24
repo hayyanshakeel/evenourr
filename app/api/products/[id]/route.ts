@@ -1,10 +1,11 @@
-import { prisma } from '@/lib/db';
+import prisma from '@/lib/db';
 import { NextRequest, NextResponse } from 'next/server';
 
-export async function PUT(req: NextRequest, { params }: { params: { id: string } }) {
+export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
-    const id = parseInt(params.id, 10);
-    if (isNaN(id)) {
+    const { id } = await params;
+    const idNum = parseInt(id, 10);
+    if (isNaN(idNum)) {
       return NextResponse.json({ message: 'Invalid product ID.' }, { status: 400 });
     }
     const body = await req.json();
@@ -17,7 +18,7 @@ export async function PUT(req: NextRequest, { params }: { params: { id: string }
       updateData.price = priceAsNumber;
     }
     const updatedProduct = await prisma.product.update({
-      where: { id },
+      where: { id: idNum },
       data: updateData
     });
     if (!updatedProduct) {
@@ -25,7 +26,7 @@ export async function PUT(req: NextRequest, { params }: { params: { id: string }
     }
     return NextResponse.json(updatedProduct);
   } catch (error) {
-    console.error(`Error updating product ${params.id}:`, error);
+    console.error(`Error updating product:`, error);
     return NextResponse.json(
       { message: 'Something went wrong while updating the product.' },
       { status: 500 }
@@ -33,19 +34,20 @@ export async function PUT(req: NextRequest, { params }: { params: { id: string }
   }
 }
 
-export async function DELETE(req: NextRequest, { params }: { params: { id:string } }) {
+export async function DELETE(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
-    const id = parseInt(params.id, 10);
-    if (isNaN(id)) {
+    const { id } = await params;
+    const idNum = parseInt(id, 10);
+    if (isNaN(idNum)) {
       return NextResponse.json({ message: 'Invalid product ID.' }, { status: 400 });
     }
-    const result = await prisma.product.delete({ where: { id } });
+    const result = await prisma.product.delete({ where: { id: idNum } });
     if (!result) {
       return NextResponse.json({ message: 'Product not found.' }, { status: 404 });
     }
     return new NextResponse(null, { status: 204 });
   } catch (error) {
-    console.error(`Error deleting product ${params.id}:`, error);
+    console.error(`Error deleting product:`, error);
     return NextResponse.json(
       { message: 'Something went wrong while deleting the product.' },
       { status: 500 }

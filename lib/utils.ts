@@ -18,3 +18,14 @@ export const ensureStartsWith = (stringToCheck: string, startsWith: string) =>
   stringToCheck.startsWith(startsWith)
     ? stringToCheck
     : `${startsWith}${stringToCheck}`;
+
+export const validateEnvironmentVariables = () => {
+  // Basic environment validation stub
+  const requiredVars = ['TURSO_DATABASE_URL'];
+  
+  for (const envVar of requiredVars) {
+    if (!process.env[envVar]) {
+      console.warn(`Warning: Missing environment variable ${envVar}`);
+    }
+  }
+};

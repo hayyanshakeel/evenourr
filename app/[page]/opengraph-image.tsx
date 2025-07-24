@@ -6,10 +6,11 @@ import OpengraphImage from 'components/opengraph-image';
 // It no longer depends on any Shopify functions.
 export const runtime = 'edge';
 
-export default async function Image({ params }: { params: { page: string } }) {
+export default async function Image({ params }: { params: Promise<{ page: string }> }) {
   // Since the original getPage function is gone, we'll use a placeholder title.
   // You can enhance this later if you build out a full content management system.
-  const title = `Your Store - ${params.page.charAt(0).toUpperCase() + params.page.slice(1)}`;
+  const { page } = await params;
+  const title = `Your Store - ${page.charAt(0).toUpperCase() + page.slice(1)}`;
   
   return await OpengraphImage({ title });
 }

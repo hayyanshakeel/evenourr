@@ -1,12 +1,12 @@
-import { prisma } from '@/lib/db';
+import prisma from '@/lib/db';
 import { NextResponse } from 'next/server';
 
 export async function GET(
   request: Request,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const customerId = parseInt(params.id);
+    const customerId = parseInt((await params).id);
     if (isNaN(customerId)) {
       return NextResponse.json({ error: 'Invalid customer ID' }, { status: 400 });
     }
@@ -31,10 +31,10 @@ export async function GET(
 
 export async function PATCH(
   request: Request,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const customerId = parseInt(params.id);
+    const customerId = parseInt((await params).id);
     const body = await request.json();
     if (isNaN(customerId)) {
       return NextResponse.json({ error: 'Invalid customer ID' }, { status: 400 });
@@ -58,10 +58,10 @@ export async function PATCH(
 
 export async function DELETE(
   request: Request,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const customerId = parseInt(params.id);
+    const customerId = parseInt((await params).id);
     if (isNaN(customerId)) {
       return NextResponse.json({ error: 'Invalid customer ID' }, { status: 400 });
     }

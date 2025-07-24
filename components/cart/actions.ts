@@ -36,8 +36,8 @@ export async function removeItem(prevState: any, merchandiseId: string) {
       return 'Error fetching cart';
     }
 
-    const lineItem = cart.lines.find(
-      (line) => line.merchandise.id === merchandiseId
+    const lineItem: any = cart.lines.find(
+      (line: any) => line.merchandise.id === merchandiseId
     );
 
     if (lineItem && lineItem.id) {
@@ -67,8 +67,8 @@ export async function updateItemQuantity(
       return 'Error fetching cart';
     }
 
-    const lineItem = cart.lines.find(
-      (line) => line.merchandise.id === merchandiseId
+    const lineItem: any = cart.lines.find(
+      (line: any) => line.merchandise.id === merchandiseId
     );
 
     if (lineItem && lineItem.id) {

@@ -1,10 +1,21 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { coupons as couponSchema } from '@/lib/db/schema'; // Import with alias
+// import { coupons as couponSchema } from '@/lib/db/schema'; // Import with alias
 
-// Define the type based on your schema
-type Coupon = typeof couponSchema.$inferSelect;
+// Define the type manually since we're not using active Drizzle schema
+type Coupon = {
+  id: number;
+  code: string;
+  discount: number;
+  validFrom: string;
+  validUntil: string;
+  maxUses: number;
+  usedCount: number;
+  isActive: boolean;
+  createdAt: string;
+  updatedAt: string;
+};
 
 export default function CouponsList() {
     const [coupons, setCoupons] = useState<Coupon[]>([]);
