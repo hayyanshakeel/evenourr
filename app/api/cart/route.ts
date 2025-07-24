@@ -3,11 +3,15 @@ import { db } from '@/lib/db';
 import { carts, cartItems } from '@/lib/db/schema';
 import { eq, and } from 'drizzle-orm';
 import admin from 'firebase-admin';
+import type { Product } from '@/lib/types';
 
 // --- Firebase Admin Initialization ---
 // This code must run for the server to verify users.
 
 // Parse the service account key from the environment variable
+if (!process.env.FIREBASE_SERVICE_ACCOUNT_JSON) {
+  throw new Error('FIREBASE_SERVICE_ACCOUNT_JSON env variable is not set');
+}
 const serviceAccount = JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT_JSON!);
 
 // Initialize the Firebase Admin SDK if it hasn't been already
@@ -74,9 +78,9 @@ export async function GET(req: NextRequest) {
     const responseItems = items.map(item => ({
         productId: item.productId,
         quantity: item.quantity,
-        name: item.product?.name,
-        price: item.product?.price,
-        imageUrl: item.product?.imageUrl,
+        name: (item.product as Product | undefined)?.name ?? null,
+        price: (item.product as Product | undefined)?.price ?? null,
+        imageUrl: (item.product as Product | undefined)?.imageUrl ?? null,
     }));
 
     return NextResponse.json({ items: responseItems });

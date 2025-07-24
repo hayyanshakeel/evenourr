@@ -52,7 +52,7 @@ export default function CollectionsPage() {
         render: (c: Collection) => (
             <div className="flex items-center gap-3">
                 {c.imageUrl ? (
-                    <Image src={c.imageUrl} alt={c.title} width={40} height={40} className="h-10 w-10 rounded-md object-cover" />
+                    <Image src={c.imageUrl.startsWith('http') ? c.imageUrl : '/fallback.png'} alt={c.title} width={40} height={40} className="h-10 w-10 rounded-md object-cover" />
                 ) : (
                     <div className="h-10 w-10 rounded-md bg-gray-100"></div>
                 )}

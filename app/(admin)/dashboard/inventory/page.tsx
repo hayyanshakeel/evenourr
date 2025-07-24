@@ -57,7 +57,7 @@ export default function InventoryPage() {
           <div className="flex items-center gap-4">
             {p.imageUrl ? (
               <Image
-                src={p.imageUrl}
+                src={p.imageUrl.startsWith('http') ? p.imageUrl : '/fallback.png'}
                 alt={p.name}
                 width={40}
                 height={40}

@@ -146,7 +146,7 @@ const ProductsPage = () => {
           <div className="flex items-center gap-3">
             {p.imageUrl ? (
               <Image
-                src={p.imageUrl}
+                src={p.imageUrl.startsWith('http') ? p.imageUrl : '/fallback.png'}
                 alt={p.name}
                 width={40}
                 height={40}

@@ -39,7 +39,7 @@ export default function AdminLayout({ children }: { children: ReactNode }) {
     <div className="min-h-screen w-full bg-gray-50 text-gray-800">
       <Nav isNavOpen={isNavOpen} setIsNavOpen={setIsNavOpen} />
 
-      <div className="flex flex-1 flex-col md:ml-64">
+      <div className="flex flex-1 flex-col md:ml-64 z-10 relative">
         {/* Pass the title to the Header component */}
         <Header title={pageTitle} onMenuClick={() => setIsNavOpen(true)} />
         <main className="flex-1 p-4 sm:p-6">{children}</main>

@@ -1,5 +1,3 @@
-// app/api/collections/route.ts
-
 import { db } from '@/lib/db';
 import { collections } from '@/lib/db/schema';
 import { NextResponse } from 'next/server';
@@ -10,10 +8,16 @@ import { NextResponse } from 'next/server';
  */
 export async function GET() {
   try {
-    const allCollections = await db.query.collections.findMany();
+    console.log('Fetching collections...');
+    const allCollections = await db.select().from(collections);
     return NextResponse.json(allCollections, { status: 200 });
   } catch (error) {
     console.error('Failed to fetch collections:', error);
+
+    if (error instanceof Error) {
+      return NextResponse.json({ error: error.message }, { status: 500 });
+    }
+
     return NextResponse.json({ error: 'Failed to fetch collections' }, { status: 500 });
   }
 }
@@ -28,7 +32,10 @@ export async function POST(request: Request) {
     const { title, handle, description, imageUrl } = body;
 
     if (!title || !handle) {
-      return NextResponse.json({ error: 'Title and handle are required fields' }, { status: 400 });
+      return NextResponse.json(
+        { error: 'Title and handle are required fields' },
+        { status: 400 }
+      );
     }
 
     const newCollection = await db
@@ -37,17 +44,27 @@ export async function POST(request: Request) {
         title,
         handle,
         description,
-        imageUrl
+        imageUrl,
       })
       .returning();
 
     return NextResponse.json(newCollection[0], { status: 201 });
-  } catch (error) {
+  } catch (error: any) {
     console.error('Failed to create collection:', error);
-    // Handle specific DB errors, e.g., unique constraint for 'handle'
-    if (error instanceof Error && error.message.includes('UNIQUE constraint failed')) {
-        return NextResponse.json({ error: 'A collection with this handle already exists.' }, { status: 409 });
+
+    if (
+      error instanceof Error &&
+      error.message.includes('UNIQUE constraint failed')
+    ) {
+      return NextResponse.json(
+        { error: 'A collection with this handle already exists.' },
+        { status: 409 }
+      );
     }
-    return NextResponse.json({ error: 'Failed to create collection' }, { status: 500 });
+
+    return NextResponse.json(
+      { error: 'Failed to create collection', detail: error?.message || 'Unknown error' },
+      { status: 500 }
+    );
   }
 }

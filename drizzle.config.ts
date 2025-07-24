@@ -20,10 +20,8 @@ const config: Config = {
   schema: './lib/db/schema.ts',
   out: './drizzle',
   dialect: 'sqlite',
-  driver: 'turso',
   dbCredentials: {
-    url: process.env.TURSO_DATABASE_URL!,
-    authToken: process.env.TURSO_AUTH_TOKEN!
+    url: process.env.TURSO_DATABASE_URL!
   },
   verbose: true,
   strict: true

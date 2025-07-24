@@ -1,0 +1,52 @@
+[
+  {
+    "id": "TC001",
+    "title": "get products list",
+    "description": "Verify that the GET /api/products endpoint returns a list of products with correct details and appropriate status codes for success and failure scenarios."
+  },
+  {
+    "id": "TC002",
+    "title": "create new product with image upload",
+    "description": "Test the POST /api/products endpoint to create a new product including image upload functionality, ensuring the image is correctly processed and associated with the product."
+  },
+  {
+    "id": "TC003",
+    "title": "update product by id",
+    "description": "Validate the PUT /api/products/[id] endpoint to update product details by product ID, checking for correct update and proper error handling for invalid IDs."
+  },
+  {
+    "id": "TC004",
+    "title": "delete product by id",
+    "description": "Test the DELETE /api/products/[id] endpoint to delete a product by its ID, verifying successful deletion and appropriate error responses for non-existent IDs."
+  },
+  {
+    "id": "TC005",
+    "title": "batch fetch products",
+    "description": "Verify the POST /api/products/batch endpoint returns accurate and complete product details for a batch of product IDs."
+  },
+  {
+    "id": "TC006",
+    "title": "manage product collections",
+    "description": "Test the GET and POST /api/collections endpoints to list and create product collections, ensuring correct data handling and response codes."
+  },
+  {
+    "id": "TC007",
+    "title": "manage customer details",
+    "description": "Validate the GET, PATCH, and DELETE /api/customers and /api/customers/[id] endpoints for retrieving, updating, and deleting customer details including addresses and order history."
+  },
+  {
+    "id": "TC008",
+    "title": "process orders management",
+    "description": "Test the GET, PATCH, and DELETE /api/orders and /api/orders/[id] endpoints for listing, updating, and deleting orders, including order item management and error handling."
+  },
+  {
+    "id": "TC009",
+    "title": "coupon validation and deletion",
+    "description": "Verify the GET /api/coupons, GET /api/coupons/[code], and DELETE /api/coupons/[code] endpoints for listing coupons, validating coupon codes, and deleting coupons with correct status codes and constraints."
+  },
+  {
+    "id": "TC010",
+    "title": "authenticated cart operations",
+    "description": "Test the authenticated cart management endpoints GET, POST, PATCH, DELETE /api/cart and /api/cart/[itemId] for adding, updating, and removing cart items, ensuring Firebase authentication and permission enforcement."
+  }
+]

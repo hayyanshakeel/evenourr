@@ -5,22 +5,8 @@
     {
       "idx": 0,
       "version": "6",
-      "when": 1753286866185,
-      "tag": "0000_flippant_leech",
-      "breakpoints": true
-    },
-    {
-      "idx": 1,
-      "version": "6",
-      "when": 1753293937165,
-      "tag": "0001_foamy_vision",
-      "breakpoints": true
-    },
-    {
-      "idx": 2,
-      "version": "6",
-      "when": 1753294058814,
-      "tag": "0002_lethal_gravity",
+      "when": 1753351055813,
+      "tag": "0000_heavy_natasha_romanoff",
       "breakpoints": true
     }
   ]

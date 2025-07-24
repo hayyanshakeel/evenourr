@@ -25,7 +25,7 @@ export default function DataTable<T extends { id: any }>({
 }: DataTableProps<T>) {
   if (loading) {
     return (
-      <div className="flex items-center justify-center p-12 text-sm text-gray-500">
+      <div className="flex items-center justify-center p-8 sm:p-12 text-sm text-gray-500">
         Loading...
       </div>
     );
@@ -33,23 +33,22 @@ export default function DataTable<T extends { id: any }>({
   
   if (data.length === 0) {
     return (
-      <div className="flex items-center justify-center p-12 text-sm text-gray-500">
+      <div className="flex items-center justify-center p-8 sm:p-12 text-sm text-gray-500">
         {emptyMessage}
       </div>
     );
   }
 
   return (
-    <div className="overflow-x-auto">
-      <table className="min-w-full divide-y divide-gray-200">
+    <div className="w-full overflow-x-auto">
+      <table className="min-w-full divide-y divide-gray-200 text-sm">
         <thead className="bg-gray-50">
           <tr>
             {columns.map((col) => (
               <th
                 key={col.key}
                 scope="col"
-                // Apply the className to the header
-                className={`px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500 ${col.className || ''}`}
+                className={`px-2 sm:px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500 ${col.className || ''}`}
               >
                 {col.label}
               </th>
@@ -66,8 +65,7 @@ export default function DataTable<T extends { id: any }>({
               {columns.map((col) => (
                 <td 
                   key={col.key} 
-                  // Apply the className to the cell
-                  className={`whitespace-nowrap px-4 py-4 text-sm text-gray-600 ${col.className || ''}`}
+                  className={`whitespace-nowrap px-2 sm:px-4 py-3 sm:py-4 text-gray-600 ${col.className || ''}`}
                 >
                   {col.render(item)}
                 </td>

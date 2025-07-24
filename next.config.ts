@@ -1,8 +1,5 @@
-// File: next.config.ts
-
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  // This 'images' block is what we are adding
   images: {
     remotePatterns: [
       {

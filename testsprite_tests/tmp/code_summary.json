@@ -1,0 +1,69 @@
+{
+  "tech_stack": [
+    "TypeScript",
+    "Next.js",
+    "React",
+    "Tailwind CSS",
+    "Drizzle ORM",
+    "SQLite/PostgreSQL (via Drizzle)",
+    "Firebase (for auth)",
+    "Cloudinary (for images)"
+  ],
+  "features": [
+    {
+      "name": "Products API",
+      "description": "CRUD operations for products, including batch fetch and image upload.",
+      "files": [
+        "app/api/products/route.ts",
+        "app/api/products/[id]/route.ts",
+        "app/api/products/batch/route.ts"
+      ]
+    },
+    {
+      "name": "Collections API",
+      "description": "CRUD operations for product collections.",
+      "files": [
+        "app/api/collections/routes.ts"
+      ]
+    },
+    {
+      "name": "Customers API",
+      "description": "CRUD operations for customers, including address and order info.",
+      "files": [
+        "app/api/customers/route.ts",
+        "app/api/customers/[id]/route.ts"
+      ]
+    },
+    {
+      "name": "Orders API",
+      "description": "CRUD operations for orders, including order items.",
+      "files": [
+        "app/api/orders/route.ts",
+        "app/api/orders/[id]/route.ts"
+      ]
+    },
+    {
+      "name": "Coupons API",
+      "description": "CRUD operations for coupons, including validation by code.",
+      "files": [
+        "app/api/coupons/route.ts",
+        "app/api/coupons/[code]/route.ts"
+      ]
+    },
+    {
+      "name": "Cart API",
+      "description": "Authenticated cart management for users, including add, update, and remove items.",
+      "files": [
+        "app/api/cart/route.ts",
+        "app/api/cart/[itemId]/route.ts"
+      ]
+    },
+    {
+      "name": "Dashboard Stats API",
+      "description": "Fetches dashboard statistics for admin overview.",
+      "files": [
+        "app/api/dashboard/stats/route.ts"
+      ]
+    }
+  ]
+} 
