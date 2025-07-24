@@ -10,24 +10,17 @@ export function RelatedProducts({ products }: { products: Product[] }) {
     <ul className="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5">
       {products.map((product) => (
         <li key={product.slug} className="rounded-lg border bg-white p-4">
-          {/* Use product.slug for the link */}
-          <Link href={`/product/${product.slug}`} className="h-full w-full">
-            <div className="relative aspect-square w-full overflow-hidden">
+          <Link href={`/product/${product.slug}`}>
+            {product.images[0] && (
               <Image
-                src={product.images?.[0]?.url || '/placeholder.svg'}
-                // Use product.name for the alt text
+                src={product.images[0].url}
                 alt={product.name}
-                fill
-                className="object-cover"
+                width={200}
+                height={200}
               />
-            </div>
-            {/* Use product.name for the title */}
-            <p className="mt-2 font-semibold">{product.name}</p>
-            <Price
-              className="text-sm"
-              amount={product.price.toString()}
-              currencyCode="USD" // Set your currency
-            />
+            )}
+            <h3>{product.name}</h3>
+            <Price amount={product.price} />
           </Link>
         </li>
       ))}

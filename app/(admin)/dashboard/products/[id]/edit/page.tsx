@@ -49,6 +49,7 @@ export default function EditProductPage() {
 
   return (
     <div>
+      <Header title="Edit Product" />
       <div className="mt-8">
         <ProductForm initialData={product} productId={productId} />
       </div>
