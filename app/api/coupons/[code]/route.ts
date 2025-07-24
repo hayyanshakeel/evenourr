@@ -7,11 +7,11 @@ export const dynamic = 'force-dynamic';
 // GET function to fetch a single coupon
 export async function GET(
   request: NextRequest,
-  { params }: { params: { code: string } }
+  { params }: { params: Promise<{ code: string }> }
 ) {
   try {
-    const couponCode = params.code.toUpperCase();
-    const coupon = await prisma.coupons.findFirst({ where: { code: couponCode } });
+    const couponCode = (await params).code.toUpperCase();
+    const coupon = await prisma.coupon.findFirst({ where: { code: couponCode } });
 
     if (!coupon) {
       return new NextResponse(JSON.stringify({ error: 'Coupon not found' }), {
@@ -36,22 +36,21 @@ export async function GET(
 // PATCH function to update a coupon
 export async function PATCH(
   request: NextRequest,
-  { params }: { params: { code: string } }
+  { params }: { params: Promise<{ code: string }> }
 ) {
   try {
     const body = await request.json();
-    const couponCode = params.code.toUpperCase();
-    const updated = await prisma
-      .update(prisma.coupons)
-      .set(body)
-      .where({ code: couponCode })
-      .returning();
+    const couponCode = (await params).code.toUpperCase();
+    const updated = await prisma.coupon.update({
+      where: { code: couponCode },
+      data: body
+    });
 
-    if (updated.length === 0) {
+    if (!updated) {
       return new NextResponse(JSON.stringify({ error: 'Coupon not found' }), { status: 404 });
     }
 
-    return new NextResponse(JSON.stringify(updated[0]), { status: 200 });
+    return new NextResponse(JSON.stringify(updated), { status: 200 });
   } catch (error) {
     console.error('[COUPON_PATCH_ERROR]', error);
     return new NextResponse(JSON.stringify({ error: 'Internal Server Error' }), { status: 500 });
@@ -61,11 +60,11 @@ export async function PATCH(
 // DELETE function to remove a coupon
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { code: string } }
+  { params }: { params: Promise<{ code: string }> }
 ) {
   try {
-    const couponCode = params.code.toUpperCase();
-    const deleted = await prisma.coupons.deleteMany({ where: { code: couponCode } });
+    const couponCode = (await params).code.toUpperCase();
+    const deleted = await prisma.coupon.deleteMany({ where: { code: couponCode } });
 
     if (deleted.count === 0) {
       return new NextResponse(JSON.stringify({ error: 'Coupon not found' }), { status: 404 });

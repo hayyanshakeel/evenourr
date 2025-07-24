@@ -6,7 +6,7 @@ import prisma from '@/lib/db';
 
 async function ThreeItemGridItems() {
   // Fetch the 3 most recent products
-  const homepageItems = await prisma.products.findMany({
+  const homepageItems = await prisma.product.findMany({
     orderBy: { createdAt: 'desc' },
     take: 3
   });

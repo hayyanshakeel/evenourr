@@ -6,7 +6,7 @@ import ProductDetails from '@/components/product-details';
 export async function generateMetadata({
   params,
 }: {
-  params: { handle: string };
+  params: Promise<{ handle: string }>;
 }): Promise<Metadata> {
   const { handle } = await params;
   if (!handle) return notFound();
@@ -21,8 +21,8 @@ export async function generateMetadata({
   };
 }
 
-export default async function ProductPage({ params }: { params: { handle: string } }) {
-  const { handle } = params;
+export default async function ProductPage({ params }: { params: Promise<{ handle: string }> }) {
+  const { handle } = await params;
   if (!handle) return notFound();
 
   const product = await prisma.product.findFirst({ where: { slug: handle } });

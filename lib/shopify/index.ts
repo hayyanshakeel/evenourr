@@ -10,7 +10,13 @@ export async function getCollection(handle: string) {
 }
 
 export async function getCollections() {
-  return await prisma.collection.findMany();
+  const collections = await prisma.collection.findMany();
+  return collections.map((collection: any) => ({
+    path: `/search/${collection.handle}`,
+    updatedAt: collection.updatedAt.toISOString(),
+    title: collection.title,
+    handle: collection.handle
+  }));
 }
 
 export async function getPages() {
@@ -18,8 +24,13 @@ export async function getPages() {
   return [];
 }
 
-export async function getProducts() {
-  return await prisma.product.findMany();
+export async function getProducts(options: any = {}) {
+  const products = await prisma.product.findMany();
+  return products.map((product: any) => ({
+    handle: product.slug,
+    updatedAt: product.updatedAt.toISOString(),
+    title: product.name
+  }));
 }
 
 // Cart functions - basic stubs for compatibility
@@ -31,13 +42,17 @@ export async function addToCart(items: any[]) {
 export async function createCart() {
   // Implement cart creation
   console.warn('createCart: Implement cart creation');
-  return { id: null };
+  return { id: null, checkoutUrl: '' };
 }
 
 export async function getCart() {
   // Implement cart retrieval
   console.warn('getCart: Implement cart retrieval');
-  return null;
+  return {
+    id: null,
+    checkoutUrl: '',
+    lines: []
+  };
 }
 
 export async function removeFromCart(itemIds: string[]) {
