@@ -7,7 +7,7 @@ export default async function Image({
   params: { collection: string };
 }) {
   const collection = await getCollection(params.collection);
-  const title = collection?.seo?.title || collection?.title;
+  const title = collection?.seo?.title || collection?.title || 'Collection';
 
   return await OpengraphImage({ title });
 }

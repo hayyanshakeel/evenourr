@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { Coupon } from '@prisma/client';
+import { Coupon } from '@/lib/mock-prisma-types';
 
 export default function CouponsList() {
     const [coupons, setCoupons] = useState<Coupon[]>([]);
