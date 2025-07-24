@@ -51,7 +51,7 @@ export default function EditProductPage() {
     <div>
       <Header title="Edit Product" />
       <div className="mt-8">
-        <ProductForm initialData={product} productId={productId} />
+        <ProductForm initialData={product} />
       </div>
     </div>
   );

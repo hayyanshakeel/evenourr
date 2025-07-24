@@ -1,5 +1,3 @@
-// components/admin/nav.tsx
-
 'use client';
 
 import Link from 'next/link';
@@ -7,20 +5,21 @@ import { usePathname } from 'next/navigation';
 import {
   HomeIcon,
   ShoppingBagIcon,
-  FolderIcon, // NEW
-  CircleStackIcon, // NEW
+  FolderIcon,
+  CircleStackIcon,
   ArchiveBoxIcon,
   UserGroupIcon,
   TicketIcon,
   Cog6ToothIcon,
-  XMarkIcon
+  XMarkIcon,
+  ChevronRightIcon
 } from '@heroicons/react/24/outline';
+import { useState } from 'react';
 
 function classNames(...classes: string[]) {
   return classes.filter(Boolean).join(' ');
 }
 
-// Define menu items with new additions
 const menuItems = [
   { href: '/dashboard', label: 'Dashboard', icon: HomeIcon },
   { href: '/dashboard/orders', label: 'Orders', icon: ArchiveBoxIcon },
@@ -28,11 +27,10 @@ const menuItems = [
     href: '/dashboard/products',
     label: 'Products',
     icon: ShoppingBagIcon,
-    // Add sub-navigation for better organization
     children: [
       { href: '/dashboard/products', label: 'All Products' },
-      { href: '/dashboard/inventory', label: 'Inventory', icon: CircleStackIcon },
-      { href: '/dashboard/collections', label: 'Collections', icon: FolderIcon },
+      { href: '/dashboard/inventory', label: 'Inventory' },
+      { href: '/dashboard/collections', label: 'Collections' },
     ]
   },
   { href: '/dashboard/customers', label: 'Customers', icon: UserGroupIcon },
@@ -42,86 +40,121 @@ const menuItems = [
 
 export default function Nav({ isNavOpen, setIsNavOpen }: { isNavOpen: boolean, setIsNavOpen: (open: boolean) => void }) {
   const pathname = usePathname();
+  const [expandedItems, setExpandedItems] = useState<string[]>(['Products']);
 
-  // Sidebar content
+  const toggleExpanded = (label: string) => {
+    setExpandedItems(prev => 
+      prev.includes(label) 
+        ? prev.filter(item => item !== label)
+        : [...prev, label]
+    );
+  };
+
   const navContent = (
-    <nav className="flex flex-1 flex-col h-full">
-      <ul role="list" className="flex flex-1 flex-col gap-y-7">
-        <li>
-          <ul role="list" className="-mx-2 space-y-1">
-            {menuItems.map((item) => (
-              <li key={item.label}>
-                {!item.children ? (
-                  <Link
-                    href={item.href}
+    <div className="flex h-full flex-col bg-white border-r border-gray-200">
+      <div className="flex h-16 items-center justify-between px-6 border-b border-gray-200">
+        <div className="flex items-center">
+          <h1 className="text-xl font-semibold text-gray-900">Admin</h1>
+        </div>
+        <button
+          type="button"
+          className="md:hidden -m-2 p-2 text-gray-600 hover:text-gray-900"
+          onClick={() => setIsNavOpen(false)}
+        >
+          <XMarkIcon className="h-6 w-6" />
+        </button>
+      </div>
+
+      <nav className="flex-1 px-4 py-6 space-y-1">
+        {menuItems.map((item) => {
+          const isActive = pathname === item.href || pathname.startsWith(item.href + '/');
+          const isExpanded = expandedItems.includes(item.label);
+          
+          return (
+            <div key={item.label}>
+              {item.children ? (
+                <>
+                  <button
+                    onClick={() => toggleExpanded(item.label)}
                     className={classNames(
-                      pathname === item.href
-                        ? 'bg-gray-50 text-blue-600'
-                        : 'text-gray-700 hover:bg-gray-50 hover:text-blue-600',
-                      'group flex gap-x-3 rounded-md p-2 text-sm font-semibold leading-6'
+                      'w-full flex items-center justify-between px-3 py-2 text-sm font-medium rounded-lg transition-colors',
+                      isActive
+                        ? 'bg-gray-100 text-gray-900'
+                        : 'text-gray-700 hover:bg-gray-50 hover:text-gray-900'
                     )}
-                    onClick={() => setIsNavOpen(false)}
                   >
-                    <item.icon className="h-6 w-6 shrink-0" aria-hidden="true" />
-                    {item.label}
-                  </Link>
-                ) : (
-                  <div>
-                    <div
-                      className={classNames(
-                        item.children.some((child) => pathname.startsWith(child.href)) ? 'bg-gray-50 text-blue-600' : 'text-gray-700',
-                        'group flex gap-x-3 rounded-md p-2 text-sm font-semibold leading-6'
-                      )}
-                    >
-                      <item.icon className="h-6 w-6 shrink-0" aria-hidden="true" />
+                    <div className="flex items-center">
+                      <item.icon className="mr-3 h-5 w-5 flex-shrink-0" />
                       {item.label}
                     </div>
-                    <ul className="mt-1 ml-2 pl-5 border-l border-gray-200">
+                    <ChevronRightIcon 
+                      className={classNames(
+                        'h-4 w-4 transition-transform',
+                        isExpanded ? 'rotate-90' : ''
+                      )}
+                    />
+                  </button>
+                  {isExpanded && (
+                    <div className="mt-1 ml-8 space-y-1">
                       {item.children.map((child) => (
-                        <li key={child.label}>
-                          <Link
-                            href={child.href}
-                            className={classNames(
-                              pathname === child.href
-                                ? 'text-blue-600'
-                                : 'text-gray-500 hover:text-blue-600',
-                              'block rounded-md py-2 pr-2 pl-4 text-sm leading-6'
-                            )}
-                            onClick={() => setIsNavOpen(false)}
-                          >
-                            {child.label}
-                          </Link>
-                        </li>
+                        <Link
+                          key={child.href}
+                          href={child.href}
+                          className={classNames(
+                            'block px-3 py-2 text-sm rounded-lg transition-colors',
+                            pathname === child.href
+                              ? 'bg-blue-50 text-blue-700 font-medium'
+                              : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'
+                          )}
+                        >
+                          {child.label}
+                        </Link>
                       ))}
-                    </ul>
-                  </div>
-                )}
-              </li>
-            ))}
-          </ul>
-        </li>
-      </ul>
-    </nav>
+                    </div>
+                  )}
+                </>
+              ) : (
+                <Link
+                  href={item.href}
+                  className={classNames(
+                    'flex items-center px-3 py-2 text-sm font-medium rounded-lg transition-colors',
+                    isActive
+                      ? 'bg-gray-100 text-gray-900'
+                      : 'text-gray-700 hover:bg-gray-50 hover:text-gray-900'
+                  )}
+                >
+                  <item.icon className="mr-3 h-5 w-5 flex-shrink-0" />
+                  {item.label}
+                </Link>
+              )}
+            </div>
+          );
+        })}
+      </nav>
+    </div>
   );
 
   return (
     <>
-      {/* Desktop sidebar */}
-      <div className="hidden md:fixed md:inset-y-0 md:z-30 md:flex md:w-64 md:flex-col md:bg-white md:border-r md:shadow-sm">
-        <div className="flex h-full flex-col p-4">{navContent}</div>
-      </div>
-      {/* Mobile sidebar */}
       {isNavOpen && (
-        <>
-          <div className="fixed inset-0 z-40 bg-black bg-opacity-30 transition-opacity md:hidden" onClick={() => setIsNavOpen(false)} />
-          <div className="fixed inset-y-0 left-0 z-50 w-64 bg-white shadow-lg flex flex-col p-4 transition-transform md:hidden">
-            <button className="mb-4 self-end" onClick={() => setIsNavOpen(false)}>
-              <XMarkIcon className="h-6 w-6 text-gray-600" />
-            </button>
-            {navContent}
-          </div>
-        </>
+        <div
+          className="fixed inset-0 z-40 bg-gray-600 bg-opacity-75 md:hidden"
+          onClick={() => setIsNavOpen(false)}
+        />
       )}
+
+      <div className="hidden md:fixed md:inset-y-0 md:z-50 md:flex md:w-64 md:flex-col">
+        {navContent}
+      </div>
+
+      <div
+        className={classNames(
+          'fixed inset-y-0 left-0 z-50 w-64 transform transition-transform duration-300 ease-in-out md:hidden',
+          isNavOpen ? 'translate-x-0' : '-translate-x-full'
+        )}
+      >
+        {navContent}
+      </div>
     </>
   );
 }

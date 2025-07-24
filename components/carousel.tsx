@@ -3,10 +3,11 @@
 import Link from 'next/link';
 import { GridTileImage } from 'components/grid/tile';
 import { prisma } from '@/lib/db';
+import { Product } from '@prisma/client';
 
 export async function Carousel() {
   // Fetch the 8 most recent products
-  const products = await prisma.products.findMany({
+  const products = await prisma.product.findMany({
     orderBy: { createdAt: 'desc' },
     take: 8
   });
@@ -14,7 +15,7 @@ export async function Carousel() {
   if (!products?.length) return null;
 
   // Format the data to match what GridTileImage expects
-  const carouselProducts = products.map((product) => ({
+  const carouselProducts = products.map((product: Product) => ({
     handle: product.slug,
     title: product.name,
     priceRange: {

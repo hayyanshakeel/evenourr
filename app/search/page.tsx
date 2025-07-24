@@ -1,8 +1,8 @@
 import { prisma } from '@/lib/db';
+import { Product } from '@prisma/client';
 import Grid from 'components/grid';
 import ProductGridItems from 'components/layout/product-grid-items';
 import { defaultSort, sorting } from 'lib/constants';
-import { Product as ProductType } from '@/lib/types';
 
 export const metadata = {
   title: 'Search',

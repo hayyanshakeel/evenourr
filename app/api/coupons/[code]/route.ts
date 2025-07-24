@@ -11,7 +11,7 @@ export async function GET(
 ) {
   try {
     const couponCode = params.code.toUpperCase();
-    const coupon = await prisma.coupons.findFirst({ where: { code: couponCode } });
+    const coupon = await prisma.coupon.findFirst({ where: { code: couponCode } });
 
     if (!coupon) {
       return new NextResponse(JSON.stringify({ error: 'Coupon not found' }), {
@@ -41,17 +41,16 @@ export async function PATCH(
   try {
     const body = await request.json();
     const couponCode = params.code.toUpperCase();
-    const updated = await prisma
-      .update(prisma.coupons)
-      .set(body)
-      .where({ code: couponCode })
-      .returning();
+    const updated = await prisma.coupon.update({
+      where: { code: couponCode },
+      data: body
+    });
 
-    if (updated.length === 0) {
+    if (!updated) {
       return new NextResponse(JSON.stringify({ error: 'Coupon not found' }), { status: 404 });
     }
 
-    return new NextResponse(JSON.stringify(updated[0]), { status: 200 });
+    return new NextResponse(JSON.stringify(updated), { status: 200 });
   } catch (error) {
     console.error('[COUPON_PATCH_ERROR]', error);
     return new NextResponse(JSON.stringify({ error: 'Internal Server Error' }), { status: 500 });
@@ -65,7 +64,7 @@ export async function DELETE(
 ) {
   try {
     const couponCode = params.code.toUpperCase();
-    const deleted = await prisma.coupons.deleteMany({ where: { code: couponCode } });
+    const deleted = await prisma.coupon.deleteMany({ where: { code: couponCode } });
 
     if (deleted.count === 0) {
       return new NextResponse(JSON.stringify({ error: 'Coupon not found' }), { status: 404 });
