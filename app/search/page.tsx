@@ -1,8 +1,6 @@
 // File: app/search/page.tsx
 
-import { db } from '@/lib/db';
-import { products as productsTable } from '@/lib/db/schema';
-import { desc } from 'drizzle-orm';
+import { prisma } from '@/lib/db';
 
 import Grid from 'components/grid';
 import ProductGridItems from 'components/layout/product-grid-items';
@@ -21,14 +19,11 @@ export default async function SearchPage({
   const { sort } = searchParams as { [key: string]: string };
   const { sortKey, reverse } = sorting.find((item) => item.slug === sort) || defaultSort;
 
-  // Fetch all products from your Turso database
-  const rawProducts = await db
-    .select()
-    .from(productsTable)
-    .orderBy(reverse ? desc(productsTable.createdAt) : productsTable.createdAt);
+  // Fetch products for search
+  const products = await prisma.products.findMany();
 
   // Format the data to match what the frontend components expect
-  const formattedProducts = rawProducts.map((product) => ({
+  const formattedProducts = products.map((product) => ({
     handle: product.slug,
     title: product.name,
     priceRange: {

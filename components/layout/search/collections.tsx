@@ -1,12 +1,12 @@
 // components/layout/search/collections.tsx
 import { Suspense } from 'react';
 
-import { db } from '@/lib/db';
+import { prisma } from '@/lib/db';
 import FilterList from './filter';
 
 async function CollectionList() {
   // Fetch categories from your database instead of Shopify
-  const collections = await db.query.categories.findMany();
+  const collections = await prisma.category.findMany();
 
   const list = collections.map((collection) => ({
     title: collection.title,

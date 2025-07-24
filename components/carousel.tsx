@@ -2,17 +2,14 @@
 
 import Link from 'next/link';
 import { GridTileImage } from 'components/grid/tile';
-import { db } from '@/lib/db';
-import { products as productsTable } from '@/lib/db/schema';
-import { desc } from 'drizzle-orm';
+import { prisma } from '@/lib/db';
 
 export async function Carousel() {
   // Fetch the 8 most recent products
-  const products = await db
-    .select()
-    .from(productsTable)
-    .orderBy(desc(productsTable.createdAt))
-    .limit(8);
+  const products = await prisma.products.findMany({
+    orderBy: { createdAt: 'desc' },
+    take: 8
+  });
 
   if (!products?.length) return null;
 

@@ -1,17 +1,13 @@
 'use server';
 
-import { db } from '@/lib/db';
-import { products } from '@/lib/db/schema';
-import { eq } from 'drizzle-orm';
+import { prisma } from '@/lib/db';
 
 export async function getProductById(productId: number) {
   try {
-    const product = await db.query.products.findFirst({
-      where: eq(products.id, productId),
-    });
+    const product = await prisma.products.findFirst({ where: { id: productId } });
     return product;
   } catch (error) {
-    console.error('Failed to fetch product:', error);
+    // handle error
     return null;
   }
 }

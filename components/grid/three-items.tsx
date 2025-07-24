@@ -2,22 +2,19 @@
 
 import Link from 'next/link';
 import { GridTileImage } from 'components/grid/tile';
-import { db } from '@/lib/db';
-import { products as productsTable } from '@/lib/db/schema';
-import { desc } from 'drizzle-orm';
+import { prisma } from '@/lib/db';
 
 async function ThreeItemGridItems() {
   // Fetch the 3 most recent products
-  const homepageItems = await db
-    .select()
-    .from(productsTable)
-    .orderBy(desc(productsTable.createdAt))
-    .limit(3);
+  const homepageItems = await prisma.products.findMany({
+    orderBy: { createdAt: 'desc' },
+    take: 3
+  });
 
   if (!homepageItems || homepageItems.length < 3) return null;
 
   // Format the data for display
-  const [firstProduct, secondProduct, thirdProduct] = homepageItems.map(item => ({
+  const [firstProduct, secondProduct, thirdProduct] = homepageItems.map((item: typeof homepageItems[number]) => ({
     handle: item.slug,
     title: item.name,
     priceRange: {

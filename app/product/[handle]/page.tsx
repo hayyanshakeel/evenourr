@@ -1,6 +1,4 @@
-import { db } from '@/lib/db';
-import { products } from '@/lib/db/schema';
-import { eq } from 'drizzle-orm';
+import { prisma } from '@/lib/db';
 import { notFound } from 'next/navigation';
 import type { Metadata } from 'next';
 import ProductDetails from '@/components/product-details';
@@ -14,7 +12,7 @@ export async function generateMetadata({
   const { handle } = await params;
   if (!handle) return notFound();
 
-  const product = await db.query.products.findFirst({ where: eq(products.slug, handle) });
+  const product = await prisma.products.findFirst({ where: { slug: handle } });
   
   if (!product) return notFound();
 
@@ -25,42 +23,40 @@ export async function generateMetadata({
 }
 
 // --- Corrected Page Component ---
-export default async function ProductPage({ params }: { params: { handle:string } }) {
-  const { handle } = await params;
+export default async function ProductPage({ params }: { params: { handle: string } }) {
+  const { handle } = params;
   if (!handle) return notFound();
 
-  const productData = await db.query.products.findFirst({
-    where: eq(products.slug, handle),
-  });
+  const product = await prisma.products.findFirst({ where: { slug: handle } });
 
-  if (!productData) {
+  if (!product) {
     return notFound();
   }
 
   // Create mock variants based on the product itself since the variants table
   // has different structure than expected by ProductDetails component
   const mockVariants = [{
-    id: productData.id,
-    productId: productData.id,
-    name: productData.name,
-    price: productData.price,
-    inventory: productData.inventory,
-    createdAt: productData.createdAt?.toISOString() || new Date().toISOString(),
-    updatedAt: productData.updatedAt?.toISOString() || new Date().toISOString(),
+    id: product.id,
+    productId: product.id,
+    name: product.name,
+    price: product.price,
+    inventory: product.inventory,
+    createdAt: product.createdAt?.toISOString() || new Date().toISOString(),
+    updatedAt: product.updatedAt?.toISOString() || new Date().toISOString(),
   }];
 
   // Transform the database product to match the expected Product interface
   const transformedProduct = {
-    id: productData.id,
-    name: productData.name,
-    slug: productData.slug || handle, // Fallback to handle if slug is null
-    description: productData.description || '',
-    price: productData.price,
-    imageUrl: productData.imageUrl || null,
-    status: productData.status,
-    inventory: productData.inventory,
-    createdAt: productData.createdAt?.toISOString() || new Date().toISOString(),
-    updatedAt: productData.updatedAt?.toISOString() || new Date().toISOString(),
+    id: product.id,
+    name: product.name,
+    slug: product.slug || handle, // Fallback to handle if slug is null
+    description: product.description || '',
+    price: product.price,
+    imageUrl: product.imageUrl || null,
+    status: product.status,
+    inventory: product.inventory,
+    createdAt: product.createdAt?.toISOString() || new Date().toISOString(),
+    updatedAt: product.updatedAt?.toISOString() || new Date().toISOString(),
     variants: mockVariants
   };
 

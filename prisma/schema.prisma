@@ -1,3 +1,5 @@
+mkdir -p prisma
+cat > prisma/schema.prisma <<'EOF'
 generator client {
   provider        = "prisma-client-js"
   previewFeatures = ["driverAdapters"]
@@ -114,3 +116,4 @@ model Coupon {
   createdAt  DateTime @default(now())
   updatedAt  DateTime @updatedAt
 }
+EOF
