@@ -9,23 +9,31 @@ import ProductGridItems from 'components/layout/product-grid-items';
 
 // This function generates the page title based on the collection
 export async function generateMetadata({ params }: { params: { collection: string } }): Promise<Metadata> {
-  const category = await prisma.category.findFirst({ where: { handle: params.collection } });
+  const collection = await prisma.collection.findFirst({ where: { handle: params.collection } });
 
-  if (!category) return notFound();
+  if (!collection) return notFound();
 
   return {
-    title: category.title,
-    description: `Products in the ${category.title} collection`,
+    title: collection.title,
+    description: `Products in the ${collection.title} collection`,
   };
 }
 
 // This is the main page component that fetches and displays products
 export default async function CategoryPage({ params }: { params: { collection: string } }) {
-  const category = await prisma.category.findFirst({ where: { handle: params.collection } });
-  if (!category) return null; // or notFound()
+  const collection = await prisma.collection.findFirst({ where: { handle: params.collection } });
+  if (!collection) return null; // or notFound()
 
-  // 1. Fetch the raw product data from the database
-  const rawProducts = await prisma.products.findMany({ where: { categoryId: category.id } });
+  // 1. Fetch the raw product data from the database through the junction table
+  const rawProducts = await prisma.product.findMany({
+    where: {
+      productsToCollections: {
+        some: {
+          collectionId: collection.id
+        }
+      }
+    }
+  });
 
   // 2. Transform the raw data into the shape the component expects
   const formattedProducts = rawProducts.map((product: any) => ({

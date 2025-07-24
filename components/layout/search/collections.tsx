@@ -1,7 +1,7 @@
 // components/layout/search/collections.tsx
 import { Suspense } from 'react';
 
-import { prisma } from '@/lib/db';
+import prisma from '@/lib/db';
 import FilterList from './filter';
 
 async function CollectionList() {
