@@ -8,7 +8,7 @@ export async function PATCH(request: Request, { params }: { params: { itemId: st
     if (!quantity || quantity < 1) {
       return NextResponse.json({ error: 'Invalid quantity' }, { status: 400 });
     }
-    await prisma.cartItems.update({
+    await prisma.cartItem.update({
       where: { id: itemId },
       data: { quantity },
     });
@@ -22,7 +22,7 @@ export async function PATCH(request: Request, { params }: { params: { itemId: st
 export async function DELETE(request: Request, { params }: { params: { itemId: string } }) {
   try {
     const itemId = parseInt(params.itemId);
-    await prisma.cartItems.delete({ where: { id: itemId } });
+    await prisma.cartItem.delete({ where: { id: itemId } });
     return NextResponse.json({ message: 'Item removed' });
   } catch (error) {
     console.error('Failed to remove item:', error);

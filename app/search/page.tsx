@@ -1,10 +1,8 @@
-// File: app/search/page.tsx
-
 import { prisma } from '@/lib/db';
-
 import Grid from 'components/grid';
 import ProductGridItems from 'components/layout/product-grid-items';
 import { defaultSort, sorting } from 'lib/constants';
+import { Product as ProductType } from '@/lib/types';
 
 export const metadata = {
   title: 'Search',
@@ -19,11 +17,9 @@ export default async function SearchPage({
   const { sort } = searchParams as { [key: string]: string };
   const { sortKey, reverse } = sorting.find((item) => item.slug === sort) || defaultSort;
 
-  // Fetch products for search
-  const products = await prisma.products.findMany();
+  const products = await prisma.product.findMany();
 
-  // Format the data to match what the frontend components expect
-  const formattedProducts = products.map((product) => ({
+  const formattedProducts = products.map((product: any) => ({
     handle: product.slug,
     title: product.name,
     priceRange: {

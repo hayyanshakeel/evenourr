@@ -4,25 +4,17 @@ import admin from 'firebase-admin';
 import type { Product } from '@/lib/types';
 
 // --- Firebase Admin Initialization ---
-// This code must run for the server to verify users.
-
-// Parse the service account key from the environment variable
 if (!process.env.FIREBASE_SERVICE_ACCOUNT_JSON) {
   throw new Error('FIREBASE_SERVICE_ACCOUNT_JSON env variable is not set');
 }
 const serviceAccount = JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT_JSON!);
 
-// Initialize the Firebase Admin SDK if it hasn't been already
 if (!admin.apps.length) {
   admin.initializeApp({
     credential: admin.credential.cert(serviceAccount)
   });
 }
 
-/**
- * Verifies the Firebase ID token from the request's Authorization header.
- * @returns The user's UID if the token is valid, otherwise null.
- */
 async function getUserIdFromRequest(req: NextRequest): Promise<string | null> {
     const authHeader = req.headers.get('Authorization');
     if (!authHeader) {
@@ -45,26 +37,23 @@ async function getUserIdFromRequest(req: NextRequest): Promise<string | null> {
     }
 }
 
-
-// --- API Route Handlers ---
-
 export async function GET(req: NextRequest) {
     const userId = await getUserIdFromRequest(req);
     if (!userId) {
         return NextResponse.json({ error: 'Unauthorized: Invalid or missing token' }, { status: 401 });
     }
 
-    const cart = await prisma.carts.findFirst({ where: { userId } });
+    const cart = await prisma.cart.findFirst({ where: { userId } });
     if (!cart) {
         return NextResponse.json({ items: [] });
     }
 
-    const items = await prisma.cartItems.findMany({
+    const items = await prisma.cartItem.findMany({
         where: { cartId: cart.id },
         include: { product: true }
     });
 
-    const responseItems = items.map(item => ({
+    const responseItems = items.map((item: any) => ({
         productId: item.productId,
         quantity: item.quantity,
         name: (item.product as Product | undefined)?.name ?? null,
@@ -75,11 +64,6 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ items: responseItems });
 }
 
-interface CartItemInput {
-    productId: number;
-    quantity: number;
-}
-
 export async function POST(req: NextRequest) {
     const userId = await getUserIdFromRequest(req);
     if (!userId) {
@@ -88,25 +72,25 @@ export async function POST(req: NextRequest) {
 
     const { productId, quantity } = await req.json();
 
-    let cart = await prisma.carts.findFirst({ where: { userId } });
+    let cart = await prisma.cart.findFirst({ where: { userId } });
     if (!cart) {
-        cart = await prisma.carts.create({ data: { userId } });
+        cart = await prisma.cart.create({ data: { userId } });
         if (!cart) {
             return NextResponse.json({ error: 'Failed to create cart' }, { status: 500 });
         }
     }
 
-    const existingItem = await prisma.cartItems.findFirst({
+    const existingItem = await prisma.cartItem.findFirst({
         where: { cartId: cart.id, productId }
     });
 
     if (existingItem) {
-        await prisma.cartItems.update({
+        await prisma.cartItem.update({
             where: { id: existingItem.id },
             data: { quantity: existingItem.quantity + quantity }
         });
     } else {
-        await prisma.cartItems.create({
+        await prisma.cartItem.create({
             data: { cartId: cart.id, productId, quantity }
         });
     }

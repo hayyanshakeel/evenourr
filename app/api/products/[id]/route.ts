@@ -16,7 +16,7 @@ export async function PUT(req: NextRequest, { params }: { params: { id: string }
       }
       updateData.price = priceAsNumber;
     }
-    const updatedProduct = await prisma.products.update({
+    const updatedProduct = await prisma.product.update({
       where: { id },
       data: updateData
     });
@@ -39,7 +39,7 @@ export async function DELETE(req: NextRequest, { params }: { params: { id:string
     if (isNaN(id)) {
       return NextResponse.json({ message: 'Invalid product ID.' }, { status: 400 });
     }
-    const result = await prisma.products.delete({ where: { id } });
+    const result = await prisma.product.delete({ where: { id } });
     if (!result) {
       return NextResponse.json({ message: 'Product not found.' }, { status: 404 });
     }

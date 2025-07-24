@@ -3,7 +3,7 @@ import { NextResponse } from 'next/server';
 
 export async function GET() {
   try {
-    const allCustomers = await prisma.customers.findMany({
+    const allCustomers = await prisma.customer.findMany({
       orderBy: { createdAt: 'desc' }
     });
     return NextResponse.json(allCustomers);

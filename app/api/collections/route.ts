@@ -3,7 +3,7 @@ import { NextResponse } from 'next/server';
 
 export async function GET() {
   try {
-    const allCollections = await prisma.collections.findMany();
+    const allCollections = await prisma.collection.findMany();
     return NextResponse.json(allCollections, { status: 200 });
   } catch (error) {
     console.error('Failed to fetch collections:', error);
@@ -23,7 +23,7 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Title and handle are required fields' }, { status: 400 });
     }
 
-    const newCollection = await prisma.collections.create({
+    const newCollection = await prisma.collection.create({
       data: {
         title,
         handle,

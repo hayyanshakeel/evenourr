@@ -1,6 +1,6 @@
 // File: app/search/[collection]/page.tsx
 
-import { prisma } from '@/lib/db';
+import prisma from '@/lib/db';
 import { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 
@@ -28,7 +28,7 @@ export default async function CategoryPage({ params }: { params: { collection: s
   const rawProducts = await prisma.products.findMany({ where: { categoryId: category.id } });
 
   // 2. Transform the raw data into the shape the component expects
-  const formattedProducts = rawProducts.map((product) => ({
+  const formattedProducts = rawProducts.map((product: any) => ({
     id: product.id,
     handle: product.slug,
     title: product.name,

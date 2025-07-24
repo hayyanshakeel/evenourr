@@ -3,19 +3,19 @@ import { NextResponse } from 'next/server';
 
 export async function GET() {
   try {
-    const totalRevenueResult = await prisma.orders.aggregate({
+    const totalRevenueResult = await prisma.order.aggregate({
       _sum: { totalPrice: true },
       where: { status: 'paid' }
     });
     const totalRevenue = totalRevenueResult._sum.totalPrice || 0;
 
-    const totalSalesResult = await prisma.orders.aggregate({ _count: { id: true } });
+    const totalSalesResult = await prisma.order.aggregate({ _count: { id: true } });
     const totalSales = totalSalesResult._count.id || 0;
 
-    const totalCustomersResult = await prisma.customers.aggregate({ _count: { id: true } });
+    const totalCustomersResult = await prisma.customer.aggregate({ _count: { id: true } });
     const totalCustomers = totalCustomersResult._count.id || 0;
 
-    const recentOrders = await prisma.orders.findMany({
+    const recentOrders = await prisma.order.findMany({
       take: 5,
       orderBy: { createdAt: 'desc' },
       include: { customer: true }

@@ -1,7 +1,5 @@
 import { NextResponse } from 'next/server';
-import { db } from '@/lib/turso';
-import { products } from '@/lib/schema';
-import { inArray } from 'drizzle-orm';
+import { prisma } from '@/lib/db';
 
 export async function POST(request: Request) {
   try {
@@ -11,17 +9,19 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Product IDs must be a non-empty array' }, { status: 400 });
     }
 
-    // Fetch specific fields for the products in the cart
-    const productDetails = await db
-      .select({
-        id: products.id,
-        title: products.title,
-        handle: products.handle,
-        imageUrl: products.imageUrl
-      })
-      .from(products)
-      .where(inArray(products.id, ids))
-      .all();
+    const productDetails = await prisma.product.findMany({
+      where: {
+        id: {
+          in: ids,
+        },
+      },
+      select: {
+        id: true,
+        name: true,
+        slug: true,
+        imageUrl: true,
+      },
+    });
 
     return NextResponse.json(productDetails);
   } catch (error) {

@@ -1,4 +1,4 @@
-import { prisma } from '@/lib/db';
+import prisma from '@/lib/db';
 import { NextResponse } from 'next/server';
 
 export async function GET(request: Request) {
@@ -7,7 +7,7 @@ export async function GET(request: Request) {
 
     if (code) {
         try {
-            const coupon = await prisma.coupons.findFirst({ where: { code } });
+            const coupon = await prisma.coupon.findFirst({ where: { code } });
             if (!coupon) {
                 return NextResponse.json({ error: 'Invalid coupon code' }, { status: 404 });
             }
@@ -18,7 +18,7 @@ export async function GET(request: Request) {
         }
     } else {
         try {
-            const allCoupons = await prisma.coupons.findMany();
+            const allCoupons = await prisma.coupon.findMany();
             return NextResponse.json(allCoupons);
         } catch (error) {
             console.error('Error fetching all coupons:', error);

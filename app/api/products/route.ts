@@ -1,4 +1,4 @@
-import { prisma } from '@/lib/db';
+import prisma from '@/lib/db';
 import { NextResponse } from 'next/server';
 
 export async function GET(request: Request) {
@@ -13,13 +13,13 @@ export async function GET(request: Request) {
 
     let allProducts;
     if (status && ['draft', 'active', 'archived'].includes(status)) {
-      allProducts = await prisma.products.findMany({
+      allProducts = await prisma.product.findMany({
         where: { status },
         take: limitNum,
         skip: offsetNum
       });
     } else {
-      allProducts = await prisma.products.findMany({
+      allProducts = await prisma.product.findMany({
         take: limitNum,
         skip: offsetNum
       });
@@ -38,19 +38,19 @@ export async function POST(request: Request) {
     const price = parseFloat(formData.get('price') as string);
     const inventory = parseInt(formData.get('inventory') as string, 10) || 0;
     const status = formData.get('status') as string;
-    // For image upload, you may need to handle this differently with Prisma
     const imageUrl = formData.get('image') as string;
 
     if (!name || isNaN(price) || !imageUrl) {
       return NextResponse.json({ error: 'Name, a valid price, and image are required' }, { status: 400 });
     }
 
-    const newProduct = await prisma.products.create({
+    const newProduct = await prisma.product.create({
       data: {
         name,
         price,
         inventory,
         status,
+        slug: name.toLowerCase().replace(/\s/g, '-'),
         imageUrl,
       }
     });
