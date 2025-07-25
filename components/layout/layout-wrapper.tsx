@@ -14,7 +14,7 @@ export const LayoutWrapper = ({ children }: { children: React.ReactNode }) => {
   return (
     <CartProvider>
       {/* Hide the navbar on the admin login page */}
-      {!pathname.includes('/admin/login') && <Navbar />}
+      {!pathname.includes('/hatsadmin/login') && <Navbar />}
       <div className="mx-auto max-w-screen-2xl px-4">
         <main>{children}</main>
       </div>

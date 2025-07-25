@@ -18,3 +18,9 @@ export const ensureStartsWith = (stringToCheck: string, startsWith: string) =>
   stringToCheck.startsWith(startsWith)
     ? stringToCheck
     : `${startsWith}${stringToCheck}`;
+
+export const validateEnvironmentVariables = () => {
+  // Placeholder function for environment validation
+  // Add your environment variable checks here
+  return true;
+};

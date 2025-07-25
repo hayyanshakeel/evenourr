@@ -1,6 +1,7 @@
 import prisma from '@/lib/db';
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 import { uploadToCloudinary } from '@/lib/cloudinary';
+import { verifyFirebaseUser } from '@/lib/firebase-verify';
 
 export async function GET(request: Request) {
   try {
@@ -32,111 +33,109 @@ export async function GET(request: Request) {
   }
 }
 
-export async function POST(request: Request) {
+export async function POST(request: NextRequest) {
   try {
+    // Verify Firebase token and get user
+    const result = await verifyFirebaseUser(request);
+    
+    if ('error' in result) {
+      return NextResponse.json({ error: result.error }, { status: result.status });
+    }
+
+    const { user } = result;
+
+    // Check if user has admin role
+    if (user.role !== 'admin') {
+      return NextResponse.json({ error: 'Forbidden - Admin access required' }, { status: 403 });
+    }
+
     const formData = await request.formData();
     
-    // Extract all form fields
-    const title = formData.get('title') as string;
+    // Extract form fields
+    const name = formData.get('name') as string;
     const description = formData.get('description') as string;
     const price = parseFloat(formData.get('price') as string);
-    const compareAtPrice = formData.get('compareAtPrice') ? parseFloat(formData.get('compareAtPrice') as string) : null;
-    const costPerItem = formData.get('costPerItem') ? parseFloat(formData.get('costPerItem') as string) : null;
-    const trackQuantity = formData.get('trackQuantity') === 'true';
-    const quantity = formData.get('quantity') ? parseInt(formData.get('quantity') as string, 10) : 0;
-    const sku = formData.get('sku') as string;
-    const barcode = formData.get('barcode') as string;
-    const weight = formData.get('weight') ? parseFloat(formData.get('weight') as string) : null;
+    const inventory = parseInt(formData.get('inventory') as string, 10) || 0;
     const status = formData.get('status') as string;
-    const vendor = formData.get('vendor') as string;
-    const productType = formData.get('productType') as string;
-    const tags = formData.get('tags') as string;
-    const seoTitle = formData.get('seoTitle') as string;
-    const seoDescription = formData.get('seoDescription') as string;
-    const url = formData.get('url') as string;
+    const slug = formData.get('slug') as string;
 
     console.log('Form data received:', { 
-      title, 
+      name, 
       price, 
-      quantity, 
+      inventory, 
       status,
-      trackQuantity,
-      vendor,
-      productType,
-      tags
+      slug
     });
 
-    if (!title || isNaN(price)) {
-      return NextResponse.json({ error: 'Title and valid price are required' }, { status: 400 });
+    if (!name || name.trim() === '') {
+      return NextResponse.json({ error: 'Product name is required' }, { status: 400 });
+    }
+    
+    if (isNaN(price)) {
+      return NextResponse.json({ error: 'Valid price is required' }, { status: 400 });
     }
 
     // Handle multiple image uploads
     const imageUrls: string[] = [];
-    let imageIndex = 0;
+    const images = formData.getAll('images') as File[];
     
-    while (true) {
-      const imageFile = formData.get(`image_${imageIndex}`) as File;
-      if (!imageFile || imageFile.size === 0) break;
-      
-      console.log(`Uploading image ${imageIndex} to Cloudinary...`);
-      const imageUrl = await uploadToCloudinary(imageFile);
-      console.log(`Cloudinary upload result for image ${imageIndex}:`, imageUrl);
-      
-      if (imageUrl) {
-        imageUrls.push(imageUrl);
+    for (let i = 0; i < images.length; i++) {
+      const imageFile = images[i];
+      if (imageFile && imageFile.size > 0) {
+        console.log(`Uploading image ${i} to Cloudinary...`);
+        const imageUrl = await uploadToCloudinary(imageFile);
+        console.log(`Cloudinary upload result for image ${i}:`, imageUrl);
+        
+        if (imageUrl) {
+          imageUrls.push(imageUrl);
+        }
       }
-      imageIndex++;
     }
 
-    // Generate slug from title
-    const slug = (url || title).toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '');
+
+    // Parse categoryId as integer if present
+    let categoryId: number | null = null;
+    const categoryIdRaw = formData.get('categoryId');
+    if (categoryIdRaw && typeof categoryIdRaw === 'string' && categoryIdRaw !== '') {
+      categoryId = parseInt(categoryIdRaw, 10);
+      if (isNaN(categoryId)) categoryId = null;
+    }
 
     console.log('Creating product with data:', {
-      name: title,
+      name,
       description,
       price,
-      inventory: quantity,
+      inventory,
       status: status || 'draft',
       slug,
       imageUrl: imageUrls[0] || null, // Use first image as main image
-      vendor,
-      productType,
-      tags,
-      sku,
-      barcode,
-      weight,
-      compareAtPrice,
-      costPerItem,
-      seoTitle,
-      seoDescription,
-      trackQuantity
+      imageUrls,
+      categoryId
     });
 
+
+    // Create product with categoryId if present
     const newProduct = await prisma.product.create({
       data: {
-        name: title,
+        name,
         description: description || null,
         price,
-        inventory: trackQuantity ? quantity : 0,
+        inventory,
         status: status || 'draft',
         slug,
-        imageUrl: imageUrls[0] || null,
-        // Note: Add these fields to your Prisma schema if you want to store them
-        // vendor,
-        // productType,
-        // tags,
-        // sku,
-        // barcode,
-        // weight,
-        // compareAtPrice,
-        // costPerItem,
-        // seoTitle,
-        // seoDescription,
-        // trackQuantity
+        imageUrl: imageUrls[0] || null, // Use first image as main image
+        categoryId: categoryId ?? undefined,
       }
     });
 
-    return NextResponse.json(newProduct, { status: 201 });
+    // For now, we'll store all image URLs in a simple way
+    // Later we can enhance this to use the ProductImage model when types are updated
+    console.log('Product created with images:', imageUrls);
+
+    return NextResponse.json({
+      ...newProduct,
+      images: imageUrls
+    }, { status: 201 });
   } catch (error) {
     console.error('Error creating product:', error);
     return NextResponse.json({ error: 'Failed to create product' }, { status: 500 });

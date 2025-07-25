@@ -1,99 +1,95 @@
 import { prisma } from '@/lib/db';
 import { NextRequest, NextResponse } from 'next/server';
-import admin from 'firebase-admin';
-import type { Product } from '@/lib/types';
+import { cookies } from 'next/headers';
 
-// --- Firebase Admin Initialization ---
-if (!process.env.FIREBASE_SERVICE_ACCOUNT_JSON) {
-  throw new Error('FIREBASE_SERVICE_ACCOUNT_JSON env variable is not set');
-}
-const serviceAccount = JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT_JSON!);
-
-if (!admin.apps.length) {
-  admin.initializeApp({
-    credential: admin.credential.cert(serviceAccount)
-  });
-}
-
-async function getUserIdFromRequest(req: NextRequest): Promise<string | null> {
-    const authHeader = req.headers.get('Authorization');
-    if (!authHeader) {
-        console.warn("No Authorization header found.");
-        return null;
-    }
-    
-    const token = authHeader.split('Bearer ')[1];
-    if (!token) {
-        console.warn("Bearer token is missing.");
-        return null;
-    }
-
-    try {
-        const decodedToken = await admin.auth().verifyIdToken(token);
-        return decodedToken.uid;
-    } catch (error) {
-        console.error("Error verifying auth token:", error);
-        return null;
-    }
+// Simple session-based cart (using cookies for demo)
+async function getSessionId(): Promise<string> {
+  const cookieStore = await cookies();
+  let sessionId = cookieStore.get('session_id')?.value;
+  
+  if (!sessionId) {
+    sessionId = Math.random().toString(36).substring(2, 15);
+  }
+  
+  return sessionId;
 }
 
 export async function GET(req: NextRequest) {
-    const userId = await getUserIdFromRequest(req);
-    if (!userId) {
-        return NextResponse.json({ error: 'Unauthorized: Invalid or missing token' }, { status: 401 });
-    }
-
-    const cart = await prisma.cart.findFirst({ where: { userId } });
-    if (!cart) {
-        return NextResponse.json({ items: [] });
-    }
-
-    const items = await prisma.cartItem.findMany({
-        where: { cartId: cart.id },
-        include: { product: true }
+  try {
+    const sessionId = await getSessionId();
+    
+    const cart = await prisma.cart.findFirst({ 
+      where: { sessionId: sessionId },
+      include: {
+        cartItems: {
+          include: {
+            product: true
+          }
+        }
+      }
     });
+    
+    if (!cart) {
+      return NextResponse.json({ items: [] });
+    }
 
-    const responseItems = items.map((item: any) => ({
-        productId: item.productId,
-        quantity: item.quantity,
-        name: (item.product as Product | undefined)?.name ?? null,
-        price: (item.product as Product | undefined)?.price ?? null,
-        imageUrl: (item.product as Product | undefined)?.imageUrl ?? null,
+    const responseItems = cart.cartItems.map((item: any) => ({
+      id: item.id,
+      productId: item.productId,
+      quantity: item.quantity,
+      product: item.product
     }));
 
     return NextResponse.json({ items: responseItems });
+  } catch (error) {
+    console.error('Cart GET error:', error);
+    return NextResponse.json({ error: 'Failed to fetch cart' }, { status: 500 });
+  }
 }
 
 export async function POST(req: NextRequest) {
-    const userId = await getUserIdFromRequest(req);
-    if (!userId) {
-        return NextResponse.json({ error: 'Unauthorized: Invalid or missing token' }, { status: 401 });
+  try {
+    const sessionId = await getSessionId();
+    const { productId, quantity = 1 } = await req.json();
+
+    if (!productId) {
+      return NextResponse.json({ error: 'Product ID is required' }, { status: 400 });
     }
 
-    const { productId, quantity } = await req.json();
-
-    let cart = await prisma.cart.findFirst({ where: { userId } });
+    let cart = await prisma.cart.findFirst({ where: { sessionId: sessionId } });
     if (!cart) {
-        cart = await prisma.cart.create({ data: { userId } });
-        if (!cart) {
-            return NextResponse.json({ error: 'Failed to create cart' }, { status: 500 });
-        }
+      cart = await prisma.cart.create({ data: { sessionId: sessionId } });
     }
 
     const existingItem = await prisma.cartItem.findFirst({
-        where: { cartId: cart.id, productId }
+      where: { cartId: cart.id, productId: parseInt(productId) }
     });
 
     if (existingItem) {
-        await prisma.cartItem.update({
-            where: { id: existingItem.id },
-            data: { quantity: existingItem.quantity + quantity }
-        });
+      await prisma.cartItem.update({
+        where: { id: existingItem.id },
+        data: { quantity: existingItem.quantity + quantity }
+      });
     } else {
-        await prisma.cartItem.create({
-            data: { cartId: cart.id, productId, quantity }
-        });
+      await prisma.cartItem.create({
+        data: { 
+          cartId: cart.id, 
+          productId: parseInt(productId), 
+          quantity 
+        }
+      });
     }
 
-    return NextResponse.json({ success: true, message: 'Cart updated' });
+    const response = NextResponse.json({ success: true, message: 'Item added to cart' });
+    response.cookies.set('session_id', sessionId, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      maxAge: 30 * 24 * 60 * 60 * 1000 // 30 days
+    });
+
+    return response;
+  } catch (error) {
+    console.error('Cart POST error:', error);
+    return NextResponse.json({ error: 'Failed to add item to cart' }, { status: 500 });
+  }
 }

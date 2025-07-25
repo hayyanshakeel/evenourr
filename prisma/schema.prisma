@@ -8,21 +8,153 @@ datasource db {
   url      = "file:./dev.db"
 }
 
+// User model for authentication and authorization
+model User {
+  id                    Int      @id @default(autoincrement())
+  email                 String   @unique
+  password              String
+  firstName             String
+  lastName              String
+  role                  String   @default("user") // user, admin, moderator
+  isActive              Boolean  @default(true)
+  emailVerified         Boolean  @default(false)
+  emailVerificationToken String?
+  passwordResetToken    String?
+  passwordResetExpires  DateTime?
+  lastLogin             DateTime?
+  failedLoginAttempts   Int      @default(0)
+  lockedUntil           DateTime?
+  createdAt             DateTime @default(now())
+  updatedAt             DateTime @updatedAt
+
+  // Relations
+  orders    Order[]
+  carts     Cart[]
+  sessions  UserSession[]
+}
+
+// User sessions for secure session management
+model UserSession {
+  id        String   @id @default(cuid())
+  userId    Int
+  token     String   @unique
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model Category {
+  id        Int      @id @default(autoincrement())
+  name      String   @unique
+  products  Product[]
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
 model Product {
   id          Int      @id @default(autoincrement())
   name        String
   description String?
-  price       Float
-  inventory   Int      @default(0)
+  price       Float    // Base price
+  inventory   Int      @default(0) // Total inventory (sum of all variants)
   slug        String   @unique
   imageUrl    String?
   status      String   @default("active")
+  hasVariants Boolean  @default(false)
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
+
+  categoryId Int?
+  category   Category? @relation(fields: [categoryId], references: [id])
 
   cartItems            CartItem[]
   orderItems           OrderItem[]
   productsToCollections ProductToCollection[]
+  images               ProductImage[]
+  variants             ProductVariant[]
+  options              ProductOption[]
+}
+
+model ProductOption {
+  id        Int      @id @default(autoincrement())
+  productId Int
+  name      String   // e.g., "Size", "Color"
+  position  Int      @default(0)
+  createdAt DateTime @default(now())
+
+  product Product             @relation(fields: [productId], references: [id], onDelete: Cascade)
+  values  ProductOptionValue[]
+
+  @@unique([productId, name])
+}
+
+model ProductOptionValue {
+  id       Int    @id @default(autoincrement())
+  optionId Int
+  value    String // e.g., "Small", "Red"
+  position Int    @default(0)
+
+  option   ProductOption @relation(fields: [optionId], references: [id], onDelete: Cascade)
+  variants VariantOptionValue[]
+
+  @@unique([optionId, value])
+}
+
+model ProductVariant {
+  id             Int      @id @default(autoincrement())
+  productId      Int
+  title          String   // e.g., "Small / Red"
+  price          Float
+  compareAtPrice Float?   // Original price for sale pricing
+  sku            String?
+  barcode        String?
+  inventory      Int      @default(0)
+  weight         Float?
+  requiresShipping Boolean @default(true)
+  taxable        Boolean  @default(true)
+  position       Int      @default(0)
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  product     Product              @relation(fields: [productId], references: [id], onDelete: Cascade)
+  optionValues VariantOptionValue[]
+  cartItems   CartItem[]
+  orderItems  OrderItem[]
+
+  @@unique([productId, title])
+}
+
+model VariantOptionValue {
+  id        Int @id @default(autoincrement())
+  variantId Int
+  optionValueId Int
+
+  variant     ProductVariant     @relation(fields: [variantId], references: [id], onDelete: Cascade)
+  optionValue ProductOptionValue @relation(fields: [optionValueId], references: [id], onDelete: Cascade)
+
+  @@unique([variantId, optionValueId])
+}
+
+model StoreSetting {
+  id       Int    @id @default(autoincrement())
+  key      String @unique
+  value    String
+  category String @default("general")
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model ProductImage {
+  id        Int      @id @default(autoincrement())
+  productId Int
+  imageUrl  String
+  altText   String?
+  sortOrder Int      @default(0)
+  createdAt DateTime @default(now())
+
+  product Product @relation(fields: [productId], references: [id], onDelete: Cascade)
 }
 
 model Collection {
@@ -49,11 +181,12 @@ model ProductToCollection {
 
 model Cart {
   id        Int      @id @default(autoincrement())
-  userId    String?
+  userId    Int?
   sessionId String?  @unique
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
+  user      User?      @relation(fields: [userId], references: [id], onDelete: Cascade)
   cartItems CartItem[]
 }
 
@@ -61,12 +194,14 @@ model CartItem {
   id        Int @id @default(autoincrement())
   cartId    Int
   productId Int
+  variantId Int?
   quantity  Int @default(1)
 
-  cart    Cart    @relation(fields: [cartId], references: [id], onDelete: Cascade)
-  product Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+  cart    Cart            @relation(fields: [cartId], references: [id], onDelete: Cascade)
+  product Product         @relation(fields: [productId], references: [id], onDelete: Cascade)
+  variant ProductVariant? @relation(fields: [variantId], references: [id], onDelete: Cascade)
 
-  @@unique([cartId, productId])
+  @@unique([cartId, productId, variantId])
 }
 
 model Customer {
@@ -81,7 +216,8 @@ model Customer {
 
 model Order {
   id         Int      @id @default(autoincrement())
-  customerId Int
+  userId     Int?
+  customerId Int?     // Keep for backwards compatibility
   totalPrice Float
   status     String   @default("pending")
   createdAt  DateTime @default(now())
@@ -90,8 +226,8 @@ model Order {
   closedAt    DateTime?
   processedAt DateTime?
 
-
-  customer   Customer   @relation(fields: [customerId], references: [id])
+  user       User?      @relation(fields: [userId], references: [id], onDelete: SetNull)
+  customer   Customer?  @relation(fields: [customerId], references: [id])
   orderItems OrderItem[]
 }
 
@@ -99,11 +235,13 @@ model OrderItem {
   id        Int   @id @default(autoincrement())
   orderId   Int
   productId Int
+  variantId Int?
   quantity  Int   @default(1)
   price     Float
 
-  order   Order   @relation(fields: [orderId], references: [id], onDelete: Cascade)
-  product Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+  order   Order           @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  product Product         @relation(fields: [productId], references: [id], onDelete: Cascade)
+  variant ProductVariant? @relation(fields: [variantId], references: [id], onDelete: Cascade)
 }
 
 model Coupon {

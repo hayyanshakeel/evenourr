@@ -7,10 +7,11 @@ export const dynamic = 'force-dynamic';
 // GET function to fetch a single coupon
 export async function GET(
   request: NextRequest,
-  { params }: { params: { code: string } }
+  { params }: { params: Promise<{ code: string }> }
 ) {
   try {
-    const couponCode = params.code.toUpperCase();
+    const { code } = await params;
+    const couponCode = code.toUpperCase();
     const coupon = await prisma.coupon.findFirst({ where: { code: couponCode } });
 
     if (!coupon) {
@@ -36,11 +37,12 @@ export async function GET(
 // PATCH function to update a coupon
 export async function PATCH(
   request: NextRequest,
-  { params }: { params: { code: string } }
+  { params }: { params: Promise<{ code: string }> }
 ) {
   try {
     const body = await request.json();
-    const couponCode = params.code.toUpperCase();
+    const { code } = await params;
+    const couponCode = code.toUpperCase();
     const updated = await prisma.coupon.update({
       where: { code: couponCode },
       data: body
@@ -60,10 +62,11 @@ export async function PATCH(
 // DELETE function to remove a coupon
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { code: string } }
+  { params }: { params: Promise<{ code: string }> }
 ) {
   try {
-    const couponCode = params.code.toUpperCase();
+    const { code } = await params;
+    const couponCode = code.toUpperCase();
     const deleted = await prisma.coupon.deleteMany({ where: { code: couponCode } });
 
     if (deleted.count === 0) {

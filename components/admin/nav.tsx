@@ -12,7 +12,8 @@ import {
   TicketIcon,
   Cog6ToothIcon,
   XMarkIcon,
-  ChevronRightIcon
+  ChevronRightIcon,
+  CubeIcon
 } from '@heroicons/react/24/outline';
 import { useState } from 'react';
 
@@ -20,22 +21,23 @@ function classNames(...classes: string[]) {
   return classes.filter(Boolean).join(' ');
 }
 
-const menuItems = [
-  { href: '/dashboard', label: 'Dashboard', icon: HomeIcon },
-  { href: '/dashboard/orders', label: 'Orders', icon: ArchiveBoxIcon },
+const navigationItems = [
+  { href: '/hatsadmin/dashboard', label: 'Dashboard', icon: HomeIcon },
+  { href: '/hatsadmin/dashboard/orders', label: 'Orders', icon: ArchiveBoxIcon },
   {
-    href: '/dashboard/products',
+    href: '/hatsadmin/dashboard/products',
     label: 'Products',
-    icon: ShoppingBagIcon,
-    children: [
-      { href: '/dashboard/products', label: 'All Products' },
-      { href: '/dashboard/inventory', label: 'Inventory' },
-      { href: '/dashboard/collections', label: 'Collections' },
+    icon: CubeIcon,
+    subItems: [
+      { href: '/hatsadmin/dashboard/products', label: 'All Products' },
+      { href: '/hatsadmin/dashboard/inventory', label: 'Inventory' },
+      { href: '/hatsadmin/dashboard/collections', label: 'Collections' },
+      { href: '/hatsadmin/dashboard/products/categories', label: 'Categories' },
     ]
   },
-  { href: '/dashboard/customers', label: 'Customers', icon: UserGroupIcon },
-  { href: '/dashboard/coupons', label: 'Coupons', icon: TicketIcon },
-  { href: '/dashboard/settings', label: 'Settings', icon: Cog6ToothIcon }
+  { href: '/hatsadmin/dashboard/customers', label: 'Customers', icon: UserGroupIcon },
+  { href: '/hatsadmin/dashboard/coupons', label: 'Coupons', icon: TicketIcon },
+  { href: '/hatsadmin/dashboard/settings', label: 'Settings', icon: Cog6ToothIcon }
 ];
 
 export default function Nav({ isNavOpen, setIsNavOpen }: { isNavOpen: boolean, setIsNavOpen: (open: boolean) => void }) {
@@ -66,13 +68,13 @@ export default function Nav({ isNavOpen, setIsNavOpen }: { isNavOpen: boolean, s
       </div>
 
       <nav className="flex-1 px-4 py-6 space-y-1">
-        {menuItems.map((item) => {
+        {navigationItems.map((item) => {
           const isActive = pathname === item.href || pathname.startsWith(item.href + '/');
           const isExpanded = expandedItems.includes(item.label);
           
           return (
             <div key={item.label}>
-              {item.children ? (
+              {item.subItems ? (
                 <>
                   <button
                     onClick={() => toggleExpanded(item.label)}
@@ -96,7 +98,7 @@ export default function Nav({ isNavOpen, setIsNavOpen }: { isNavOpen: boolean, s
                   </button>
                   {isExpanded && (
                     <div className="mt-1 ml-8 space-y-1">
-                      {item.children.map((child) => (
+                      {item.subItems.map((child) => (
                         <Link
                           key={child.href}
                           href={child.href}

@@ -8,28 +8,30 @@ import Grid from 'components/grid';
 import ProductGridItems from 'components/layout/product-grid-items';
 
 // This function generates the page title based on the collection
-export async function generateMetadata({ params }: { params: { collection: string } }): Promise<Metadata> {
-  const collection = await prisma.collection.findFirst({ where: { handle: params.collection } });
+export async function generateMetadata({ params }: { params: Promise<{ collection: string }> }): Promise<Metadata> {
+  const { collection } = await params;
+  const collectionData = await prisma.collection.findFirst({ where: { handle: collection } });
 
-  if (!collection) return notFound();
+  if (!collectionData) return notFound();
 
   return {
-    title: collection.title,
-    description: `Products in the ${collection.title} collection`,
+    title: collectionData.title,
+    description: `Products in the ${collectionData.title} collection`,
   };
 }
 
 // This is the main page component that fetches and displays products
-export default async function CategoryPage({ params }: { params: { collection: string } }) {
-  const collection = await prisma.collection.findFirst({ where: { handle: params.collection } });
-  if (!collection) return null; // or notFound()
+export default async function CategoryPage({ params }: { params: Promise<{ collection: string }> }) {
+  const { collection } = await params;
+  const collectionData = await prisma.collection.findFirst({ where: { handle: collection } });
+  if (!collectionData) return notFound();
 
   // 1. Fetch the raw product data from the database
   const rawProducts = await prisma.product.findMany({ 
     where: { 
       productsToCollections: {
         some: {
-          collectionId: collection.id
+          collectionId: collectionData.id
         }
       }
     }

@@ -1,15 +1,16 @@
 import { prisma } from '@/lib/db';
 import { NextResponse } from 'next/server';
 
-export async function PATCH(request: Request, { params }: { params: { itemId: string } }) {
+export async function PATCH(request: Request, { params }: { params: Promise<{ itemId: string }> }) {
   try {
     const { quantity } = await request.json();
-    const itemId = parseInt(params.itemId);
+    const { itemId } = await params;
+    const itemIdNum = parseInt(itemId);
     if (!quantity || quantity < 1) {
       return NextResponse.json({ error: 'Invalid quantity' }, { status: 400 });
     }
     await prisma.cartItem.update({
-      where: { id: itemId },
+      where: { id: itemIdNum },
       data: { quantity },
     });
     return NextResponse.json({ message: 'Item updated' });
@@ -19,10 +20,11 @@ export async function PATCH(request: Request, { params }: { params: { itemId: st
   }
 }
 
-export async function DELETE(request: Request, { params }: { params: { itemId: string } }) {
+export async function DELETE(request: Request, { params }: { params: Promise<{ itemId: string }> }) {
   try {
-    const itemId = parseInt(params.itemId);
-    await prisma.cartItem.delete({ where: { id: itemId } });
+    const { itemId } = await params;
+    const itemIdNum = parseInt(itemId);
+    await prisma.cartItem.delete({ where: { id: itemIdNum } });
     return NextResponse.json({ message: 'Item removed' });
   } catch (error) {
     console.error('Failed to remove item:', error);
