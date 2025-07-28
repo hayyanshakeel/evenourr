@@ -21,21 +21,21 @@ function classNames(...classes: string[]) {
 }
 
 const menuItems = [
-  { href: '/dashboard', label: 'Dashboard', icon: HomeIcon },
-  { href: '/dashboard/orders', label: 'Orders', icon: ArchiveBoxIcon },
+  { href: '/hatsadmin/dashboard', label: 'Dashboard', icon: HomeIcon },
+  { href: '/hatsadmin/dashboard/orders', label: 'Orders', icon: ArchiveBoxIcon },
   {
-    href: '/dashboard/products',
+    href: '/hatsadmin/dashboard/products',
     label: 'Products',
     icon: ShoppingBagIcon,
     children: [
-      { href: '/dashboard/products', label: 'All Products' },
-      { href: '/dashboard/inventory', label: 'Inventory' },
-      { href: '/dashboard/collections', label: 'Collections' },
+      { href: '/hatsadmin/dashboard/products', label: 'All Products' },
+      { href: '/hatsadmin/dashboard/inventory', label: 'Inventory' },
+      { href: '/hatsadmin/dashboard/collections', label: 'Collections' },
     ]
   },
-  { href: '/dashboard/customers', label: 'Customers', icon: UserGroupIcon },
-  { href: '/dashboard/coupons', label: 'Coupons', icon: TicketIcon },
-  { href: '/dashboard/settings', label: 'Settings', icon: Cog6ToothIcon }
+  { href: '/hatsadmin/dashboard/customers', label: 'Customers', icon: UserGroupIcon },
+  { href: '/hatsadmin/dashboard/coupons', label: 'Coupons', icon: TicketIcon },
+  { href: '/hatsadmin/dashboard/settings', label: 'Settings', icon: Cog6ToothIcon }
 ];
 
 export default function Nav({ isNavOpen, setIsNavOpen }: { isNavOpen: boolean, setIsNavOpen: (open: boolean) => void }) {

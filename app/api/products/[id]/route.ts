@@ -179,12 +179,15 @@ export async function DELETE(
       return NextResponse.json({ message: 'Invalid product ID.' }, { status: 400 });
     }
     const result = await prisma.product.delete({ where: { id } });
-    if (!result) {
+    return new NextResponse(null, { status: 204 });
+  } catch (error: any) {
+    console.error(`Error deleting product:`, error);
+    
+    // Handle Prisma "not found" error
+    if (error.code === 'P2025') {
       return NextResponse.json({ message: 'Product not found.' }, { status: 404 });
     }
-    return new NextResponse(null, { status: 204 });
-  } catch (error) {
-    console.error(`Error deleting product:`, error);
+    
     return NextResponse.json(
       { message: 'Something went wrong while deleting the product.' },
       { status: 500 }

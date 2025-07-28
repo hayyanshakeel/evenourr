@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import { PhotoIcon, XMarkIcon, PlusIcon } from '@heroicons/react/24/outline';
 import VariantsManager from './variants-manager';
 import { formatCurrency, CURRENCIES } from '@/lib/currencies';
+import { useSettings } from '@/hooks/useSettings';
 
 interface SimpleProductFormProps {
   initialData?: any;
@@ -31,7 +32,7 @@ function SimpleProductForm({ initialData }: SimpleProductFormProps) {
   const [error, setError] = useState<string | null>(null);
   const [categories, setCategories] = useState<{ id: number; name: string }[]>([]);
   const [categoryId, setCategoryId] = useState<string>(initialData?.categoryId ? String(initialData.categoryId) : '');
-  const [currency, setCurrency] = useState('USD');
+  const { currency } = useSettings();
   const [formData, setFormData] = useState({
     name: initialData?.name || '',
     description: initialData?.description || '',
@@ -42,7 +43,8 @@ function SimpleProductForm({ initialData }: SimpleProductFormProps) {
 
   const [imageFiles, setImageFiles] = useState<File[]>([]);
   const [imagePreviews, setImagePreviews] = useState<string[]>(
-    initialData?.images ? initialData.images : []
+    initialData?.images ? initialData.images : 
+    initialData?.imageUrl ? [initialData.imageUrl] : []
   );
   
   // Variants state
@@ -65,18 +67,6 @@ function SimpleProductForm({ initialData }: SimpleProductFormProps) {
       .catch(err => {
         console.error('Error fetching categories:', err);
         setError('Failed to load categories');
-      });
-
-    // Fetch store settings (including currency)
-    fetch('/api/settings')
-      .then(res => res.json())
-      .then(data => {
-        if (data.currency) {
-          setCurrency(data.currency);
-        }
-      })
-      .catch(err => {
-        console.error('Error fetching settings:', err);
       });
   }, []);
 
@@ -156,7 +146,7 @@ function SimpleProductForm({ initialData }: SimpleProductFormProps) {
       console.log('Product saved successfully:', result);
       
       // Redirect back to products page
-      router.push('/dashboard/products');
+      router.push('/hatsadmin/dashboard/products');
     } catch (error) {
       console.error('Error saving product:', error);
       setError(error instanceof Error ? error.message : 'Failed to save product');

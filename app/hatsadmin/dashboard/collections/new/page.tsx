@@ -79,7 +79,7 @@ export default function NewCollectionPage() {
       const result = await response.json();
       console.log('Collection created:', result);
       
-      router.push('/dashboard/collections');
+      router.push('/hatsadmin/dashboard/collections');
     } catch (error) {
       console.error('Error creating collection:', error);
       alert('Failed to create collection. Please try again.');
@@ -98,7 +98,7 @@ export default function NewCollectionPage() {
         <div className="flex items-center space-x-3">
           <button
             type="button"
-            onClick={() => router.push('/dashboard/collections')}
+            onClick={() => router.push('/hatsadmin/dashboard/collections')}
             className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
           >
             Cancel

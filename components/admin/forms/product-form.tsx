@@ -118,7 +118,7 @@ export function ProductForm({ initialData }: ProductFormProps) {
         throw new Error(errorData.error || 'Something went wrong');
       }
 
-      router.push('/dashboard/products');
+      router.push('/hatsadmin/dashboard/products');
       router.refresh();
 
     } catch (err: any) {

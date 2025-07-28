@@ -266,7 +266,7 @@ export default function InventoryPage() {
                   <tr 
                     key={item.id} 
                     className="hover:bg-gray-50 cursor-pointer transition-colors"
-                    onClick={() => router.push(`/dashboard/products/${item.product.id}/edit`)}
+                    onClick={() => router.push(`/hatsadmin/dashboard/products/${item.product.id}/edit`)}
                   >
                     <td className="px-4 sm:px-6 py-4 whitespace-nowrap">
                       <div className="flex items-center">

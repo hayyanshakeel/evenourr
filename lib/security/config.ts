@@ -11,10 +11,10 @@ export const SECURITY_CONFIG = {
 
   // Rate Limiting (requests per minute)
   RATE_LIMITS: {
-    GLOBAL: 100,
+    GLOBAL: 120,        // Increased from 100
     AUTH: 5,
-    API_WRITE: 30,
-    API_READ: 60,
+    API_WRITE: 50,      // Increased from 30 for admin operations
+    API_READ: 100,      // Increased from 60
     UPLOAD: 10,
   },
 

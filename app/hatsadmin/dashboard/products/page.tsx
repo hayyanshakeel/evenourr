@@ -212,7 +212,7 @@ const ProductsPage = () => {
             <button
               onClick={(e) => {
                 e.stopPropagation();
-                router.push(`/dashboard/products/${p.id}/edit`);
+                router.push(`/hatsadmin/dashboard/products/${p.id}/edit`);
               }}
               className="hover:text-gray-700 p-1"
               title="Edit Product"
@@ -274,7 +274,7 @@ const ProductsPage = () => {
             Import
           </button>
           <button
-            onClick={() => router.push('/dashboard/products/new')}
+            onClick={() => router.push('/hatsadmin/dashboard/products/new')}
             className="inline-flex items-center justify-center px-4 py-2 border border-transparent text-sm font-medium rounded-lg shadow-sm text-white bg-black hover:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500"
           >
             <PlusIcon className="-ml-1 mr-2 h-5 w-5" />
@@ -308,7 +308,7 @@ const ProductsPage = () => {
             data={filteredProducts}
             columns={columns}
             loading={loading}
-            onRowClick={(product) => router.push(`/dashboard/products/${product.id}/edit`)}
+            onRowClick={(product) => router.push(`/hatsadmin/dashboard/products/${product.id}/edit`)}
           />
         </div>
       </div>

@@ -3,6 +3,9 @@
 import { useEffect, useState } from 'react';
 import Header from '@/components/admin/header';
 import { useAuth } from '@/components/auth/AuthContext';
+import { useSettings } from '@/hooks/useSettings';
+import { useRouter } from 'next/navigation';
+import { PlusIcon } from '@heroicons/react/24/outline';
 
 interface Order {
   id: number;
@@ -17,7 +20,9 @@ interface Order {
 export default function OrdersPage() {
   const [orders, setOrders] = useState<Order[]>([]);
   const [loading, setLoading] = useState(true);
+  const { currency } = useSettings();
   const { getIdToken } = useAuth();
+  const router = useRouter();
 
   useEffect(() => {
     const fetchOrders = async () => {
@@ -55,14 +60,22 @@ export default function OrdersPage() {
   }, [getIdToken]);
 
   const formatCurrency = (amount: number) =>
-    new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(amount / 100);
+    new Intl.NumberFormat('en-US', { style: 'currency', currency }).format(amount / 100);
 
   const formatDate = (dateString: string) =>
     new Date(dateString).toLocaleDateString();
 
   return (
     <div>
-      <Header title="Orders" />
+      <Header title="Orders">
+        <button
+          onClick={() => router.push('/hatsadmin/dashboard/orders/new')}
+          className="inline-flex items-center rounded-md bg-blue-600 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-blue-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600"
+        >
+          <PlusIcon className="-ml-0.5 mr-1.5 h-5 w-5" />
+          Create order
+        </button>
+      </Header>
       <div className="mt-8 rounded-lg border bg-white shadow-sm">
         <div className="overflow-x-auto">
           <table className="min-w-full divide-y divide-gray-200">

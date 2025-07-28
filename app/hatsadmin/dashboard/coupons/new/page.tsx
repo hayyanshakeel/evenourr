@@ -59,7 +59,7 @@ const NewCouponPage = () => {
       }
 
       // On success, redirect back to the main coupons list
-      router.push('/dashboard/coupons');
+      router.push('/hatsadmin/dashboard/coupons');
       router.refresh(); // Refresh the page to show the new coupon
 
     } catch (err: any) {

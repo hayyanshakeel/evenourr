@@ -3,7 +3,8 @@
 import { useState, useEffect } from 'react';
 import Header from '@/components/admin/header';
 import { CheckIcon } from '@heroicons/react/24/outline';
-import { getCurrencyList, Currency } from '@/lib/currencies';
+import { getCurrencyList, Currency, CURRENCIES } from '@/lib/currencies';
+import { useSettings, saveSettings } from '@/hooks/useSettings';
 
 interface Settings {
   storeName: string;
@@ -18,6 +19,7 @@ interface Settings {
 
 export default function SettingsPage() {
   const [currencies] = useState<Currency[]>(getCurrencyList());
+  const { settings: globalSettings, loading: globalLoading } = useSettings();
   const [settings, setSettings] = useState<Settings>({
     storeName: 'My Store',
     storeEmail: 'contact@mystore.com',
@@ -29,22 +31,58 @@ export default function SettingsPage() {
     freeShippingThreshold: 5000
   });
   const [saved, setSaved] = useState(false);
+  const [loading, setLoading] = useState(false);
+
+  // Update local settings when global settings change
+  useEffect(() => {
+    if (globalSettings) {
+      setSettings(prev => ({
+        ...prev,
+        ...globalSettings,
+        // Convert string numbers back to numbers for numeric fields
+        taxRate: globalSettings.taxRate ?? prev.taxRate,
+        shippingRate: globalSettings.shippingRate ?? prev.shippingRate,
+        freeShippingThreshold: globalSettings.freeShippingThreshold ?? prev.freeShippingThreshold,
+      }));
+    }
+  }, [globalSettings]);
 
   const handleSave = async () => {
-    // In a real app, this would save to the database
-    setSaved(true);
-    setTimeout(() => setSaved(false), 3000);
+    try {
+      setLoading(true);
+      const success = await saveSettings(settings);
+      
+      if (success) {
+        setSaved(true);
+        setTimeout(() => setSaved(false), 3000);
+      } else {
+        console.error('Failed to save settings');
+      }
+    } catch (error) {
+      console.error('Error saving settings:', error);
+    } finally {
+      setLoading(false);
+    }
   };
 
   const handleChange = (field: keyof Settings, value: string | number) => {
     setSettings(prev => ({ ...prev, [field]: value }));
   };
 
+  // Get current currency symbol
+  const currentCurrencySymbol = CURRENCIES[globalSettings?.currency || settings.currency]?.symbol || '$';
+
   return (
     <div>
       <Header title="Settings" />
 
-      <div className="mt-8 max-w-3xl">
+      {(loading || globalLoading) ? (
+        <div className="mt-8 text-center">
+          <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+          <p className="mt-2 text-gray-600">Loading settings...</p>
+        </div>
+      ) : (
+        <div className="mt-8 max-w-3xl">
         <div className="bg-white shadow sm:rounded-lg">
           <div className="px-4 py-5 sm:p-6">
             <h3 className="text-lg font-medium leading-6 text-gray-900">Store Settings</h3>
@@ -169,7 +207,7 @@ export default function SettingsPage() {
                 </label>
                 <div className="relative mt-1 rounded-md shadow-sm">
                   <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3">
-                    <span className="text-gray-500 sm:text-sm">$</span>
+                    <span className="text-gray-500 sm:text-sm">{currentCurrencySymbol}</span>
                   </div>
                   <input
                     type="number"
@@ -190,7 +228,7 @@ export default function SettingsPage() {
                 </label>
                 <div className="relative mt-1 rounded-md shadow-sm">
                   <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3">
-                    <span className="text-gray-500 sm:text-sm">$</span>
+                    <span className="text-gray-500 sm:text-sm">{currentCurrencySymbol}</span>
                   </div>
                   <input
                     type="number"
@@ -218,7 +256,8 @@ export default function SettingsPage() {
             {saved ? 'Saved' : 'Save Settings'}
           </button>
         </div>
-      </div>
+        </div>
+      )}
     </div>
   );
 }

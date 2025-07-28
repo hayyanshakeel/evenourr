@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { useAuth } from '@/components/auth/AuthContext';
+import { useSettings } from '@/hooks/useSettings';
 import {
   CurrencyDollarIcon,
   ShoppingCartIcon,
@@ -33,6 +34,7 @@ const DashboardPage = () => {
   const [stats, setStats] = useState<Stats | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const { currency } = useSettings();
   const { getIdToken } = useAuth();
 
   useEffect(() => {
@@ -87,7 +89,7 @@ const DashboardPage = () => {
   const formatCurrency = (amount: number) =>
     new Intl.NumberFormat('en-US', {
       style: 'currency',
-      currency: 'USD'
+      currency
     }).format(amount);
 
   return (
