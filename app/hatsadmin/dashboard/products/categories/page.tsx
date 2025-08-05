@@ -1,151 +1,238 @@
-"use client";
-import { useEffect, useState } from "react";
+'use client';
+
+import { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
+import { 
+  MagnifyingGlassIcon, 
+  TagIcon,
+  PlusIcon
+} from '@heroicons/react/24/outline';
 
 interface Category {
   id: number;
   name: string;
+  description: string;
+  handle: string;
+  published: boolean;
+  productCount: number;
+  image?: string;
+  createdAt: string;
 }
 
 export default function CategoriesPage() {
+  const router = useRouter();
   const [categories, setCategories] = useState<Category[]>([]);
-  const [name, setName] = useState("");
-  const [editingId, setEditingId] = useState<number | null>(null);
-  const [editingName, setEditingName] = useState("");
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [statusFilter, setStatusFilter] = useState<string>('all');
 
   useEffect(() => {
     fetchCategories();
   }, []);
 
-  async function fetchCategories() {
-    setLoading(true);
-    setError(null);
+  const fetchCategories = async () => {
     try {
-      const res = await fetch("/api/categories");
-      const data = await res.json();
-      setCategories(data);
-    } catch (err) {
-      setError("Failed to load categories");
+      setLoading(true);
+      const response = await fetch('/api/categories');
+      if (!response.ok) {
+        throw new Error('Failed to fetch categories');
+      }
+      const data = await response.json();
+      // Map the API response to our interface format
+      const formattedCategories: Category[] = data.map((category: any) => ({
+        id: category.id,
+        name: category.name,
+        description: category.description || '',
+        handle: category.handle || category.name?.toLowerCase().replace(/\s+/g, '-'),
+        published: category.published || true,
+        productCount: category.productCount || 0,
+        image: category.imageUrl,
+        createdAt: category.createdAt || new Date().toISOString()
+      }));
+      setCategories(formattedCategories);
+    } catch (error) {
+      console.error('Error fetching categories:', error);
+      // Fallback to mock data if API fails
+      setCategories([
+        {
+          id: 1,
+          name: 'Men\'s Clothing',
+          description: 'Clothing and accessories for men',
+          handle: 'mens-clothing',
+          published: true,
+          productCount: 15,
+          createdAt: '2024-01-15T00:00:00.000Z'
+        },
+        {
+          id: 2,
+          name: 'Women\'s Clothing',
+          description: 'Clothing and accessories for women',
+          handle: 'womens-clothing',
+          published: true,
+          productCount: 18,
+          createdAt: '2024-02-01T00:00:00.000Z'
+        },
+        {
+          id: 3,
+          name: 'Accessories',
+          description: 'Fashion accessories and jewelry',
+          handle: 'accessories',
+          published: false,
+          productCount: 7,
+          createdAt: '2024-03-01T00:00:00.000Z'
+        }
+      ]);
     } finally {
       setLoading(false);
     }
-  }
+  };
 
-  async function handleAddCategory(e: React.FormEvent) {
-    e.preventDefault();
-    if (!name.trim()) return;
-    setLoading(true);
-    setError(null);
-    try {
-      const res = await fetch("/api/categories", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name }),
-      });
-      if (!res.ok) throw new Error("Failed to add category");
-      setName("");
-      fetchCategories();
-    } catch (err) {
-      setError("Failed to add category");
-    } finally {
-      setLoading(false);
-    }
-  }
-
-  async function handleDelete(id: number) {
-    if (!confirm("Delete this category?")) return;
-    setLoading(true);
-    setError(null);
-    try {
-      const res = await fetch(`/api/categories/${id}`, { method: "DELETE" });
-      if (!res.ok) throw new Error("Failed to delete category");
-      fetchCategories();
-    } catch (err) {
-      setError("Failed to delete category");
-    } finally {
-      setLoading(false);
-    }
-  }
-
-  async function handleEdit(id: number, name: string) {
-    setEditingId(id);
-    setEditingName(name);
-  }
-
-  async function handleEditSave(id: number) {
-    if (!editingName.trim()) return;
-    setLoading(true);
-    setError(null);
-    try {
-      const res = await fetch(`/api/categories/${id}`, {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name: editingName }),
-      });
-      if (!res.ok) throw new Error("Failed to update category");
-      setEditingId(null);
-      setEditingName("");
-      fetchCategories();
-    } catch (err) {
-      setError("Failed to update category");
-    } finally {
-      setLoading(false);
-    }
-  }
+  const filteredCategories = categories.filter(category => {
+    const matchesSearch = category.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                         category.description.toLowerCase().includes(searchTerm.toLowerCase());
+    const matchesStatus = statusFilter === 'all' || 
+      (statusFilter === 'published' && category.published) ||
+      (statusFilter === 'draft' && !category.published);
+    return matchesSearch && matchesStatus;
+  });
 
   return (
-    <div className="max-w-2xl mx-auto py-8">
-      <h1 className="text-2xl font-bold mb-4">Categories</h1>
-      <form onSubmit={handleAddCategory} className="flex gap-2 mb-6">
-        <input
-          value={name}
-          onChange={e => setName(e.target.value)}
-          className="border px-3 py-2 rounded w-full"
-          placeholder="New category name"
-        />
-        <button type="submit" className="bg-black text-white px-4 py-2 rounded">Add</button>
-      </form>
-      {error && <div className="text-red-500 mb-2">{error}</div>}
-      <div className="bg-white rounded shadow divide-y">
-        <div className="flex font-semibold px-4 py-2 text-gray-700">
-          <div className="w-1/2">Name</div>
-          <div className="w-1/2 text-right">Actions</div>
+    <div className="max-w-none">
+      {/* Header */}
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
+        <div>
+          <h1 className="text-2xl font-semibold text-gray-900">Categories</h1>
+          <p className="text-sm text-gray-500 mt-1">Organize your products into categories</p>
         </div>
-        {loading ? (
-          <div className="px-4 py-4 text-gray-500">Loading...</div>
-        ) : categories.length === 0 ? (
-          <div className="px-4 py-4 text-gray-500">No categories found.</div>
-        ) : (
-          categories.map(cat => (
-            <div key={cat.id} className="flex px-4 py-2 items-center">
-              <div className="w-1/2">
-                {editingId === cat.id ? (
-                  <input
-                    value={editingName}
-                    onChange={e => setEditingName(e.target.value)}
-                    className="border px-2 py-1 rounded w-full"
-                  />
-                ) : (
-                  cat.name
-                )}
-              </div>
-              <div className="w-1/2 flex gap-2 justify-end">
-                {editingId === cat.id ? (
-                  <>
-                    <button onClick={() => handleEditSave(cat.id)} className="text-green-600 hover:underline">Save</button>
-                    <button onClick={() => { setEditingId(null); setEditingName(""); }} className="text-gray-500 hover:underline">Cancel</button>
-                  </>
-                ) : (
-                  <>
-                    <button onClick={() => handleEdit(cat.id, cat.name)} className="text-blue-600 hover:underline">Edit</button>
-                    <button onClick={() => handleDelete(cat.id)} className="text-red-600 hover:underline">Delete</button>
-                  </>
-                )}
-              </div>
+        <button
+          onClick={() => router.push('/hatsadmin/dashboard/products/categories/new')}
+          className="inline-flex items-center justify-center px-4 py-2 border border-transparent text-sm font-medium rounded-lg shadow-sm text-white bg-black hover:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500 w-full sm:w-auto"
+        >
+          <PlusIcon className="-ml-1 mr-2 h-5 w-5" />
+          Create category
+        </button>
+      </div>
+
+      {/* Categories Management Card */}
+      <div className="rounded-lg border bg-white shadow-sm">
+        {/* Search and Filter Section */}
+        <div className="p-4 border-b border-gray-200">
+          <div className="flex flex-col sm:flex-row gap-3">
+            <div className="flex-1 relative">
+              <MagnifyingGlassIcon className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+              <input
+                type="text"
+                placeholder="Search categories..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-md leading-5 bg-white placeholder-gray-500 focus:outline-none focus:placeholder-gray-400 focus:ring-1 focus:ring-gray-500 focus:border-gray-500 text-sm"
+              />
             </div>
-          ))
+            <select
+              value={statusFilter}
+              onChange={(e) => setStatusFilter(e.target.value)}
+              className="block w-full px-3 py-2 border border-gray-300 rounded-md bg-white focus:outline-none focus:ring-1 focus:ring-gray-500 focus:border-gray-500 text-sm sm:max-w-xs"
+            >
+              <option value="all">All Status</option>
+              <option value="published">Published</option>
+              <option value="draft">Draft</option>
+            </select>
+          </div>
+        </div>
+
+        {/* Categories Table */}
+        <div className="overflow-hidden">
+          {loading ? (
+            <div className="p-8 text-center">
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-600 mx-auto"></div>
+              <p className="mt-2 text-sm text-gray-500">Loading categories...</p>
+            </div>
+          ) : filteredCategories.length === 0 ? (
+            <div className="p-8 text-center">
+              <TagIcon className="mx-auto h-10 w-10 text-gray-400" />
+              <h3 className="mt-2 text-sm font-medium text-gray-900">No categories found</h3>
+              <p className="mt-1 text-sm text-gray-500">Try adjusting your search or filter criteria.</p>
+            </div>
+          ) : (
+          <div className="overflow-x-auto">
+            <table className="min-w-full divide-y divide-gray-200">
+              <thead className="bg-gray-50">
+                <tr>
+                  <th className="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">
+                    Category
+                  </th>
+                  <th className="hidden sm:table-cell px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">
+                    Handle
+                  </th>
+                  <th className="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">
+                    Status
+                  </th>
+                  <th className="px-4 py-3 text-right text-xs font-semibold text-gray-500 uppercase tracking-wider">
+                    Products
+                  </th>
+                  <th className="hidden md:table-cell px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">
+                    Created
+                  </th>
+                </tr>
+              </thead>
+              <tbody className="bg-white divide-y divide-gray-200">
+                {filteredCategories.map((category) => (
+                  <tr 
+                    key={category.id} 
+                    className="hover:bg-gray-50 cursor-pointer transition-colors"
+                    onClick={() => router.push(`/hatsadmin/dashboard/products/categories/${category.id}`)}
+                  >
+                    <td className="px-4 py-3 whitespace-nowrap">
+                      <div className="flex items-center">
+                        <div className="flex-shrink-0 h-10 w-10">
+                          <div className="h-10 w-10 rounded-lg bg-gray-200 flex items-center justify-center">
+                            {category.image ? (
+                              <img
+                                src={category.image}
+                                alt={category.name}
+                                className="h-10 w-10 rounded-lg object-cover"
+                              />
+                            ) : (
+                              <TagIcon className="h-5 w-5 text-gray-400" />
+                            )}
+                          </div>
+                        </div>
+                        <div className="ml-3">
+                          <div className="text-sm font-semibold text-gray-900">
+                            {category.name}
+                          </div>
+                          <div className="text-sm text-gray-500">
+                            {category.description || 'No description'}
+                          </div>
+                          <div className="sm:hidden text-xs text-gray-400 mt-1">
+                            Handle: {category.handle}
+                          </div>
+                        </div>
+                      </div>
+                    </td>
+                    <td className="hidden sm:table-cell px-4 py-3 whitespace-nowrap text-sm text-gray-500">
+                      {category.handle}
+                    </td>
+                    <td className="px-4 py-3 whitespace-nowrap">
+                      <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${
+                        category.published ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800'
+                      }`}>
+                        {category.published ? 'Published' : 'Draft'}
+                      </span>
+                    </td>
+                    <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-900 text-right">
+                      {category.productCount}
+                    </td>
+                    <td className="hidden md:table-cell px-4 py-3 whitespace-nowrap text-sm text-gray-500">
+                      {new Date(category.createdAt).toLocaleDateString()}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
         )}
+        </div>
       </div>
     </div>
   );

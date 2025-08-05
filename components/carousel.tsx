@@ -9,7 +9,12 @@ export async function Carousel() {
   // Fetch the 8 most recent products
   const products = await prisma.product.findMany({
     orderBy: { createdAt: 'desc' },
-    take: 8
+    take: 8,
+    include: {
+      images: {
+        orderBy: { sortOrder: 'asc' }
+      }
+    }
   });
 
   if (!products?.length) return null;
@@ -25,7 +30,9 @@ export async function Carousel() {
       }
     },
     featuredImage: {
-      url: product.imageUrl
+      url: (product as any).images && (product as any).images.length > 0 
+        ? (product as any).images[0].imageUrl 
+        : product.imageUrl
     }
   }));
 

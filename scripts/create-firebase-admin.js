@@ -23,7 +23,7 @@ async function createAdminUser() {
     // Create admin user
     const userCredential = await createUserWithEmailAndPassword(
       auth,
-      'admin@evenour.co',
+      'evenour.in@gmail.com',
       'Hayyaan123@1'
     );
 
@@ -33,7 +33,7 @@ async function createAdminUser() {
     });
 
     console.log('✅ Admin user created successfully!');
-    console.log('Email: admin@evenour.co');
+    console.log('Email: evenour.in@gmail.com');
     console.log('Password: Hayyaan123@1');
     console.log('Display Name: Admin User');
     console.log('UID:', userCredential.user.uid);
@@ -49,7 +49,7 @@ async function createAdminUser() {
       try {
         const userCredential = await signInWithEmailAndPassword(
           auth,
-          'admin@evenour.co',
+          'evenour.in@gmail.com',
           'Hayyaan123@1'
         );
         console.log('✅ Admin login test successful!');

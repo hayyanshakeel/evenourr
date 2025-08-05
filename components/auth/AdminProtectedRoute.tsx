@@ -22,7 +22,7 @@ export default function AdminProtectedRoute({ children }: AdminProtectedRoutePro
       }
 
       // Check if user has admin role
-      if (user.email !== 'admin@evenour.co') {
+      if (user.email !== 'admin@evenour.co' && user.email !== 'evenour.in@gmail.com') {
         // Not an admin, redirect to regular login
         router.push('/userlogin');
         return;

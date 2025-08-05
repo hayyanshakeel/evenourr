@@ -26,6 +26,7 @@ export async function verifyFirebaseUser(request: NextRequest) {
     // Determine role based on email and Firebase UID
     let role = 'user';
     if (decodedToken.email === 'admin@evenour.co' || 
+        decodedToken.email === 'evenour.in@gmail.com' ||
         decodedToken.uid === 'Xzeo6SISCyQOI2vipWcdl9QlbV32') {
       role = 'admin';
     }

@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { usePathname } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
 import {
   HomeIcon,
   ShoppingBagIcon,
@@ -13,7 +13,8 @@ import {
   Cog6ToothIcon,
   XMarkIcon,
   ChevronRightIcon,
-  CubeIcon
+  CubeIcon,
+  ArrowRightOnRectangleIcon
 } from '@heroicons/react/24/outline';
 import { useState } from 'react';
 
@@ -42,6 +43,7 @@ const navigationItems = [
 
 export default function Nav({ isNavOpen, setIsNavOpen }: { isNavOpen: boolean, setIsNavOpen: (open: boolean) => void }) {
   const pathname = usePathname();
+  const router = useRouter();
   const [expandedItems, setExpandedItems] = useState<string[]>(['Products']);
 
   const toggleExpanded = (label: string) => {
@@ -50,6 +52,15 @@ export default function Nav({ isNavOpen, setIsNavOpen }: { isNavOpen: boolean, s
         ? prev.filter(item => item !== label)
         : [...prev, label]
     );
+  };
+
+  const handleSignOut = () => {
+    // Clear any auth tokens/session data
+    localStorage.removeItem('authToken');
+    sessionStorage.removeItem('authToken');
+    
+    // Redirect to login or home page
+    router.push('/');
   };
 
   const navContent = (
@@ -133,6 +144,17 @@ export default function Nav({ isNavOpen, setIsNavOpen }: { isNavOpen: boolean, s
           );
         })}
       </nav>
+
+      {/* Sign Out Button */}
+      <div className="px-4 pb-4 border-t border-gray-200">
+        <button
+          onClick={handleSignOut}
+          className="flex items-center w-full px-3 py-2 text-sm font-medium text-gray-700 rounded-lg hover:bg-gray-50 hover:text-gray-900 transition-colors"
+        >
+          <ArrowRightOnRectangleIcon className="mr-3 h-5 w-5 flex-shrink-0" />
+          Sign out
+        </button>
+      </div>
     </div>
   );
 

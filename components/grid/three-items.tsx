@@ -8,7 +8,12 @@ async function ThreeItemGridItems() {
   // Fetch the 3 most recent products
   const homepageItems = await prisma.product.findMany({
     orderBy: { createdAt: 'desc' },
-    take: 3
+    take: 3,
+    include: {
+      images: {
+        orderBy: { sortOrder: 'asc' }
+      }
+    }
   });
 
   if (!homepageItems || homepageItems.length < 3) return null;
@@ -24,7 +29,9 @@ async function ThreeItemGridItems() {
       }
     },
     featuredImage: {
-      url: item.imageUrl
+      url: (item as any).images && (item as any).images.length > 0 
+        ? (item as any).images[0].imageUrl 
+        : item.imageUrl
     }
   }));
 

@@ -34,6 +34,11 @@ export default async function CategoryPage({ params }: { params: Promise<{ colle
           collectionId: collectionData.id
         }
       }
+    },
+    include: {
+      images: {
+        orderBy: { sortOrder: 'asc' }
+      }
     }
   });
 
@@ -50,7 +55,9 @@ export default async function CategoryPage({ params }: { params: Promise<{ colle
       },
     },
     featuredImage: {
-      url: product.imageUrl,
+      url: (product as any).images && (product as any).images.length > 0 
+        ? (product as any).images[0].imageUrl 
+        : product.imageUrl,
     },
   }));
 

@@ -14,7 +14,12 @@ export async function GET(
     }
 
     const product = await prisma.product.findUnique({
-      where: { id }
+      where: { id },
+      include: {
+        images: {
+          orderBy: { sortOrder: 'asc' }
+        }
+      }
     });
 
     if (!product) {
@@ -155,9 +160,37 @@ export async function PUT(
       return NextResponse.json({ message: 'Product not found.' }, { status: 404 });
     }
 
+    // Update ProductImage records if we have new images
+    if (imageUrls.length > 0) {
+      // Delete existing product images
+      await prisma.productImage.deleteMany({
+        where: { productId: id }
+      });
+
+      // Create new product image records
+      await prisma.productImage.createMany({
+        data: imageUrls.map((url, index) => ({
+          productId: id,
+          imageUrl: url,
+          altText: `${updatedProduct.name} image ${index + 1}`,
+          sortOrder: index,
+        })),
+      });
+    }
+
+    // Fetch the complete updated product with images
+    const completeProduct = await prisma.product.findUnique({
+      where: { id },
+      include: {
+        images: { 
+          orderBy: { sortOrder: 'asc' }
+        }
+      }
+    });
+
     return NextResponse.json({
-      ...updatedProduct,
-      images: imageUrls
+      ...completeProduct,
+      images: completeProduct?.images || []
     });
   } catch (error) {
     console.error(`Error updating product:`, error);

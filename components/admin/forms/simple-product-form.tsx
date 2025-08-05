@@ -43,8 +43,11 @@ function SimpleProductForm({ initialData }: SimpleProductFormProps) {
 
   const [imageFiles, setImageFiles] = useState<File[]>([]);
   const [imagePreviews, setImagePreviews] = useState<string[]>(
-    initialData?.images ? initialData.images : 
-    initialData?.imageUrl ? [initialData.imageUrl] : []
+    initialData?.images && initialData.images.length > 0 
+      ? initialData.images.map((img: any) => img.imageUrl)
+      : initialData?.imageUrl 
+        ? [initialData.imageUrl] 
+        : []
   );
   
   // Variants state

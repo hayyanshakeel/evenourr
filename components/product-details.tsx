@@ -24,6 +24,7 @@ interface Product {
   description: string | null;
   price: number;
   imageUrl: string | null;
+  images?: { id: number; imageUrl: string; altText: string | null; sortOrder: number }[];
   status: string;
   inventory: number;
   createdAt: string;
@@ -58,23 +59,41 @@ export default function ProductDetails({ product }: ProductDetailsProps) {
         currencyCode: 'USD'
       }
     },
-    images: product.imageUrl ? [{ 
-      url: product.imageUrl, 
-      altText: product.name, 
-      width: 600, 
-      height: 600 
-    }] : [],
-    featuredImage: product.imageUrl ? { 
-      url: product.imageUrl, 
-      altText: product.name, 
-      width: 600, 
-      height: 600 
-    } : { 
-      url: '/placeholder.svg', 
-      altText: 'Product image', 
-      width: 600, 
-      height: 600 
-    },
+    images: product.images && product.images.length > 0 
+      ? product.images.map((img: any) => ({ 
+          url: img.imageUrl, 
+          altText: img.altText || product.name, 
+          width: 600, 
+          height: 600 
+        }))
+      : product.imageUrl 
+        ? [{ 
+            url: product.imageUrl, 
+            altText: product.name, 
+            width: 600, 
+            height: 600 
+          }] 
+        : [],
+    featuredImage: product.images && product.images.length > 0
+      ? { 
+          url: product.images[0]?.imageUrl || '', 
+          altText: product.images[0]?.altText || product.name, 
+          width: 600, 
+          height: 600 
+        }
+      : product.imageUrl 
+        ? { 
+            url: product.imageUrl, 
+            altText: product.name, 
+            width: 600, 
+            height: 600 
+          }
+        : { 
+            url: '/placeholder.svg', 
+            altText: 'Product image', 
+            width: 600, 
+            height: 600 
+          },
     variants: product.variants.map(variant => ({
       id: variant.id.toString(),
       title: variant.name,

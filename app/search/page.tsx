@@ -18,7 +18,13 @@ export default async function SearchPage({
   const { sort } = (resolvedSearchParams || {}) as { [key: string]: string };
   const { sortKey, reverse } = sorting.find((item) => item.slug === sort) || defaultSort;
 
-  const products = await prisma.product.findMany();
+  const products = await prisma.product.findMany({
+    include: {
+      images: {
+        orderBy: { sortOrder: 'asc' }
+      }
+    }
+  });
 
   const formattedProducts = products.map((product: any) => ({
     handle: product.slug,
@@ -30,7 +36,9 @@ export default async function SearchPage({
       }
     },
     featuredImage: {
-      url: product.imageUrl
+      url: product.images && product.images.length > 0 
+        ? product.images[0].imageUrl 
+        : product.imageUrl
     }
   }));
 

@@ -80,15 +80,6 @@ export default function CustomersPage() {
                   </button>
                 </div>
               </div>
-              
-              {/* Additional section */}
-              <div className="mt-16 pt-8 border-t border-gray-200">
-                <h4 className="text-lg font-medium text-gray-900 mb-2">Get customers with apps</h4>
-                <p className="text-gray-600 mb-4">Grow your customer list by adding a lead capture form to your store and marketing.</p>
-                <button className="text-sm text-blue-600 hover:text-blue-800 font-medium">
-                  See app recommendations
-                </button>
-              </div>
             </div>
           </div>
         </div>

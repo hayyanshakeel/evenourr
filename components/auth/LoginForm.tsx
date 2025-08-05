@@ -27,6 +27,13 @@ export default function LoginForm({ redirectPath = '/', isAdminLogin = false }: 
       console.log('Email:', email);
       console.log('Is admin login:', isAdminLogin);
       
+      // For admin login, check if email is authorized admin email
+      if (isAdminLogin && email !== 'admin@evenour.co' && email !== 'evenour.in@gmail.com') {
+        setError('Access denied. Admin credentials required.');
+        setLoading(false);
+        return;
+      }
+      
       await signIn(email, password);
       
       console.log('Login successful, redirecting...');
@@ -71,9 +78,15 @@ export default function LoginForm({ redirectPath = '/', isAdminLogin = false }: 
     try {
       await signInWithGoogle();
       
-      // Redirect based on login type
+      // For admin login, we'll need to check the user's email after auth state changes
+      // This will be handled by the auth state listener
       if (isAdminLogin) {
-        router.push('/hatsadmin/dashboard');
+        // We'll let the auth state change handle the redirect
+        // But we need to add a timeout check for admin validation
+        setTimeout(() => {
+          // The auth context should have updated by now
+          router.push('/hatsadmin/dashboard');
+        }, 1000);
       } else {
         router.push(redirectPath);
       }
@@ -88,11 +101,11 @@ export default function LoginForm({ redirectPath = '/', isAdminLogin = false }: 
     <div className={isAdminLogin ? "space-y-6" : "min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8"}>
       <div className={isAdminLogin ? "w-full" : "max-w-md w-full space-y-8"}>
         <div>
-          <h2 className={`text-center font-extrabold text-gray-900 ${isAdminLogin ? 'text-2xl' : 'mt-6 text-3xl'}`}>
-            {isAdminLogin ? 'Admin Login' : 'Sign in to your account'}
+          <h2 className="text-center font-extrabold text-gray-900 text-2xl">
+            Admin Sign In
           </h2>
           <p className="mt-2 text-center text-sm text-gray-600">
-            {isAdminLogin ? 'Admin Dashboard Access' : 'User Dashboard Access'}
+            Access the admin dashboard
           </p>
         </div>
         

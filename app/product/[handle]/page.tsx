@@ -11,7 +11,14 @@ export async function generateMetadata({
   const { handle } = await params;
   if (!handle) return notFound();
 
-  const product = await prisma.product.findFirst({ where: { slug: handle } });
+  const product = await prisma.product.findFirst({ 
+    where: { slug: handle },
+    include: {
+      images: {
+        orderBy: { sortOrder: 'asc' }
+      }
+    }
+  });
   
   if (!product) return notFound();
 
@@ -25,7 +32,14 @@ export default async function ProductPage({ params }: { params: Promise<{ handle
   const { handle } = await params;
   if (!handle) return notFound();
 
-  const product = await prisma.product.findFirst({ where: { slug: handle } });
+  const product = await prisma.product.findFirst({ 
+    where: { slug: handle },
+    include: {
+      images: {
+        orderBy: { sortOrder: 'asc' }
+      }
+    }
+  });
 
   if (!product) {
     return notFound();
@@ -48,6 +62,7 @@ export default async function ProductPage({ params }: { params: Promise<{ handle
     description: product.description || '',
     price: product.price,
     imageUrl: product.imageUrl || null,
+    images: product.images || [],
     status: product.status,
     inventory: product.inventory,
     createdAt: product.createdAt?.toISOString() || new Date().toISOString(),
