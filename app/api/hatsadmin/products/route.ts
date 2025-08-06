@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { prisma } from '@/lib/db';
+import prisma from '@/lib/db';
 import { productSchemas, validateInput, ValidationError } from '@/lib/security/validation';
 import { v2 as cloudinary } from 'cloudinary';
 import { firebaseAdminAuth } from '@/lib/firebase-admin';

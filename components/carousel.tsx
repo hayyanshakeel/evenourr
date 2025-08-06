@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { GridTileImage } from 'components/grid/tile';
-import { prisma } from '@/lib/db';
+import prisma from '@/lib/db';
 import { Product } from '@prisma/client';
 
 export async function Carousel() {

@@ -1,343 +1,295 @@
-'use client';
+"use client"
 
-import { useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
+import { useState, useEffect } from "react"
+import { useRouter } from "next/navigation"
+import { PageHeader } from "@/components/admin/page-header"
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { Button } from "@/components/ui/button"
+import { Badge } from "@/components/ui/badge"
+import { Input } from "@/components/ui/input"
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { 
-  MagnifyingGlassIcon, 
-  AdjustmentsHorizontalIcon,
-  ExclamationTriangleIcon,
-  CheckCircleIcon,
-  ClockIcon
-} from '@heroicons/react/24/outline';
+  HiFunnel as Filter,
+  HiArrowDownTray as Download,
+  HiPlus as Plus,
+  HiCube as Package,
+  HiChartBar as TrendingUp,
+  HiExclamationTriangle as AlertTriangle,
+  HiEye as Eye,
+  HiMagnifyingGlass as Search,
+  HiEllipsisHorizontal as MoreHorizontal,
+  HiCurrencyDollar as DollarSign
+} from "react-icons/hi2"
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
+import { AdminInventoryItem } from "@/lib/admin-data"
 
-interface InventoryItem {
-  id: number;
-  product: {
-    id: number;
-    title: string;
-    image?: string;
-    handle: string;
-  };
-  variant: {
-    id: number;
-    title: string;
-    sku?: string;
-    price: number;
-  };
-  quantity: number;
-  available: number;
-  committed: number;
-  onHand: number;
-  location: string;
-  status: 'in-stock' | 'low-stock' | 'out-of-stock';
+interface InventoryStats {
+  totalItems: number;
+  lowStock: number;
+  outOfStock: number;
+  totalValue: number;
 }
 
 export default function InventoryPage() {
-  const router = useRouter();
-  const [inventory, setInventory] = useState<InventoryItem[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [searchTerm, setSearchTerm] = useState('');
-  const [statusFilter, setStatusFilter] = useState<string>('all');
+  const router = useRouter()
+  const [inventory, setInventory] = useState<AdminInventoryItem[]>([])
+  const [stats, setStats] = useState<InventoryStats>({ totalItems: 0, lowStock: 0, outOfStock: 0, totalValue: 0 })
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
+  const [searchTerm, setSearchTerm] = useState("")
+  const [statusFilter, setStatusFilter] = useState("all")
 
   useEffect(() => {
-    fetchInventory();
-  }, []);
+    fetchInventory()
+    fetchStats()
+  }, [searchTerm, statusFilter])
 
   const fetchInventory = async () => {
     try {
-      setLoading(true);
+      setLoading(true)
+      const params = new URLSearchParams()
+      if (searchTerm) params.append('search', searchTerm)
+      if (statusFilter !== 'all') params.append('status', statusFilter)
       
-      // Fetch real products from the API
-      const response = await fetch('/api/products');
-      if (!response.ok) {
-        throw new Error('Failed to fetch products');
-      }
+      const response = await fetch(`/api/admin/inventory?${params}`)
+      if (!response.ok) throw new Error('Failed to fetch inventory')
       
-      const products = await response.json();
-      
-      // Transform products into inventory items
-      const inventoryItems: InventoryItem[] = products.map((product: any, index: number) => {
-        const quantity = product.quantity || 0;
-        const committed = Math.floor(quantity * 0.1); // Simulate 10% committed
-        const available = quantity - committed;
-        
-        return {
-          id: product.id,
-          product: {
-            id: product.id,
-            title: product.name || product.title,
-            handle: product.handle || product.name?.toLowerCase().replace(/\s+/g, '-') || 'product',
-            image: product.imageUrl || product.images?.[0]
-          },
-          variant: {
-            id: product.id * 10, // Generate variant ID
-            title: 'Default variant',
-            sku: product.sku || `SKU-${product.id}`,
-            price: product.price || 0
-          },
-          quantity: quantity,
-          available: available,
-          committed: committed,
-          onHand: quantity,
-          location: 'Main Warehouse',
-          status: quantity === 0 ? 'out-of-stock' : quantity <= 10 ? 'low-stock' : 'in-stock'
-        };
-      });
-      
-      setInventory(inventoryItems);
-    } catch (error) {
-      console.error('Error fetching inventory:', error);
-      
-      // Fallback to empty inventory if API fails
-      setInventory([]);
+      const data = await response.json()
+      setInventory(data || [])
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to fetch inventory')
     } finally {
-      setLoading(false);
+      setLoading(false)
     }
-  };
+  }
 
-  const filteredInventory = inventory.filter(item => {
-    const matchesSearch = item.product.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         item.variant.sku?.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesStatus = statusFilter === 'all' || item.status === statusFilter;
-    return matchesSearch && matchesStatus;
-  });
-
-  const getStatusIcon = (status: string) => {
-    switch (status) {
-      case 'in-stock':
-        return <CheckCircleIcon className="h-4 w-4 text-green-500" />;
-      case 'low-stock':
-        return <ExclamationTriangleIcon className="h-4 w-4 text-yellow-500" />;
-      case 'out-of-stock':
-        return <ClockIcon className="h-4 w-4 text-red-500" />;
-      default:
-        return null;
-    }
-  };
-
-  const getStatusBadge = (status: string) => {
-    const baseClasses = "inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium";
-    switch (status) {
-      case 'in-stock':
-        return `${baseClasses} bg-green-100 text-green-800`;
-      case 'low-stock':
-        return `${baseClasses} bg-yellow-100 text-yellow-800`;
-      case 'out-of-stock':
-        return `${baseClasses} bg-red-100 text-red-800`;
-      default:
-        return `${baseClasses} bg-gray-100 text-gray-800`;
-    }
-  };
-
-  const updateQuantity = async (inventoryId: number, newQuantity: number) => {
+  const fetchStats = async () => {
     try {
-      // Find the inventory item to get the product ID
-      const inventoryItem = inventory.find(item => item.id === inventoryId);
-      if (!inventoryItem) {
-        console.error('Inventory item not found:', inventoryId);
-        return;
-      }
-
-      console.log('Updating product quantity:', {
-        productId: inventoryItem.product.id,
-        newQuantity
-      });
-
-      // Update the product quantity via API
-      const response = await fetch(`/api/products/${inventoryItem.product.id}`, {
-        method: 'PATCH',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          quantity: newQuantity
-        })
-      });
-
-      if (!response.ok) {
-        const errorText = await response.text();
-        console.error('API Error:', response.status, errorText);
-        throw new Error(`Failed to update quantity: ${response.status} ${errorText}`);
-      }
-
-      const updatedProduct = await response.json();
-      console.log('Product updated successfully:', updatedProduct);
-
-      // Update local state
-      setInventory(prev => prev.map(item => 
-        item.id === inventoryId 
-          ? { 
-              ...item, 
-              quantity: newQuantity,
-              available: newQuantity - item.committed,
-              onHand: newQuantity,
-              status: newQuantity === 0 ? 'out-of-stock' : newQuantity <= 10 ? 'low-stock' : 'in-stock'
-            }
-          : item
-      ));
-    } catch (error) {
-      console.error('Error updating quantity:', error);
-      const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
-      alert(`Failed to update quantity: ${errorMessage}`);
+      const response = await fetch('/api/admin/inventory/stats')
+      if (!response.ok) throw new Error('Failed to fetch stats')
+      
+      const data = await response.json()
+      setStats(data)
+    } catch (err) {
+      console.error('Failed to fetch inventory stats:', err)
     }
-  };
+  }
+
+  const getStatusColor = (status: string) => {
+    switch (status.toLowerCase()) {
+      case 'in stock': return 'bg-green-100 text-green-800'
+      case 'low stock': return 'bg-yellow-100 text-yellow-800'
+      case 'out of stock': return 'bg-red-100 text-red-800'
+      default: return 'bg-gray-100 text-gray-800'
+    }
+  }
+
+  const formatPrice = (price: number) => {
+    return new Intl.NumberFormat('en-US', {
+      style: 'currency',
+      currency: 'USD',
+    }).format(price)
+  }
 
   return (
-    <div>
-      {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-        <div>
-          <h1 className="text-2xl font-semibold text-gray-900">Inventory</h1>
-          <p className="text-sm text-gray-500 mt-1">Manage your product inventory levels</p>
-        </div>
+    <div className="space-y-6">
+      <PageHeader
+        title="Inventory"
+        subtitle="Manage stock levels and product availability"
+        showAddButton={true}
+        addButtonText="Adjust Stock"
+        onAdd={() => router.push('/hatsadmin/dashboard/inventory/adjust')}
+      />
+
+      {/* Stats Cards */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium text-muted-foreground">
+              Total Items
+            </CardTitle>
+            <Package className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{stats.totalItems}</div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium text-muted-foreground">
+              Low Stock Items
+            </CardTitle>
+            <AlertTriangle className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold text-yellow-600">{stats.lowStock}</div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium text-muted-foreground">
+              Out of Stock
+            </CardTitle>
+            <AlertTriangle className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold text-red-600">{stats.outOfStock}</div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium text-muted-foreground">
+              Total Value
+            </CardTitle>
+            <DollarSign className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{formatPrice(stats.totalValue)}</div>
+          </CardContent>
+        </Card>
       </div>
 
-      {/* Inventory Management Card */}
-      <div className="mt-8 rounded-lg border bg-white shadow-sm">
-        {/* Search and Filter Section */}
-        <div className="p-4 sm:p-6 border-b border-gray-200">
-          <div className="flex flex-col sm:flex-row gap-4">
-            <div className="flex-1 relative">
-              <MagnifyingGlassIcon className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" />
-              <input
-                type="text"
-                placeholder="Search inventory..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="block w-full pl-12 pr-4 py-3 border border-gray-300 rounded-lg leading-5 bg-white placeholder-gray-500 focus:outline-none focus:placeholder-gray-400 focus:ring-2 focus:ring-gray-500 focus:border-gray-500 text-sm transition-colors"
-              />
+      {/* Inventory Table */}
+      <Card>
+        <CardHeader>
+          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+            <div>
+              <CardTitle>Inventory Items</CardTitle>
             </div>
-            <select
-              value={statusFilter}
-              onChange={(e) => setStatusFilter(e.target.value)}
-              className="block w-full px-4 py-3 border border-gray-300 rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-gray-500 focus:border-gray-500 text-sm transition-colors sm:max-w-xs"
-            >
-              <option value="all">All Status</option>
-              <option value="in-stock">In Stock</option>
-              <option value="low-stock">Low Stock</option>
-              <option value="out-of-stock">Out of Stock</option>
-            </select>
+            <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
+                <Input
+                  placeholder="Search inventory..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="pl-10 w-full sm:w-[300px]"
+                />
+              </div>
+              <Button variant="outline" size="sm">
+                <Filter className="h-4 w-4 mr-2" />
+                Filter
+              </Button>
+              <Button variant="outline" size="sm">
+                <Download className="h-4 w-4 mr-2" />
+                Export
+              </Button>
+            </div>
           </div>
-        </div>
-
-        {/* Inventory Table */}
-        <div className="overflow-hidden">
+        </CardHeader>
+        <CardContent>
           {loading ? (
-            <div className="p-6 sm:p-12 text-center">
-              <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-gray-600 mx-auto"></div>
-              <p className="mt-3 text-sm text-gray-500">Loading inventory...</p>
+            <div className="flex items-center justify-center py-8">
+              <div className="text-sm text-muted-foreground">Loading inventory...</div>
             </div>
-          ) : filteredInventory.length === 0 ? (
-            <div className="p-8 sm:p-12 text-center">
-              <AdjustmentsHorizontalIcon className="mx-auto h-12 w-12 text-gray-400" />
-              <h3 className="mt-2 text-sm font-medium text-gray-900">No inventory found</h3>
-              <p className="mt-1 text-sm text-gray-500">Try adjusting your search or filter criteria.</p>
+          ) : error ? (
+            <div className="flex items-center justify-center py-8">
+              <div className="text-sm text-red-600">Error: {error}</div>
+            </div>
+          ) : inventory.length === 0 ? (
+            <div className="flex flex-col items-center justify-center py-8 text-center">
+              <Package className="h-12 w-12 text-muted-foreground mb-4" />
+              <h3 className="text-lg font-medium mb-2">No inventory items available yet</h3>
+              <p className="text-sm text-muted-foreground mb-4">
+                Inventory will appear here once you add products to your catalog.
+              </p>
+              <Button onClick={() => router.push('/hatsadmin/dashboard/products/new')} className="bg-blue-600 hover:bg-blue-700">
+                <Plus className="h-4 w-4 mr-2" />
+                Add Product
+              </Button>
             </div>
           ) : (
-          <div className="overflow-x-auto">
-            <table className="min-w-full divide-y divide-gray-200">
-              <thead className="bg-gray-50">
-                <tr>
-                  <th className="px-4 sm:px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">
-                    Product
-                  </th>
-                  <th className="hidden sm:table-cell px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">
-                    SKU
-                  </th>
-                  <th className="px-4 sm:px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">
-                    Status
-                  </th>
-                  <th className="hidden lg:table-cell px-6 py-4 text-right text-xs font-semibold text-gray-500 uppercase tracking-wider">
-                    Available
-                  </th>
-                  <th className="hidden lg:table-cell px-6 py-4 text-right text-xs font-semibold text-gray-500 uppercase tracking-wider">
-                    Committed
-                  </th>
-                  <th className="px-4 sm:px-6 py-4 text-right text-xs font-semibold text-gray-500 uppercase tracking-wider">
-                    On hand
-                  </th>
-                  <th className="hidden md:table-cell px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">
-                    Location
-                  </th>
-                </tr>
-              </thead>
-              <tbody className="bg-white divide-y divide-gray-200">
-                {filteredInventory.map((item) => (
-                  <tr 
-                    key={item.id} 
-                    className="hover:bg-gray-50 cursor-pointer transition-colors"
-                    onClick={() => router.push(`/hatsadmin/dashboard/products/${item.product.id}/edit`)}
-                  >
-                    <td className="px-4 sm:px-6 py-4 whitespace-nowrap">
-                      <div className="flex items-center">
-                        <div className="flex-shrink-0 h-12 w-12">
-                          <div className="h-12 w-12 rounded-lg bg-gray-200 flex items-center justify-center">
-                            {item.product.image ? (
-                              <img
-                                src={item.product.image}
-                                alt={item.product.title}
-                                className="h-12 w-12 rounded-lg object-cover"
-                              />
-                            ) : (
-                              <div className="h-12 w-12 rounded-lg bg-gray-200"></div>
-                            )}
-                          </div>
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Product</TableHead>
+                  <TableHead>SKU</TableHead>
+                  <TableHead>Category</TableHead>
+                  <TableHead>Quantity</TableHead>
+                  <TableHead>Status</TableHead>
+                  <TableHead>Price</TableHead>
+                  <TableHead>Last Restocked</TableHead>
+                  <TableHead className="text-right">Actions</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {inventory.map((item) => (
+                  <TableRow key={item.id}>
+                    <TableCell>
+                      <div className="flex items-center space-x-3">
+                        <div className="w-10 h-10 bg-gray-100 rounded-lg flex items-center justify-center">
+                          {item.imageUrl ? (
+                            <img 
+                              src={item.imageUrl} 
+                              alt={item.name}
+                              className="w-full h-full object-cover rounded-lg"
+                            />
+                          ) : (
+                            <Package className="h-5 w-5 text-gray-400" />
+                          )}
                         </div>
-                        <div className="ml-4">
-                          <div className="text-sm font-semibold text-gray-900">
-                            {item.product.title}
-                          </div>
-                          <div className="text-sm text-gray-500">
-                            {item.variant.title}
-                          </div>
-                          <div className="sm:hidden text-xs text-gray-400 mt-1">
-                            SKU: {item.variant.sku || '-'}
+                        <div>
+                          <div className="font-medium">{item.name}</div>
+                          <div className="text-sm text-muted-foreground">
+                            {item.description ? item.description.substring(0, 50) + '...' : 'No description'}
                           </div>
                         </div>
                       </div>
-                    </td>
-                    <td className="hidden sm:table-cell px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                      {item.variant.sku || '-'}
-                    </td>
-                    <td className="px-4 sm:px-6 py-4 whitespace-nowrap">
-                      <div className="flex items-center">
-                        {getStatusIcon(item.status)}
-                        <span className={`ml-2 inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                          item.status === 'in-stock' ? 'bg-green-100 text-green-800' :
-                          item.status === 'low-stock' ? 'bg-yellow-100 text-yellow-800' : 'bg-red-100 text-red-800'
-                        }`}>
-                          {item.status === 'in-stock' ? 'In stock' : 
-                           item.status === 'low-stock' ? 'Low stock' : 'Out of stock'}
-                        </span>
-                      </div>
-                    </td>
-                    <td className="hidden lg:table-cell px-6 py-4 whitespace-nowrap text-sm text-gray-900 text-right">
-                      {item.available}
-                    </td>
-                    <td className="hidden lg:table-cell px-6 py-4 whitespace-nowrap text-sm text-gray-900 text-right">
-                      {item.committed}
-                    </td>
-                    <td className="px-4 sm:px-6 py-4 whitespace-nowrap text-right">
-                      <input
-                        type="number"
-                        value={item.onHand}
-                        onChange={(e) => updateQuantity(item.id, parseInt(e.target.value) || 0)}
-                        onClick={(e) => e.stopPropagation()} // Prevent row click when editing quantity
-                        className="w-16 sm:w-20 px-2 py-1 text-sm border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-right"
-                        min="0"
-                      />
-                    </td>
-                    <td className="hidden md:table-cell px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                      {item.location}
-                    </td>
-                  </tr>
+                    </TableCell>
+                    <TableCell>
+                      <code className="text-sm bg-gray-100 px-2 py-1 rounded">
+                        {item.sku || 'N/A'}
+                      </code>
+                    </TableCell>
+                    <TableCell>{item.category || 'Uncategorized'}</TableCell>
+                    <TableCell>
+                      <div className="font-medium">{item.quantity} units</div>
+                      {item.reserved > 0 && (
+                        <div className="text-sm text-muted-foreground">{item.reserved} reserved</div>
+                      )}
+                    </TableCell>
+                    <TableCell>
+                      <Badge className={getStatusColor(item.status)}>
+                        {item.status}
+                      </Badge>
+                    </TableCell>
+                    <TableCell className="font-medium">
+                      {formatPrice(item.price)}
+                    </TableCell>
+                    <TableCell>
+                      {new Date(item.lastRestocked).toLocaleDateString()}
+                    </TableCell>
+                    <TableCell className="text-right">
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <Button variant="ghost" size="sm">
+                            <MoreHorizontal className="h-4 w-4" />
+                          </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end">
+                          <DropdownMenuItem onClick={() => router.push(`/hatsadmin/dashboard/products/${item.id}`)}>
+                            <Eye className="h-4 w-4 mr-2" />
+                            View Product
+                          </DropdownMenuItem>
+                          <DropdownMenuItem onClick={() => router.push(`/hatsadmin/dashboard/inventory/${item.id}/adjust`)}>
+                            Adjust Stock
+                          </DropdownMenuItem>
+                          <DropdownMenuItem>
+                            View History
+                          </DropdownMenuItem>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
+                    </TableCell>
+                  </TableRow>
                 ))}
-              </tbody>
-            </table>
-          </div>
-        )}
-        </div>
-      </div>
+              </TableBody>
+            </Table>
+          )}
+        </CardContent>
+      </Card>
     </div>
-  );
+  )
 }

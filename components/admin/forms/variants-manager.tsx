@@ -2,6 +2,8 @@
 
 import { useState, useEffect } from 'react';
 import { PlusIcon, XMarkIcon, TrashIcon } from '@heroicons/react/24/outline';
+import { AutoComplete } from '@/components/ui/AutoComplete';
+import { getSuggestions } from '@/lib/product-suggestions';
 
 interface ProductOption {
   name: string;
@@ -203,12 +205,12 @@ export default function VariantsManager({
           {options.map((option, optionIndex) => (
             <div key={optionIndex} className="mb-4 p-4 border border-gray-200 rounded-lg">
               <div className="flex items-center justify-between mb-3">
-                <input
-                  type="text"
-                  placeholder="Option name (e.g., Size, Color)"
+                <AutoComplete
                   value={option.name}
-                  onChange={(e) => updateOption(optionIndex, 'name', e.target.value)}
-                  className="flex-1 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm"
+                  onChange={(value) => updateOption(optionIndex, 'name', value)}
+                  suggestions={['Color', 'Size', 'Material', 'Style', 'Fit', 'Length', 'Width', 'Pattern', 'Finish']}
+                  placeholder="Option name (e.g., Size, Color)"
+                  className="flex-1 text-sm"
                 />
                 <button
                   type="button"
@@ -222,12 +224,12 @@ export default function VariantsManager({
               <div className="space-y-2">
                 {option.values.map((value, valueIndex) => (
                   <div key={valueIndex} className="flex items-center space-x-2">
-                    <input
-                      type="text"
-                      placeholder="Option value"
+                    <AutoComplete
                       value={value}
-                      onChange={(e) => updateOptionValue(optionIndex, valueIndex, e.target.value)}
-                      className="flex-1 px-3 py-1 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500 text-xs"
+                      onChange={(newValue) => updateOptionValue(optionIndex, valueIndex, newValue)}
+                      suggestions={getSuggestions(option.name)}
+                      placeholder="Option value"
+                      className="flex-1 text-xs"
                     />
                     {option.values.length > 1 && (
                       <button

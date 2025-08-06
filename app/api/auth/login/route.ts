@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { prisma } from '@/lib/db';
+import prisma from '@/lib/db';
 import { authSchemas, validateInput } from '@/lib/security/validation';
 import { sanitizeRequestBody } from '@/lib/security/middleware';
 import crypto from 'crypto';

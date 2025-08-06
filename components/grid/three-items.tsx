@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { GridTileImage } from 'components/grid/tile';
-import { prisma } from '@/lib/db';
+import prisma from '@/lib/db';
 
 async function ThreeItemGridItems() {
   // Fetch the 3 most recent products

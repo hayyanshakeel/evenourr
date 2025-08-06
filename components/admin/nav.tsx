@@ -3,19 +3,19 @@
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import {
-  HomeIcon,
-  ShoppingBagIcon,
-  FolderIcon,
-  CircleStackIcon,
-  ArchiveBoxIcon,
-  UserGroupIcon,
-  TicketIcon,
-  Cog6ToothIcon,
-  XMarkIcon,
-  ChevronRightIcon,
-  CubeIcon,
-  ArrowRightOnRectangleIcon
-} from '@heroicons/react/24/outline';
+  HiHome as HiOutlineHome,
+  HiShoppingBag as HiOutlineShoppingBag,
+  HiFolder as HiOutlineFolder,
+  HiCircleStack as HiOutlineCircleStack,
+  HiArchiveBox as HiOutlineArchiveBox,
+  HiUserGroup as HiOutlineUserGroup,
+  HiTicket as HiOutlineTicket,
+  HiCog6Tooth as HiOutlineCog6Tooth,
+  HiXMark as HiOutlineXMark,
+  HiChevronRight as HiOutlineChevronRight,
+  HiCube as HiOutlineCube,
+  HiArrowRightOnRectangle as HiOutlineArrowRightOnRectangle
+} from 'react-icons/hi2';
 import { useState } from 'react';
 
 function classNames(...classes: string[]) {
@@ -23,12 +23,12 @@ function classNames(...classes: string[]) {
 }
 
 const navigationItems = [
-  { href: '/hatsadmin/dashboard', label: 'Dashboard', icon: HomeIcon },
-  { href: '/hatsadmin/dashboard/orders', label: 'Orders', icon: ArchiveBoxIcon },
+  { href: '/hatsadmin/dashboard', label: 'Dashboard', icon: HiOutlineHome },
+  { href: '/hatsadmin/dashboard/orders', label: 'Orders', icon: HiOutlineArchiveBox },
   {
     href: '/hatsadmin/dashboard/products',
     label: 'Products',
-    icon: CubeIcon,
+    icon: HiOutlineCube,
     subItems: [
       { href: '/hatsadmin/dashboard/products', label: 'All Products' },
       { href: '/hatsadmin/dashboard/inventory', label: 'Inventory' },
@@ -36,9 +36,9 @@ const navigationItems = [
       { href: '/hatsadmin/dashboard/products/categories', label: 'Categories' },
     ]
   },
-  { href: '/hatsadmin/dashboard/customers', label: 'Customers', icon: UserGroupIcon },
-  { href: '/hatsadmin/dashboard/coupons', label: 'Coupons', icon: TicketIcon },
-  { href: '/hatsadmin/dashboard/settings', label: 'Settings', icon: Cog6ToothIcon }
+  { href: '/hatsadmin/dashboard/customers', label: 'Customers', icon: HiOutlineUserGroup },
+  { href: '/hatsadmin/dashboard/coupons', label: 'Coupons', icon: HiOutlineTicket },
+  { href: '/hatsadmin/dashboard/settings', label: 'Settings', icon: HiOutlineCog6Tooth }
 ];
 
 export default function Nav({ isNavOpen, setIsNavOpen }: { isNavOpen: boolean, setIsNavOpen: (open: boolean) => void }) {
@@ -74,7 +74,7 @@ export default function Nav({ isNavOpen, setIsNavOpen }: { isNavOpen: boolean, s
           className="md:hidden -m-2 p-2 text-gray-600 hover:text-gray-900"
           onClick={() => setIsNavOpen(false)}
         >
-          <XMarkIcon className="h-6 w-6" />
+          <HiOutlineXMark className="h-6 w-6" />
         </button>
       </div>
 
@@ -100,7 +100,7 @@ export default function Nav({ isNavOpen, setIsNavOpen }: { isNavOpen: boolean, s
                       <item.icon className="mr-3 h-5 w-5 flex-shrink-0" />
                       {item.label}
                     </div>
-                    <ChevronRightIcon 
+                    <HiOutlineChevronRight 
                       className={classNames(
                         'h-4 w-4 transition-transform',
                         isExpanded ? 'rotate-90' : ''
@@ -151,7 +151,7 @@ export default function Nav({ isNavOpen, setIsNavOpen }: { isNavOpen: boolean, s
           onClick={handleSignOut}
           className="flex items-center w-full px-3 py-2 text-sm font-medium text-gray-700 rounded-lg hover:bg-gray-50 hover:text-gray-900 transition-colors"
         >
-          <ArrowRightOnRectangleIcon className="mr-3 h-5 w-5 flex-shrink-0" />
+          <HiOutlineArrowRightOnRectangle className="mr-3 h-5 w-5 flex-shrink-0" />
           Sign out
         </button>
       </div>
