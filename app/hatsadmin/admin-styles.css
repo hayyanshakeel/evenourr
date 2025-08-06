@@ -1,3 +1,132 @@
+/* Hide scrollbar utility for horizontal scroll containers */
+.no-scrollbar {
+  scrollbar-width: none; /* Firefox */
+  -ms-overflow-style: none; /* IE and Edge */
+}
+.no-scrollbar::-webkit-scrollbar {
+  display: none; /* Chrome, Safari, Opera */
+}
+/* MODERN ADMIN PANEL STYLES */
+
+/* Button overflow prevention */
+.admin-actions-container {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  flex-shrink: 0;
+  min-width: fit-content;
+}
+
+.admin-button-group {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-wrap: nowrap;
+  overflow: visible;
+}
+
+.admin-button-group button {
+  white-space: nowrap;
+  flex-shrink: 0;
+  min-width: fit-content;
+}
+
+/* Enhanced loading and transition animations */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes slideIn {
+  from {
+    opacity: 0;
+    transform: translateX(-20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes scaleIn {
+  from {
+    opacity: 0;
+    transform: scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@keyframes shimmer {
+  0% {
+    background-position: -200px 0;
+  }
+  100% {
+    background-position: calc(200px + 100%) 0;
+  }
+}
+
+/* Modern loading skeleton animation */
+.animate-pulse {
+  animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+@keyframes pulse {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: .5;
+  }
+}
+
+/* Enhanced skeleton with shimmer effect */
+.skeleton-shimmer {
+  background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
+  background-size: 200px 100%;
+  animation: shimmer 1.5s infinite;
+}
+
+/* Smooth page transitions */
+.animate-in {
+  animation: fadeIn 0.5s ease-out;
+}
+
+/* Enhanced hover effects */
+.hover-lift {
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.hover-lift:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+}
+
+/* Modern card animations */
+.card-entrance {
+  animation: scaleIn 0.3s ease-out;
+}
+
+/* Sidebar animations */
+.sidebar-slide {
+  transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Mobile-first responsive animations */
+@media (max-width: 768px) {
+  .animate-in {
+    animation: slideIn 0.4s ease-out;
+  }
+}
+
 /* MAXIMUM SPECIFICITY FOR GLOBAL ADMIN HEADER */
 header.sticky,
 [data-admin-panel="true"] header,

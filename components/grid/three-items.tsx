@@ -5,95 +5,174 @@ import { GridTileImage } from 'components/grid/tile';
 import prisma from '@/lib/db';
 
 async function ThreeItemGridItems() {
-  // Fetch the 3 most recent products
-  const homepageItems = await prisma.product.findMany({
-    orderBy: { createdAt: 'desc' },
-    take: 3,
-    include: {
-      images: {
-        orderBy: { sortOrder: 'asc' }
+  try {
+    // Fetch the 3 most recent products from Turso DB
+    const homepageItems = await prisma.product.findMany({
+      orderBy: { createdAt: 'desc' },
+      take: 3,
+      include: {
+        images: {
+          orderBy: { sortOrder: 'asc' }
+        }
       }
+    });
+
+    if (!homepageItems || homepageItems.length === 0) {
+      // Return fallback mock data if no products in database
+      const mockItems = [
+        {
+          handle: 'sample-product-1',
+          title: 'Premium Headphones',
+          priceRange: {
+            maxVariantPrice: {
+              amount: '299.99',
+              currencyCode: 'USD'
+            }
+          },
+          featuredImage: {
+            url: 'https://via.placeholder.com/400x400?text=Headphones',
+            altText: 'Premium Headphones'
+          }
+        },
+        {
+          handle: 'sample-product-2',
+          title: 'Wireless Speaker',
+          priceRange: {
+            maxVariantPrice: {
+              amount: '199.99',
+              currencyCode: 'USD'
+            }
+          },
+          featuredImage: {
+            url: 'https://via.placeholder.com/400x400?text=Speaker',
+            altText: 'Wireless Speaker'
+          }
+        },
+        {
+          handle: 'sample-product-3',
+          title: 'Smart Watch',
+          priceRange: {
+            maxVariantPrice: {
+              amount: '399.99',
+              currencyCode: 'USD'
+            }
+          },
+          featuredImage: {
+            url: 'https://via.placeholder.com/400x400?text=Smart+Watch',
+            altText: 'Smart Watch'
+          }
+        }
+      ];
+      
+      return mockItems.map((item, index) => (
+        <div key={index} className="relative aspect-square md:aspect-[4/5]">
+          <Link className="relative h-full w-full" href={`/product/${item.handle}`}>
+            <GridTileImage
+              src={item.featuredImage.url}
+              fill
+              sizes="(min-width: 768px) 33vw, 100vw"
+              priority={true}
+              className="object-cover"
+              alt={item.featuredImage.altText}
+              label={{
+                title: item.title,
+                amount: item.priceRange.maxVariantPrice.amount,
+                currencyCode: item.priceRange.maxVariantPrice.currencyCode
+              }}
+            />
+          </Link>
+        </div>
+      ));
     }
-  });
 
-  if (!homepageItems || homepageItems.length < 3) return null;
-
-  // Format the data for display
-  const [firstProduct, secondProduct, thirdProduct] = homepageItems.map((item: typeof homepageItems[number]) => ({
-    handle: item.slug,
-    title: item.name,
-    priceRange: {
-      maxVariantPrice: {
-        amount: (item.price / 100).toString(),
-        currencyCode: 'USD'
+    // Format the data for display from Turso DB
+    const formattedItems = homepageItems.map((item) => ({
+      handle: item.slug,
+      title: item.name,
+      priceRange: {
+        maxVariantPrice: {
+          amount: item.price.toString(),
+          currencyCode: 'USD'
+        }
+      },
+      featuredImage: {
+        url: item.images && item.images.length > 0
+          ? item.images[0]?.imageUrl || 'https://via.placeholder.com/400x400'
+          : item.imageUrl || 'https://via.placeholder.com/400x400',
+        altText: item.name
       }
-    },
-    featuredImage: {
-      url: (item as any).images && (item as any).images.length > 0 
-        ? (item as any).images[0].imageUrl 
-        : item.imageUrl
-    }
-  }));
+    }));
 
-  if (!firstProduct || !secondProduct || !thirdProduct) return null;
+    return formattedItems.map((item, index) => (
+      <div key={index} className="relative aspect-square md:aspect-[4/5]">
+        <Link className="relative h-full w-full" href={`/product/${item.handle}`}>
+          <GridTileImage
+            src={item.featuredImage.url}
+            fill
+            sizes="(min-width: 768px) 33vw, 100vw"
+            priority={true}
+            className="object-cover"
+            alt={item.featuredImage.altText}
+            label={{
+              title: item.title,
+              amount: item.priceRange.maxVariantPrice.amount,
+              currencyCode: item.priceRange.maxVariantPrice.currencyCode
+            }}
+          />
+        </Link>
+      </div>
+    ));
 
-  return [
-    <div key={firstProduct.handle} className="col-span-2 row-span-2 h-full">
-      <Link className="relative block aspect-square h-full w-full" href={`/product/${firstProduct.handle}`}>
-        <GridTileImage
-          src={firstProduct.featuredImage.url!}
-          fill
-          sizes="(min-width: 768px) 66vw, 100vw"
-          priority
-          alt={firstProduct.title}
-          label={{
-            position: 'bottom',
-            title: firstProduct.title,
-            amount: firstProduct.priceRange.maxVariantPrice.amount,
-            currencyCode: firstProduct.priceRange.maxVariantPrice.currencyCode
-          }}
-        />
-      </Link>
-    </div>,
-    <div key={secondProduct.handle} className="col-span-1 row-span-2">
-      <Link className="relative block aspect-square h-full w-full" href={`/product/${secondProduct.handle}`}>
-        <GridTileImage
-          src={secondProduct.featuredImage.url!}
-          fill
-          sizes="(min-width: 768px) 33vw, 100vw"
-          priority
-          alt={secondProduct.title}
-          label={{
-            position: 'bottom',
-            title: secondProduct.title,
-            amount: secondProduct.priceRange.maxVariantPrice.amount,
-            currencyCode: secondProduct.priceRange.maxVariantPrice.currencyCode
-          }}
-        />
-      </Link>
-    </div>,
-    <div key={thirdProduct.handle} className="col-span-1 row-span-2">
-      <Link className="relative block aspect-square h-full w-full" href={`/product/${thirdProduct.handle}`}>
-        <GridTileImage
-          src={thirdProduct.featuredImage.url!}
-          fill
-          sizes="(min-width: 768px) 33vw, 100vw"
-          alt={thirdProduct.title}
-          label={{
-            position: 'bottom',
-            title: thirdProduct.title,
-            amount: thirdProduct.priceRange.maxVariantPrice.amount,
-            currencyCode: thirdProduct.priceRange.maxVariantPrice.currencyCode
-          }}
-        />
-      </Link>
-    </div>
-  ];
+  } catch (error) {
+    console.error('Error fetching homepage items from Turso:', error);
+    
+    // Return fallback UI on error
+    const fallbackItems = [
+      {
+        handle: 'fallback-1',
+        title: 'Featured Product 1',
+        priceRange: { maxVariantPrice: { amount: '99.99', currencyCode: 'USD' } },
+        featuredImage: { url: 'https://via.placeholder.com/400x400?text=Product+1', altText: 'Featured Product 1' }
+      },
+      {
+        handle: 'fallback-2',
+        title: 'Featured Product 2',
+        priceRange: { maxVariantPrice: { amount: '149.99', currencyCode: 'USD' } },
+        featuredImage: { url: 'https://via.placeholder.com/400x400?text=Product+2', altText: 'Featured Product 2' }
+      },
+      {
+        handle: 'fallback-3',
+        title: 'Featured Product 3',
+        priceRange: { maxVariantPrice: { amount: '199.99', currencyCode: 'USD' } },
+        featuredImage: { url: 'https://via.placeholder.com/400x400?text=Product+3', altText: 'Featured Product 3' }
+      }
+    ];
+
+    return fallbackItems.map((item, index) => (
+      <div key={index} className="relative aspect-square md:aspect-[4/5]">
+        <Link className="relative h-full w-full" href={`/product/${item.handle}`}>
+          <GridTileImage
+            src={item.featuredImage.url}
+            fill
+            sizes="(min-width: 768px) 33vw, 100vw"
+            priority={true}
+            className="object-cover"
+            alt={item.featuredImage.altText}
+            label={{
+              title: item.title,
+              amount: item.priceRange.maxVariantPrice.amount,
+              currencyCode: item.priceRange.maxVariantPrice.currencyCode
+            }}
+          />
+        </Link>
+      </div>
+    ));
+  }
 }
 
-export async function ThreeItemGrid() {
+export function ThreeItemGrid() {
   return (
-    <section className="mx-auto grid max-w-screen-2xl gap-4 px-4 pb-4 md:grid-cols-2 md:grid-rows-2">
+    <section className="mx-auto grid max-w-screen-2xl gap-4 px-4 pb-4 md:grid-cols-6 md:grid-rows-2 lg:max-h-[calc(100vh-200px)]">
       <ThreeItemGridItems />
     </section>
   );

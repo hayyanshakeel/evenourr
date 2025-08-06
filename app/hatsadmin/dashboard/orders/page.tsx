@@ -24,79 +24,121 @@ export default function OrdersPage() {
   const [orders, setOrders] = useState<AdminOrder[]>([])
   const [stats, setStats] = useState<OrderStats | null>(null)
   const [loading, setLoading] = useState(true)
+  const [filtering, setFiltering] = useState(false)
   const [searchQuery, setSearchQuery] = useState("")
   const [statusFilter, setStatusFilter] = useState<string>("all")
+  const [debouncedSearchQuery, setDebouncedSearchQuery] = useState("")
 
-  console.log('Orders page state:', { 
-    ordersCount: orders.length, 
-    searchQuery, 
-    statusFilter, 
-    filteredCount: orders.filter(order => {
-      const customerName = order.customer?.name || (order.user ? `${order.user.firstName} ${order.user.lastName}` : '')
-      const customerEmail = order.customer?.email || order.user?.email || ''
-      const matchesSearch = searchQuery === '' || 
-                           customerName.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                           customerEmail.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                           order.id.toString().includes(searchQuery)
-      const matchesStatus = statusFilter === "all" || order.status === statusFilter
-      return matchesSearch && matchesStatus
-    }).length 
-  })
+  // Debounce search query
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedSearchQuery(searchQuery)
+    }, 300)
+
+    return () => clearTimeout(timer)
+  }, [searchQuery])
 
   useEffect(() => {
-    async function fetchData() {
-      try {
-        const [ordersResponse, statsResponse] = await Promise.all([
-          fetch('/api/admin/orders'),
-          fetch('/api/admin/orders/stats')
-        ])
-
-        if (ordersResponse.ok) {
-          const ordersData = await ordersResponse.json()
-          setOrders(ordersData.orders || ordersData)
-        }
-
-        if (statsResponse.ok) {
-          const statsData = await statsResponse.json()
-          setStats(statsData)
-        }
-      } catch (error) {
-        console.error('Failed to fetch orders data:', error)
-      } finally {
-        setLoading(false)
-      }
+    // Set filtering state when filters change (except on initial load)
+    if (!loading) {
+      setFiltering(true)
     }
-
     fetchData()
-  }, [])
+  }, [statusFilter, debouncedSearchQuery])
+
+  async function fetchData() {
+    try {
+      if (!loading) setFiltering(true) // Show filtering state for subsequent calls
+      if (loading) setLoading(true) // Show loading state for initial call
+      
+      // Build query parameters for filtering
+      const params = new URLSearchParams()
+      if (statusFilter !== 'all') {
+        params.append('status', statusFilter)
+      }
+      if (debouncedSearchQuery.trim()) {
+        params.append('search', debouncedSearchQuery.trim())
+      }
+      
+      const [ordersResponse, statsResponse] = await Promise.all([
+        fetch(`/api/admin/orders?${params}`),
+        fetch('/api/admin/orders/stats')
+      ])
+
+      if (ordersResponse.ok) {
+        const ordersData = await ordersResponse.json()
+        // Ensure we always have an array, with proper fallback
+        const ordersArray = ordersData?.orders || ordersData || []
+        setOrders(Array.isArray(ordersArray) ? ordersArray : [])
+      } else {
+        console.error('Failed to fetch orders:', ordersResponse.status)
+        setOrders([]) // Fallback to empty array
+      }
+
+      if (statsResponse.ok) {
+        const statsData = await statsResponse.json()
+        setStats(statsData)
+      } else {
+        console.error('Failed to fetch stats:', statsResponse.status)
+        setStats(null) // Fallback to null
+      }
+    } catch (error) {
+      console.error('Failed to fetch orders data:', error)
+      // Ensure we have fallback values in case of error
+      setOrders([])
+      setStats(null)
+    } finally {
+      setLoading(false)
+      setFiltering(false)
+    }
+  }
 
   const handleAddOrder = () => {
     router.push("/hatsadmin/dashboard/orders/add")
   }
 
-  const filteredOrders = orders.filter(order => {
-    const customerName = order.customer?.name || (order.user ? `${order.user.firstName} ${order.user.lastName}` : '')
-    const customerEmail = order.customer?.email || order.user?.email || ''
-    const matchesSearch = searchQuery === '' || 
-                         customerName.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                         customerEmail.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                         order.id.toString().includes(searchQuery)
+  const handleExport = () => {
+    // Ensure orders is an array before exporting
+    if (!Array.isArray(orders) || orders.length === 0) {
+      console.warn('No orders available to export')
+      return
+    }
     
-    const matchesStatus = statusFilter === "all" || order.status === statusFilter
+    // Export orders to CSV
+    const headers = ['Order ID', 'Customer', 'Total', 'Status', 'Date', 'Items']
+    const csvData = orders.map(order => {
+      let customerName = 'Unknown Customer';
+      if (order.customer) {
+        customerName = order.customer.name;
+      } else if (order.user) {
+        customerName = `${order.user.firstName} ${order.user.lastName}`.trim();
+      }
+      return [
+        order.id,
+        customerName,
+        order.totalPrice,
+        order.status,
+        new Date(order.createdAt).toLocaleDateString(),
+        order.orderItems?.length || 0
+      ]
+    })
     
-    console.log('Filter debug:', { 
-      orderId: order.id, 
-      searchQuery, 
-      statusFilter, 
-      customerName, 
-      customerEmail, 
-      matchesSearch, 
-      matchesStatus,
-      orderStatus: order.status 
-    });
+    const csvContent = [headers, ...csvData]
+      .map(row => row.map(field => `"${field}"`).join(','))
+      .join('\n')
     
-    return matchesSearch && matchesStatus
-  })
+    const blob = new Blob([csvContent], { type: 'text/csv' })
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = url
+    a.download = 'orders.csv'
+    a.click()
+    URL.revokeObjectURL(url)
+  }
+
+  // Since we're filtering on the server side, we can use orders directly
+  // Ensure filteredOrders is always an array
+  const filteredOrders = Array.isArray(orders) ? orders : []
 
   const statsCards = stats ? [
     {
@@ -200,97 +242,85 @@ export default function OrdersPage() {
 
   return (
     <div className="flex flex-col h-full w-full">
-      <PageHeader 
-        title="Orders" 
-        subtitle="Manage customer orders and fulfillment"
-        showSearch={true}
-        showFilters={true}
-        showAddButton={true}
-        addButtonText="Create Order"
-        onAdd={handleAddOrder}
-      />
+      <div className="bg-white border-b border-gray-200 shadow-sm mb-6">
+        <div className="px-4 lg:px-6 xl:px-8 py-6 lg:py-8">
+          <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4 lg:gap-6">
+            
+            {/* Title Section */}
+            <div className="flex-1">
+              <h1 className="text-2xl lg:text-3xl font-bold text-gray-900 tracking-tight">
+                Orders
+              </h1>
+              <p className="mt-2 text-sm lg:text-base text-gray-600 leading-relaxed">
+                Manage customer orders and fulfillment
+              </p>
+            </div>
+
+            {/* Actions Section */}
+            <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                <Input 
+                  placeholder="Search orders..." 
+                  className="w-full lg:w-80 pl-10"
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  disabled={loading}
+                />
+              </div>
+
+              {/* Horizontally scrollable actions for mobile, inline for desktop */}
+              <div className="flex items-center gap-2 overflow-x-auto no-scrollbar py-1 -mx-2 px-2 sm:mx-0 sm:px-0 lg:overflow-visible lg:py-0 lg:mx-0 lg:px-0 sm:gap-3">
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button variant="outline" size="sm" disabled={filtering}>
+                      <HiOutlineFilter className="h-4 w-4 mr-2" />
+                      {filtering ? 'Filtering...' : `Filter ${statusFilter !== "all" ? `(${statusFilter})` : ''}`}
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end">
+                    <DropdownMenuItem onClick={() => setStatusFilter("all")}> 
+                      All Statuses
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => setStatusFilter("pending")}> 
+                      Pending
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => setStatusFilter("processing")}> 
+                      Processing
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => setStatusFilter("paid")}> 
+                      Paid
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => setStatusFilter("shipped")}> 
+                      Shipped
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => setStatusFilter("delivered")}> 
+                      Delivered
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => setStatusFilter("cancelled")}> 
+                      Cancelled
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => setStatusFilter("fulfilled")}> 
+                      Fulfilled
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+                <Button variant="outline" size="sm" className="px-2 sm:px-3" onClick={handleExport}>
+                  <HiOutlineArrowDownTray className="h-4 w-4" />
+                  <span className="ml-1 sm:ml-2 text-xs sm:text-sm">Export</span>
+                </Button>
+                <Button variant="black" size="sm" onClick={handleAddOrder} className="px-2 sm:px-3">
+                  <HiOutlinePlus className="h-4 w-4" />
+                  <span className="ml-1 sm:ml-2 text-xs sm:text-sm">Create Order</span>
+                </Button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
       
       <main className="flex-1 overflow-auto">
         <div className="space-y-6 lg:space-y-8">
-          
-          {/* Header Actions */}
-          <div className="flex flex-col lg:flex-row gap-4 lg:items-center lg:justify-between">
-            <div className="relative">
-              <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-              <Input 
-                placeholder="Search orders..." 
-                className="w-full lg:w-80 pl-10"
-                value={searchQuery}
-                onChange={(e) => {
-                  console.log('Search input changed:', e.target.value);
-                  setSearchQuery(e.target.value);
-                }}
-              />
-            </div>
-
-            <div className="flex items-center gap-3">
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button variant="outline" size="sm">
-                    <HiOutlineFilter className="h-4 w-4 mr-2" />
-                    Filter {statusFilter !== "all" && `(${statusFilter})`}
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="end">
-                  <DropdownMenuItem onClick={() => {
-                    console.log('Filter changed to: all');
-                    setStatusFilter("all");
-                  }}>
-                    All Statuses
-                  </DropdownMenuItem>
-                  <DropdownMenuItem onClick={() => {
-                    console.log('Filter changed to: pending');
-                    setStatusFilter("pending");
-                  }}>
-                    Pending
-                  </DropdownMenuItem>
-                  <DropdownMenuItem onClick={() => {
-                    console.log('Filter changed to: processing');
-                    setStatusFilter("processing");
-                  }}>
-                    Processing
-                  </DropdownMenuItem>
-                  <DropdownMenuItem onClick={() => {
-                    console.log('Filter changed to: paid');
-                    setStatusFilter("paid");
-                  }}>
-                    Paid
-                  </DropdownMenuItem>
-                  <DropdownMenuItem onClick={() => {
-                    console.log('Filter changed to: shipped');
-                    setStatusFilter("shipped");
-                  }}>
-                    Shipped
-                  </DropdownMenuItem>
-                  <DropdownMenuItem onClick={() => {
-                    console.log('Filter changed to: delivered');
-                    setStatusFilter("delivered");
-                  }}>
-                    Delivered
-                  </DropdownMenuItem>
-                  <DropdownMenuItem onClick={() => {
-                    console.log('Filter changed to: cancelled');
-                    setStatusFilter("cancelled");
-                  }}>
-                    Cancelled
-                  </DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
-              <Button variant="outline" size="sm">
-                <HiOutlineArrowDownTray className="h-4 w-4 mr-2" />
-                Export
-              </Button>
-              <Button variant="black" size="sm" onClick={handleAddOrder}>
-                <HiOutlinePlus className="h-4 w-4 mr-2" />
-                Create Order
-              </Button>
-            </div>
-          </div>
 
           {/* Stats Grid */}
           {stats && (
@@ -359,8 +389,17 @@ export default function OrdersPage() {
                   </TableHeader>
                   <TableBody>
                     {filteredOrders.map((order) => {
-                      const customerName = order.customer?.name || (order.user ? `${order.user.firstName} ${order.user.lastName}` : 'Unknown Customer')
-                      const customerEmail = order.customer?.email || order.user?.email || ''
+                      // Better customer name logic
+                      let customerName = 'Unknown Customer';
+                      let customerEmail = '';
+                      
+                      if (order.customer) {
+                        customerName = order.customer.name;
+                        customerEmail = order.customer.email;
+                      } else if (order.user) {
+                        customerName = `${order.user.firstName} ${order.user.lastName}`.trim();
+                        customerEmail = order.user.email;
+                      }
                       
                       return (
                         <TableRow key={order.id}>
@@ -387,7 +426,7 @@ export default function OrdersPage() {
                           </TableCell>
                           <TableCell>
                             <span className="text-sm text-gray-600">
-                              {order.orderItems.length} items
+                              {order.orderItems?.length || 0} items
                             </span>
                           </TableCell>
                           <TableCell className="text-right">

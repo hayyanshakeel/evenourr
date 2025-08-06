@@ -1,71 +1,76 @@
-"use client"
+"use client";
+import * as React from "react";
+import { Dot } from "lucide-react";
+import { cn } from "@/lib/utils";
 
-import * as React from "react"
-import { OTPInput, OTPInputContext } from "input-otp"
-import { Dot } from "lucide-react"
-
-import { cn } from "@/lib/utils"
-
+// Simple OTP Input without external dependencies to avoid type issues
 const InputOTP = React.forwardRef<
-  React.ElementRef<typeof OTPInput>,
-  React.ComponentPropsWithoutRef<typeof OTPInput>
->(({ className, containerClassName, ...props }, ref) => (
-  <OTPInput
-    ref={ref}
-    containerClassName={cn(
-      "flex items-center gap-2 has-[:disabled]:opacity-50",
-      containerClassName
-    )}
-    className={cn("disabled:cursor-not-allowed", className)}
-    {...props}
-  />
-))
-InputOTP.displayName = "InputOTP"
-
-const InputOTPGroup = React.forwardRef<
-  React.ElementRef<"div">,
-  React.ComponentPropsWithoutRef<"div">
->(({ className, ...props }, ref) => (
-  <div ref={ref} className={cn("flex items-center", className)} {...props} />
-))
-InputOTPGroup.displayName = "InputOTPGroup"
-
-const InputOTPSlot = React.forwardRef<
-  React.ElementRef<"div">,
-  React.ComponentPropsWithoutRef<"div"> & { index: number }
->(({ index, className, ...props }, ref) => {
-  const inputOTPContext = React.useContext(OTPInputContext)
-  const { char, hasFakeCaret, isActive } = inputOTPContext.slots[index]
+  HTMLDivElement,
+  {
+    className?: string;
+    maxLength?: number;
+    value?: string;
+    onChange?: (value: string) => void;
+  }
+>(({ className, maxLength = 6, value = "", onChange, ...props }, ref) => {
+  const handleInputChange = (index: number, inputValue: string) => {
+    const newValue = value.split('');
+    newValue[index] = inputValue;
+    onChange?.(newValue.join('').slice(0, maxLength));
+  };
 
   return (
     <div
       ref={ref}
-      className={cn(
-        "relative flex h-10 w-10 items-center justify-center border-y border-r border-input text-sm transition-all first:rounded-l-md first:border-l last:rounded-r-md",
-        isActive && "z-10 ring-2 ring-ring ring-offset-background",
-        className
-      )}
+      className={cn("flex items-center gap-2", className)}
       {...props}
     >
-      {char}
-      {hasFakeCaret && (
-        <div className="pointer-events-none absolute inset-0 flex items-center justify-center">
-          <div className="h-4 w-px animate-caret-blink bg-foreground duration-1000" />
-        </div>
-      )}
+      {Array.from({ length: maxLength }).map((_, index) => (
+        <input
+          key={index}
+          type="text"
+          maxLength={1}
+          value={value[index] || ''}
+          onChange={(e) => handleInputChange(index, e.target.value)}
+          className="relative flex h-10 w-10 items-center justify-center border border-input text-sm text-center rounded-md"
+        />
+      ))}
     </div>
-  )
-})
-InputOTPSlot.displayName = "InputOTPSlot"
+  );
+});
+InputOTP.displayName = "InputOTP";
+
+const InputOTPGroup = React.forwardRef<
+  HTMLDivElement,
+  React.HTMLAttributes<HTMLDivElement>
+>(({ className, ...props }, ref) => (
+  <div ref={ref} className={cn("flex items-center", className)} {...props} />
+));
+InputOTPGroup.displayName = "InputOTPGroup";
+
+const InputOTPSlot = React.forwardRef<
+  HTMLDivElement,
+  React.HTMLAttributes<HTMLDivElement> & { index: number }
+>(({ index, className, ...props }, ref) => (
+  <div
+    ref={ref}
+    className={cn(
+      "relative flex h-10 w-10 items-center justify-center border border-input text-sm rounded-md",
+      className
+    )}
+    {...props}
+  />
+));
+InputOTPSlot.displayName = "InputOTPSlot";
 
 const InputOTPSeparator = React.forwardRef<
-  React.ElementRef<"div">,
-  React.ComponentPropsWithoutRef<"div">
+  HTMLDivElement,
+  React.HTMLAttributes<HTMLDivElement>
 >(({ ...props }, ref) => (
   <div ref={ref} role="separator" {...props}>
     <Dot />
   </div>
-))
-InputOTPSeparator.displayName = "InputOTPSeparator"
+));
+InputOTPSeparator.displayName = "InputOTPSeparator";
 
-export { InputOTP, InputOTPGroup, InputOTPSlot, InputOTPSeparator }
+export { InputOTP, InputOTPGroup, InputOTPSlot, InputOTPSeparator };

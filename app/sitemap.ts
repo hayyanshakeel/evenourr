@@ -1,6 +1,10 @@
-import { getCollections, getPages, getProducts } from 'lib/shopify';
-import { baseUrl, validateEnvironmentVariables } from 'lib/utils';
+import { baseUrl, validateEnvironmentVariables } from '@/lib/utils';
 import { MetadataRoute } from 'next';
+
+// Placeholder functions for products and collections (replace with your actual data sources)
+const getProducts = async () => [];
+const getCollections = async () => [];
+const getPages = async () => [];
 
 type Route = {
   url: string;

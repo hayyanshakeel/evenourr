@@ -4,6 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { ArrowUpIcon, ArrowDownIcon, DollarSign, ShoppingCart, Users, Package } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { useEffect, useState } from "react"
+import { useAdminAuth } from "@/hooks/useAdminAuth"
 
 interface DashboardMetricsData {
   totalRevenue: number;
@@ -19,14 +20,26 @@ interface DashboardMetricsData {
 export function DashboardMetrics() {
   const [metrics, setMetrics] = useState<DashboardMetricsData | null>(null)
   const [loading, setLoading] = useState(true)
+  const { makeAuthenticatedRequest, isReady, isAuthenticated } = useAdminAuth()
 
   useEffect(() => {
     async function fetchMetrics() {
+      if (!isReady) return;
+      
+      if (!isAuthenticated) {
+        console.warn('User not authenticated')
+        setLoading(false)
+        return;
+      }
+
       try {
-        const response = await fetch('/api/admin/dashboard/metrics')
+        const response = await makeAuthenticatedRequest('/api/admin/dashboard/metrics')
+        
         if (response.ok) {
           const data = await response.json()
           setMetrics(data)
+        } else {
+          console.error('Failed to fetch metrics:', response.status, response.statusText)
         }
       } catch (error) {
         console.error('Failed to fetch dashboard metrics:', error)
@@ -36,9 +49,9 @@ export function DashboardMetrics() {
     }
 
     fetchMetrics()
-  }, [])
+  }, [isReady, isAuthenticated, makeAuthenticatedRequest])
 
-  if (loading) {
+  if (loading || !metrics) {
     return (
       <div className="grid gap-4 md:gap-6 lg:gap-8 grid-cols-1 sm:grid-cols-2 lg:grid-cols-4">
         {[...Array(4)].map((_, i) => (
@@ -48,8 +61,8 @@ export function DashboardMetrics() {
               <div className="h-8 w-8 bg-gray-200 rounded"></div>
             </CardHeader>
             <CardContent>
-              <div className="h-8 bg-gray-200 rounded w-20 mb-2"></div>
-              <div className="h-3 bg-gray-200 rounded w-16"></div>
+              <div className="h-8 bg-gray-200 rounded w-16 mb-2"></div>
+              <div className="h-4 bg-gray-200 rounded w-20"></div>
             </CardContent>
           </Card>
         ))}
@@ -57,20 +70,12 @@ export function DashboardMetrics() {
     )
   }
 
-  if (!metrics) {
-    return (
-      <div className="text-center py-8">
-        <p className="text-gray-500">Unable to load dashboard metrics</p>
-      </div>
-    )
-  }
-
   const metricCards = [
     {
       title: "Total Revenue",
-      value: `₹${metrics.totalRevenue.toLocaleString()}`,
-      change: `${metrics.revenueChange > 0 ? '+' : ''}${metrics.revenueChange.toFixed(1)}%`,
-      trend: metrics.revenueChange >= 0 ? "up" : "down",
+      value: `₹${(metrics?.totalRevenue || 0).toLocaleString()}`,
+      change: `${(metrics?.revenueChange || 0) > 0 ? '+' : ''}${(metrics?.revenueChange || 0).toFixed(1)}%`,
+      trend: (metrics?.revenueChange || 0) >= 0 ? "up" : "down",
       icon: DollarSign,
       description: "vs last month",
       color: "text-calm-green",
@@ -79,9 +84,9 @@ export function DashboardMetrics() {
     },
     {
       title: "Total Orders",
-      value: metrics.totalOrders.toLocaleString(),
-      change: `${metrics.ordersChange > 0 ? '+' : ''}${metrics.ordersChange.toFixed(1)}%`,
-      trend: metrics.ordersChange >= 0 ? "up" : "down",
+      value: (metrics?.totalOrders || 0).toLocaleString(),
+      change: `${(metrics?.ordersChange || 0) > 0 ? '+' : ''}${(metrics?.ordersChange || 0).toFixed(1)}%`,
+      trend: (metrics?.ordersChange || 0) >= 0 ? "up" : "down",
       icon: ShoppingCart,
       description: "vs last month",
       color: "text-calm-blue",
@@ -90,9 +95,9 @@ export function DashboardMetrics() {
     },
     {
       title: "Total Customers",
-      value: metrics.totalCustomers.toLocaleString(),
-      change: `${metrics.customersChange > 0 ? '+' : ''}${metrics.customersChange.toFixed(1)}%`,
-      trend: metrics.customersChange >= 0 ? "up" : "down",
+      value: (metrics?.totalCustomers || 0).toLocaleString(),
+      change: `${(metrics?.customersChange || 0) > 0 ? '+' : ''}${(metrics?.customersChange || 0).toFixed(1)}%`,
+      trend: (metrics?.customersChange || 0) >= 0 ? "up" : "down",
       icon: Users,
       description: "vs last month",
       color: "text-calm-purple",
@@ -101,9 +106,9 @@ export function DashboardMetrics() {
     },
     {
       title: "Total Products",
-      value: metrics.totalProducts.toLocaleString(),
-      change: `${metrics.productsChange > 0 ? '+' : ''}${metrics.productsChange.toFixed(1)}%`,
-      trend: metrics.productsChange >= 0 ? "up" : "down",
+      value: (metrics?.totalProducts || 0).toLocaleString(),
+      change: `${(metrics?.productsChange || 0) > 0 ? '+' : ''}${(metrics?.productsChange || 0).toFixed(1)}%`,
+      trend: (metrics?.productsChange || 0) >= 0 ? "up" : "down",
       icon: Package,
       description: "vs last month",
       color: "text-calm-orange",

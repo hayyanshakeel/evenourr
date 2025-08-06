@@ -47,7 +47,7 @@ export interface AdminOrder {
     lastName: string;
     email: string;
   } | null;
-}
+};
 
 export interface AdminCollection {
   id: number;
@@ -195,6 +195,7 @@ export const ProductsService = {
 export const OrdersService = {
   getAll: async (params?: {
     status?: string;
+    search?: string;
     limit?: number;
     offset?: number;
   }) => {
@@ -203,6 +204,40 @@ export const OrdersService = {
       
       if (params?.status) {
         where.status = params.status;
+      }
+
+      // Add search functionality
+      if (params?.search) {
+        const searchTerm = params.search.toLowerCase();
+        const searchConditions = [];
+        
+        // Search by order ID if search term is a number
+        if (!isNaN(parseInt(searchTerm))) {
+          searchConditions.push({ id: parseInt(searchTerm) });
+        }
+        
+        // Search by customer name/email
+        searchConditions.push({
+          customer: {
+            OR: [
+              { name: { contains: searchTerm, mode: 'insensitive' as any } },
+              { email: { contains: searchTerm, mode: 'insensitive' as any } }
+            ]
+          }
+        });
+        
+        // Search by user name/email
+        searchConditions.push({
+          user: {
+            OR: [
+              { firstName: { contains: searchTerm, mode: 'insensitive' as any } },
+              { lastName: { contains: searchTerm, mode: 'insensitive' as any } },
+              { email: { contains: searchTerm, mode: 'insensitive' as any } }
+            ]
+          }
+        });
+        
+        where.OR = searchConditions;
       }
 
       const [orders, total] = await Promise.all([
@@ -689,6 +724,43 @@ export const CustomersService = {
     } catch (error) {
       console.error('Error in CustomersService.getById:', error);
       throw new Error(`Failed to fetch customer: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    }
+  },
+
+  getStats: async () => {
+    try {
+      const thirtyDaysAgo = new Date();
+      thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+
+      const [totalCustomers, newCustomers, totalOrders, totalRevenue] = await Promise.all([
+        prisma.customer.count(),
+        prisma.customer.count({
+          where: {
+            createdAt: { gte: thirtyDaysAgo },
+          },
+        }),
+        prisma.order.count(),
+        prisma.order.aggregate({
+          where: {
+            status: { in: ['paid', 'shipped', 'delivered'] },
+          },
+          _sum: { totalPrice: true },
+        }),
+      ]);
+
+      const averageOrdersPerCustomer = totalCustomers > 0 ? 
+        (totalOrders / totalCustomers).toFixed(1) : '0.0';
+
+      return {
+        totalCustomers,
+        newCustomers,
+        totalOrders,
+        totalRevenue: totalRevenue._sum.totalPrice || 0,
+        averageOrdersPerCustomer,
+      };
+    } catch (error) {
+      console.error('Error in CustomersService.getStats:', error);
+      throw new Error(`Failed to fetch customer stats: ${error instanceof Error ? error.message : 'Unknown error'}`);
     }
   },
 };

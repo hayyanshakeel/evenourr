@@ -1,0 +1,28 @@
+{
+  "project_name": "E-commerce Hat Store",
+  "frontend_url": "http://localhost:3001",
+  "backend_url": "http://localhost:3001/api",
+  "test_credentials": {
+    "username": "test@example.com",
+    "password": "test123"
+  },
+  "admin_credentials": {
+    "username": "admin@example.com", 
+    "password": "admin123"
+  },
+  "key_features": [
+    "User Authentication",
+    "Product Catalog",
+    "Shopping Cart", 
+    "Checkout Process",
+    "Admin Dashboard",
+    "Order Management"
+  ],
+  "test_priorities": [
+    "Functional Testing",
+    "Security Testing", 
+    "UI/UX Testing",
+    "API Testing",
+    "Error Handling"
+  ]
+}

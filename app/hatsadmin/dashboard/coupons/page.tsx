@@ -1,6 +1,6 @@
 "use client"
 
-import { PageHeader } from "@/components/admin/page-header"
+import { MobileHeader } from "@/components/admin/mobile-header"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
@@ -133,7 +133,7 @@ function CouponsActions() {
       <Button
         variant="outline"
         size="sm"
-        className="bg-white border-gray-200 text-black hover:bg-gray-50"
+        className="bg-black border-black text-white hover:bg-gray-800"
       >
         <Filter className="h-4 w-4 mr-2 text-black" />
         Filter
@@ -157,13 +157,10 @@ function CouponsActions() {
 export default function CouponsPage() {
   return (
     <div className="flex flex-col h-full w-full overflow-hidden">
-      <PageHeader 
+      <MobileHeader 
         title="Coupons" 
-        subtitle="Manage discount codes and promotional offers"
-        showSearch={true}
-        showFilters={true}
-        showAddButton={true}
-        addButtonText="New Coupon"
+        subtitle="Manage discount codes and promotional offers" 
+        actions={<CouponsActions />} 
       />
 
       <main className="flex-1 overflow-auto">

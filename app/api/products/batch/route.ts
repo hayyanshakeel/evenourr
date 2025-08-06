@@ -1,5 +1,26 @@
 import { NextResponse } from 'next/server';
-import prisma from '@/lib/db';
+
+// Mock products data for batch requests
+const mockProducts = [
+  {
+    id: 1,
+    name: 'Sample Product 1',
+    slug: 'sample-product-1',
+    imageUrl: 'https://via.placeholder.com/150'
+  },
+  {
+    id: 2,
+    name: 'Sample Product 2',
+    slug: 'sample-product-2',
+    imageUrl: 'https://via.placeholder.com/150'
+  },
+  {
+    id: 3,
+    name: 'Sample Product 3',
+    slug: 'sample-product-3',
+    imageUrl: 'https://via.placeholder.com/150'
+  }
+];
 
 export async function POST(request: Request) {
   try {
@@ -9,19 +30,8 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Product IDs must be a non-empty array' }, { status: 400 });
     }
 
-    const productDetails = await prisma.product.findMany({
-      where: {
-        id: {
-          in: ids,
-        },
-      },
-      select: {
-        id: true,
-        name: true,
-        slug: true,
-        imageUrl: true,
-      },
-    });
+    // Filter mock products by the requested IDs
+    const productDetails = mockProducts.filter(product => ids.includes(product.id));
 
     return NextResponse.json(productDetails);
   } catch (error) {

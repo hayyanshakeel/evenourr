@@ -1,8 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
-import { useRouter } from "next/navigation"
-import { PageHeader } from "@/components/admin/page-header"
+import { MobileHeader } from "@/components/admin/mobile-header"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
@@ -23,301 +21,261 @@ import {
   Calendar
 } from "lucide-react"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
-import { AdminCollection } from "@/lib/admin-data"
 
-interface CollectionStats {
-  totalCollections: number;
-  activeCollections: number;
-  totalProducts: number;
-  averageProductsPerCollection: number;
+const stats = [
+  {
+    title: "Total Collections",
+    value: "24",
+    change: "+3 this month",
+    icon: Layers,
+    color: "text-blue-500",
+    bgColor: "bg-blue-50",
+    borderColor: "border-blue-200",
+  },
+  {
+    title: "Active Collections",
+    value: "18",
+    change: "75% active",
+    icon: TrendingUp,
+    color: "text-green-500",
+    bgColor: "bg-green-50",
+    borderColor: "border-green-200",
+  },
+  {
+    title: "Total Products",
+    value: "2,847",
+    change: "In collections",
+    icon: Package,
+    color: "text-purple-500",
+    bgColor: "bg-purple-50",
+    borderColor: "border-purple-200",
+  },
+  {
+    title: "Views This Month",
+    value: "45,623",
+    change: "+12% vs last month",
+    icon: Eye,
+    color: "text-orange-500",
+    bgColor: "bg-orange-50",
+    borderColor: "border-orange-200",
+  },
+]
+
+const collections = [
+  {
+    id: "COL-001",
+    name: "Summer Collection",
+    description: "Light and breathable caps for summer",
+    products: 45,
+    status: "active",
+    visibility: "published",
+    created: "2024-01-15",
+    sales: 234,
+  },
+  {
+    id: "COL-002",
+    name: "Winter Essentials",
+    description: "Warm beanies and winter hats",
+    products: 28,
+    status: "active",
+    visibility: "published",
+    created: "2024-01-10",
+    sales: 156,
+  },
+  {
+    id: "COL-003",
+    name: "Premium Line",
+    description: "High-end luxury caps and accessories",
+    products: 12,
+    status: "active",
+    visibility: "published",
+    created: "2024-01-05",
+    sales: 89,
+  },
+  {
+    id: "COL-004",
+    name: "Sports Collection",
+    description: "Athletic caps for sports enthusiasts",
+    products: 36,
+    status: "draft",
+    visibility: "hidden",
+    created: "2024-01-20",
+    sales: 0,
+  },
+]
+
+const statusColors = {
+  active: "bg-green-100 text-green-800",
+  draft: "bg-yellow-100 text-yellow-800",
+  archived: "bg-gray-100 text-gray-800",
+}
+
+const visibilityColors = {
+  published: "bg-blue-100 text-blue-800",
+  hidden: "bg-gray-100 text-gray-800",
+  scheduled: "bg-purple-100 text-purple-800",
+}
+
+function CollectionsActions() {
+  return (
+    <div className="flex items-center gap-2 lg:gap-3">
+      <Button
+        variant="outline"
+        size="sm"
+        className="bg-white border-gray-200 text-gray-900 hover:bg-gray-50"
+      >
+        <Filter className="h-4 w-4 mr-2 text-purple-500" />
+        Filter
+      </Button>
+      <Button
+        variant="outline"
+        size="sm"
+        className="bg-white border-gray-200 text-gray-900 hover:bg-gray-50"
+      >
+        <Download className="h-4 w-4 mr-2 text-green-500" />
+        Export
+      </Button>
+      <Button size="sm" className="bg-blue-600 hover:bg-blue-700 text-white">
+        <Plus className="h-4 w-4 mr-2" />
+        Create Collection
+      </Button>
+    </div>
+  )
 }
 
 export default function CollectionsPage() {
-  const router = useRouter()
-  const [collections, setCollections] = useState<AdminCollection[]>([])
-  const [stats, setStats] = useState<CollectionStats | null>(null)
-  const [loading, setLoading] = useState(true)
-  const [searchQuery, setSearchQuery] = useState("")
-
-  useEffect(() => {
-    async function fetchData() {
-      try {
-        const [collectionsResponse, statsResponse] = await Promise.all([
-          fetch('/api/admin/collections'),
-          fetch('/api/admin/collections/stats')
-        ])
-
-        if (collectionsResponse.ok) {
-          const collectionsData = await collectionsResponse.json()
-          setCollections(collectionsData)
-        }
-
-        if (statsResponse.ok) {
-          const statsData = await statsResponse.json()
-          setStats(statsData)
-        }
-      } catch (error) {
-        console.error('Failed to fetch collections data:', error)
-      } finally {
-        setLoading(false)
-      }
-    }
-
-    fetchData()
-  }, [])
-
-  const handleAddCollection = () => {
-    router.push("/hatsadmin/dashboard/collections/add")
-  }
-
-  const filteredCollections = collections.filter(collection =>
-    collection.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    collection.description?.toLowerCase().includes(searchQuery.toLowerCase())
-  )
-
-  const collectionsStats = stats ? [
-    {
-      title: "Total Collections",
-      value: stats.totalCollections.toString(),
-      change: "Collections created",
-      icon: Layers,
-      color: "text-blue-500",
-      bgColor: "bg-blue-50",
-      borderColor: "border-blue-200",
-    },
-    {
-      title: "Active Collections",
-      value: stats.activeCollections.toString(),
-      change: `${stats.totalCollections > 0 ? Math.round((stats.activeCollections / stats.totalCollections) * 100) : 0}% active`,
-      icon: TrendingUp,
-      color: "text-green-500",
-      bgColor: "bg-green-50",
-      borderColor: "border-green-200",
-    },
-    {
-      title: "Total Products",
-      value: stats.totalProducts.toString(),
-      change: "In collections",
-      icon: Package,
-      color: "text-purple-500",
-      bgColor: "bg-purple-50",
-      borderColor: "border-purple-200",
-    },
-    {
-      title: "Avg Products",
-      value: stats.averageProductsPerCollection.toString(),
-      change: "Per collection",
-      icon: Calendar,
-      color: "text-orange-500",
-      bgColor: "bg-orange-50",
-      borderColor: "border-orange-200",
-    },
-  ] : []
-
-  const getStatusBadge = (isActive: boolean) => {
-    return isActive ? (
-      <Badge variant="default" className="bg-green-100 text-green-700">Active</Badge>
-    ) : (
-      <Badge variant="secondary">Inactive</Badge>
-    )
-  }
-
-  if (loading) {
-    return (
-      <div className="flex-1 space-y-6 p-6">
-        <PageHeader
-          title="Collections"
-          subtitle="Organize your products into collections"
-        />
-        
-        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-          {[...Array(4)].map((_, i) => (
-            <Card key={i}>
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <div className="h-4 bg-gray-200 rounded w-20 animate-pulse"></div>
-                <div className="h-4 w-4 bg-gray-200 rounded animate-pulse"></div>
-              </CardHeader>
-              <CardContent>
-                <div className="h-8 bg-gray-200 rounded w-16 animate-pulse mb-2"></div>
-                <div className="h-3 bg-gray-200 rounded w-24 animate-pulse"></div>
-              </CardContent>
-            </Card>
-          ))}
-        </div>
-
-        <div className="space-y-4">
-          <div className="h-10 bg-gray-200 rounded animate-pulse"></div>
-          <div className="h-64 bg-gray-200 rounded animate-pulse"></div>
-        </div>
-      </div>
-    )
-  }
-
   return (
-    <div className="flex-1 space-y-6 p-6">
-      <PageHeader
-        title="Collections"
-        subtitle="Organize your products into collections"
+    <div className="flex flex-col h-full w-full overflow-hidden">
+      <MobileHeader 
+        title="Collections" 
+        subtitle="Organize products into themed collections" 
+        actions={<CollectionsActions />} 
       />
-      
-      {/* Stats Cards */}
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-        {collectionsStats.map((stat, index) => {
-          const IconComponent = stat.icon
-          return (
-            <Card key={index} className={`border ${stat.borderColor} hover:shadow-md transition-shadow`}>
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium text-gray-600">
-                  {stat.title}
-                </CardTitle>
-                <div className={`h-4 w-4 ${stat.color}`}>
-                  <IconComponent className="h-4 w-4" />
-                </div>
-              </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold text-gray-900">
-                  {stat.value}
-                </div>
-                <p className="text-xs text-gray-500 mt-1">
-                  {stat.change}
-                </p>
-              </CardContent>
-            </Card>
-          )
-        })}
-      </div>
 
-      {/* Collections Table */}
-      <Card>
-        <CardHeader>
-          <div className="flex items-center justify-between">
-            <div>
-              <CardTitle>Collections</CardTitle>
-              <p className="text-sm text-gray-500 mt-1">
-                {filteredCollections.length} total collections
-              </p>
-            </div>
-            <div className="flex items-center gap-2">
-              <Button variant="outline" size="sm">
-                <Filter className="h-4 w-4 mr-2" />
-                Filter
-              </Button>
-              <Button variant="outline" size="sm">
-                <Download className="h-4 w-4 mr-2" />
-                Export
-              </Button>
-              <Button onClick={handleAddCollection} size="sm">
-                <Plus className="h-4 w-4 mr-2" />
-                New Collection
-              </Button>
-            </div>
+      <main className="flex-1 overflow-auto">
+        <div className="p-4 lg:p-6 xl:p-8 space-y-6 lg:space-y-8">
+          
+          {/* Stats Grid */}
+          <div className="grid gap-4 md:gap-6 lg:gap-8 grid-cols-1 sm:grid-cols-2 lg:grid-cols-4">
+            {stats.map((stat, index) => {
+              const IconComponent = stat.icon
+              return (
+                <Card
+                  key={stat.title}
+                  className={`relative overflow-hidden transition-all duration-300 hover:shadow-lg hover:-translate-y-1 border ${stat.borderColor}`}
+                >
+                  <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-3">
+                    <CardTitle className="text-sm font-medium text-gray-600">
+                      {stat.title}
+                    </CardTitle>
+                    <div className={`p-2 rounded-lg ${stat.bgColor}`}>
+                      <IconComponent className={`h-5 w-5 ${stat.color}`} />
+                    </div>
+                  </CardHeader>
+                  <CardContent className="space-y-2">
+                    <div className="text-3xl font-bold text-gray-900">
+                      {stat.value}
+                    </div>
+                    <p className="text-xs text-gray-500">
+                      {stat.change}
+                    </p>
+                  </CardContent>
+                </Card>
+              )
+            })}
           </div>
-        </CardHeader>
-        <CardContent>
-          <div className="flex items-center gap-4 mb-6">
-            <div className="relative flex-1 max-w-sm">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
-              <Input
-                placeholder="Search collections..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="pl-9"
-              />
+
+          {/* Search and Filters */}
+          <div className="flex flex-col lg:flex-row gap-4 lg:items-center lg:justify-between">
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
+              <Input placeholder="Search collections..." className="w-full lg:w-80 pl-10" />
             </div>
           </div>
 
-          {filteredCollections.length === 0 ? (
-            <div className="text-center py-12">
-              <Layers className="mx-auto h-12 w-12 text-gray-400 mb-4" />
-              <h3 className="text-lg font-medium text-gray-900 mb-2">
-                No collections available
-              </h3>
-              <p className="text-gray-500 mb-4">
-                {searchQuery 
-                  ? "No collections match your search criteria." 
-                  : "Get started by creating your first collection to organize your products."
-                }
-              </p>
-              {!searchQuery && (
-                <Button onClick={handleAddCollection}>
-                  <Plus className="h-4 w-4 mr-2" />
-                  Create First Collection
-                </Button>
-              )}
-            </div>
-          ) : (
-            <div className="rounded-md border">
+          {/* Collections Table */}
+          <Card className="border shadow-sm">
+            <CardHeader>
+              <CardTitle>All Collections</CardTitle>
+            </CardHeader>
+            <CardContent>
               <Table>
                 <TableHeader>
                   <TableRow>
                     <TableHead>Collection</TableHead>
                     <TableHead>Products</TableHead>
                     <TableHead>Status</TableHead>
+                    <TableHead>Visibility</TableHead>
+                    <TableHead>Sales</TableHead>
                     <TableHead>Created</TableHead>
-                    <TableHead>Updated</TableHead>
                     <TableHead className="text-right">Actions</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {filteredCollections.map((collection) => (
-                    <TableRow key={collection.id}>
+                  {collections.map((collection) => (
+                    <TableRow key={collection.id} className="hover:bg-gray-50">
                       <TableCell>
-                        <div className="flex items-center gap-3">
-                          <div className="h-10 w-10 rounded-md border bg-gray-100 flex items-center justify-center">
+                        <div className="flex items-center space-x-3">
+                          <div className="h-10 w-10 rounded-md bg-gray-100 flex items-center justify-center">
                             <Layers className="h-5 w-5 text-gray-500" />
                           </div>
                           <div>
-                            <div className="font-medium">{collection.title}</div>
-                            <div className="text-sm text-gray-500">
-                              {collection.description || 'No description'}
-                            </div>
+                            <div className="font-medium">{collection.name}</div>
+                            <div className="text-sm text-gray-500">{collection.description}</div>
                           </div>
                         </div>
                       </TableCell>
                       <TableCell>
-                        <span className="font-medium">{collection.productCount || 0}</span>
-                        <span className="text-gray-500 ml-1">products</span>
+                        <span className="inline-flex items-center px-2 py-1 rounded-full text-xs bg-gray-100 text-gray-700">
+                          {collection.products} products
+                        </span>
                       </TableCell>
                       <TableCell>
-                        {getStatusBadge(collection.status === 'ACTIVE')}
+                        <Badge className={statusColors[collection.status as keyof typeof statusColors]}>
+                          {collection.status.charAt(0).toUpperCase() + collection.status.slice(1)}
+                        </Badge>
                       </TableCell>
-                      <TableCell className="text-gray-500">
-                        {collection.createdAt ? new Date(collection.createdAt).toLocaleDateString() : '-'}
+                      <TableCell>
+                        <Badge className={visibilityColors[collection.visibility as keyof typeof visibilityColors]}>
+                          {collection.visibility.charAt(0).toUpperCase() + collection.visibility.slice(1)}
+                        </Badge>
                       </TableCell>
-                      <TableCell className="text-gray-500">
-                        {collection.updatedAt ? new Date(collection.updatedAt).toLocaleDateString() : '-'}
+                      <TableCell className="font-medium">{collection.sales}</TableCell>
+                      <TableCell className="text-sm text-gray-500">
+                        {new Date(collection.created).toLocaleDateString()}
                       </TableCell>
                       <TableCell className="text-right">
-                        <DropdownMenu>
-                          <DropdownMenuTrigger asChild>
-                            <Button variant="ghost" size="sm">
-                              <MoreHorizontal className="h-4 w-4" />
-                            </Button>
-                          </DropdownMenuTrigger>
-                          <DropdownMenuContent align="end">
-                            <DropdownMenuItem>
-                              <Eye className="h-4 w-4 mr-2" />
-                              View
-                            </DropdownMenuItem>
-                            <DropdownMenuItem>
-                              <Edit className="h-4 w-4 mr-2" />
-                              Edit
-                            </DropdownMenuItem>
-                            <DropdownMenuItem className="text-red-600">
-                              <Trash2 className="h-4 w-4 mr-2" />
-                              Delete
-                            </DropdownMenuItem>
-                          </DropdownMenuContent>
-                        </DropdownMenu>
+                        <div className="flex items-center justify-end gap-2">
+                          <Button variant="ghost" size="sm">
+                            <Edit className="h-4 w-4" />
+                          </Button>
+                          <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                              <Button variant="ghost" size="sm">
+                                <MoreHorizontal className="h-4 w-4" />
+                              </Button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="end">
+                              <DropdownMenuItem>View collection</DropdownMenuItem>
+                              <DropdownMenuItem>Edit products</DropdownMenuItem>
+                              <DropdownMenuItem>Analytics</DropdownMenuItem>
+                              <DropdownMenuItem>Duplicate</DropdownMenuItem>
+                              <DropdownMenuItem className="text-red-600">
+                                <Trash2 className="h-4 w-4 mr-2" />
+                                Delete
+                              </DropdownMenuItem>
+                            </DropdownMenuContent>
+                          </DropdownMenu>
+                        </div>
                       </TableCell>
                     </TableRow>
                   ))}
                 </TableBody>
               </Table>
-            </div>
-          )}
-        </CardContent>
-      </Card>
+            </CardContent>
+          </Card>
+        </div>
+      </main>
     </div>
   )
 }

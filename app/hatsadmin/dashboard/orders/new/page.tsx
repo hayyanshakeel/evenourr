@@ -2,16 +2,25 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import Header from '@/components/admin/header';
+import { FormLayout } from '@/components/admin/form-layout';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Badge } from '@/components/ui/badge';
+import { Separator } from '@/components/ui/separator';
 import { useSettings } from '@/hooks/useSettings';
 import { CURRENCIES } from '@/lib/currencies';
 import { 
-  MagnifyingGlassIcon, 
-  XMarkIcon,
-  PlusIcon,
-  TrashIcon,
-  UserPlusIcon 
-} from '@heroicons/react/24/outline';
+  Search, 
+  X,
+  Plus,
+  Trash2,
+  UserPlus,
+  Save 
+} from 'lucide-react';
 
 interface Product {
   id: number;
@@ -78,15 +87,29 @@ export default function CreateOrderPage() {
           fetch('/api/products'),
           fetch('/api/customers')
         ]);
-        
+
         if (productsRes.ok) {
-          const productsData = await productsRes.json();
-          setProducts(productsData);
+          try {
+            const productsData = await productsRes.json();
+            setProducts(productsData);
+          } catch (err) {
+            console.error('Products API did not return JSON:', err);
+          }
+        } else {
+          const text = await productsRes.text();
+          console.error('Products API error:', text);
         }
-        
+
         if (customersRes.ok) {
-          const customersData = await customersRes.json();
-          setCustomers(customersData);
+          try {
+            const customersData = await customersRes.json();
+            setCustomers(customersData);
+          } catch (err) {
+            console.error('Customers API did not return JSON:', err);
+          }
+        } else {
+          const text = await customersRes.text();
+          console.error('Customers API error:', text);
         }
       } catch (error) {
         console.error('Error fetching data:', error);
@@ -96,23 +119,47 @@ export default function CreateOrderPage() {
     fetchData();
   }, []);
 
-  // Filter products based on search
-  const filteredProducts = products.filter(product =>
-    product.name.toLowerCase().includes(productSearch.toLowerCase())
-  );
+  const handleBack = () => {
+    router.push('/hatsadmin/dashboard/orders');
+  };
 
-  // Filter customers based on search
-  const filteredCustomers = customers.filter(customer =>
-    customer.name.toLowerCase().includes(customerSearch.toLowerCase()) ||
-    customer.email.toLowerCase().includes(customerSearch.toLowerCase())
-  );
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setLoading(true);
 
-  // Add product to order
+    try {
+      const response = await fetch('/api/orders', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(orderForm),
+      });
+
+      if (response.ok) {
+        router.push('/hatsadmin/dashboard/orders');
+      } else {
+        let errorText = '';
+        try {
+          errorText = await response.text();
+        } catch (err) {
+          errorText = 'Unknown error';
+        }
+        console.error('Failed to create order:', errorText);
+        alert('Failed to create order.\n' + errorText);
+      }
+    } catch (error) {
+      console.error('Error creating order:', error);
+      alert('Error creating order. Check the console for details.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const addProduct = (product: Product) => {
     const existingItem = orderForm.items.find(item => item.productId === product.id);
     
     if (existingItem) {
-      // Increase quantity if product already exists
       setOrderForm(prev => ({
         ...prev,
         items: prev.items.map(item =>
@@ -122,7 +169,6 @@ export default function CreateOrderPage() {
         )
       }));
     } else {
-      // Add new product
       setOrderForm(prev => ({
         ...prev,
         items: [...prev.items, {
@@ -130,16 +176,14 @@ export default function CreateOrderPage() {
           name: product.name,
           price: product.price,
           quantity: 1,
-          imageUrl: product.imageUrl
+          imageUrl: product.imageUrl,
         }]
       }));
     }
-    
-    setProductSearch('');
     setShowProductSearch(false);
+    setProductSearch('');
   };
 
-  // Remove product from order
   const removeProduct = (productId: number) => {
     setOrderForm(prev => ({
       ...prev,
@@ -147,13 +191,12 @@ export default function CreateOrderPage() {
     }));
   };
 
-  // Update product quantity
   const updateQuantity = (productId: number, quantity: number) => {
     if (quantity <= 0) {
       removeProduct(productId);
       return;
     }
-    
+
     setOrderForm(prev => ({
       ...prev,
       items: prev.items.map(item =>
@@ -164,324 +207,317 @@ export default function CreateOrderPage() {
     }));
   };
 
-  // Select customer
   const selectCustomer = (customer: Customer) => {
     setOrderForm(prev => ({
       ...prev,
       customerId: customer.id,
       customerName: customer.name,
-      customerEmail: customer.email
+      customerEmail: customer.email,
     }));
-    setCustomerSearch('');
     setShowCustomerSearch(false);
+    setCustomerSearch('');
   };
 
-  // Calculate totals
+  const clearCustomer = () => {
+    setOrderForm(prev => ({
+      ...prev,
+      customerId: null,
+      customerName: '',
+      customerEmail: '',
+    }));
+  };
+
+  const filteredProducts = products.filter(product =>
+    product.name.toLowerCase().includes(productSearch.toLowerCase())
+  );
+
+  const filteredCustomers = customers.filter(customer =>
+    customer.name.toLowerCase().includes(customerSearch.toLowerCase()) ||
+    customer.email.toLowerCase().includes(customerSearch.toLowerCase())
+  );
+
   const subtotal = orderForm.items.reduce((sum, item) => sum + (item.price * item.quantity), 0);
-  const taxAmount = (subtotal * orderForm.taxRate) / 100;
-  const total = subtotal + taxAmount + orderForm.shippingAmount - orderForm.discountAmount;
+  const taxAmount = subtotal * (orderForm.taxRate / 100);
+  const total = subtotal + orderForm.shippingAmount - orderForm.discountAmount + taxAmount;
 
-  // Submit order
-  const handleSubmit = async () => {
-    if (orderForm.items.length === 0) {
-      alert('Please add at least one product to the order');
-      return;
-    }
-
-    setLoading(true);
-    try {
-      const response = await fetch('/api/orders', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          customerId: orderForm.customerId,
-          customerName: orderForm.customerName,
-          customerEmail: orderForm.customerEmail,
-          items: orderForm.items,
-          subtotal,
-          taxAmount,
-          shippingAmount: orderForm.shippingAmount,
-          discountAmount: orderForm.discountAmount,
-          total,
-          notes: orderForm.notes,
-        }),
-      });
-
-      if (response.ok) {
-        router.push('/hatsadmin/dashboard/orders');
-      } else {
-        console.error('Failed to create order');
-      }
-    } catch (error) {
-      console.error('Error creating order:', error);
-    } finally {
-      setLoading(false);
-    }
-  };
+  const actions = (
+    <>
+      <Button variant="outline" onClick={handleBack} disabled={loading}>
+        Cancel
+      </Button>
+      <Button onClick={handleSubmit} disabled={loading || orderForm.items.length === 0} className="bg-blue-600 hover:bg-blue-700">
+        <Save className="h-4 w-4 mr-2" />
+        {loading ? 'Creating...' : 'Create Order'}
+      </Button>
+    </>
+  );
 
   return (
-    <div>
-      <Header title="Create order">
-        <div className="flex gap-2">
-          <button
-            onClick={() => router.back()}
-            className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50"
-          >
-            Cancel
-          </button>
-          <button
-            onClick={handleSubmit}
-            disabled={loading || orderForm.items.length === 0}
-            className="px-4 py-2 text-sm font-medium text-white bg-blue-600 border border-transparent rounded-md hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
-          >
-            {loading ? 'Creating...' : 'Create order'}
-          </button>
-        </div>
-      </Header>
-
-      <div className="mt-8 grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Main Content */}
-        <div className="lg:col-span-2 space-y-6">
-          {/* Products Section */}
-          <div className="bg-white shadow rounded-lg">
-            <div className="px-6 py-4 border-b border-gray-200">
-              <h3 className="text-lg font-medium text-gray-900">Products</h3>
-            </div>
-            <div className="p-6">
-              {/* Product Search */}
-              <div className="relative">
+    <FormLayout
+      title="New Order"
+      subtitle="Create a new order for a customer"
+      onBack={handleBack}
+      actions={actions}
+    >
+      <form onSubmit={handleSubmit} className="space-y-8">
+        {/* Customer Selection */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <UserPlus className="h-5 w-5" />
+              Customer Information
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            {orderForm.customerId ? (
+              <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
+                <div>
+                  <p className="font-medium">{orderForm.customerName}</p>
+                  <p className="text-sm text-gray-500">{orderForm.customerEmail}</p>
+                </div>
+                <Button variant="outline" size="sm" onClick={clearCustomer}>
+                  <X className="h-4 w-4" />
+                </Button>
+              </div>
+            ) : (
+              <div className="space-y-2">
+                <Label>Select Customer</Label>
                 <div className="relative">
-                  <MagnifyingGlassIcon className="absolute left-3 top-1/2 h-5 w-5 -translate-y-1/2 text-gray-400" />
-                  <input
-                    type="text"
-                    placeholder="Search products"
-                    value={productSearch}
-                    onChange={(e) => setProductSearch(e.target.value)}
-                    onFocus={() => setShowProductSearch(true)}
-                    className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
-                  />
-                </div>
-                
-                {/* Product Search Results */}
-                {showProductSearch && productSearch && (
-                  <div className="absolute z-10 mt-1 w-full bg-white border border-gray-300 rounded-md shadow-lg max-h-60 overflow-auto">
-                    {filteredProducts.length > 0 ? (
-                      filteredProducts.map((product) => (
-                        <button
-                          key={product.id}
-                          onClick={() => addProduct(product)}
-                          className="w-full px-4 py-3 text-left hover:bg-gray-50 flex items-center space-x-3"
-                        >
-                          {product.imageUrl && (
-                            <img src={product.imageUrl} alt={product.name} className="w-10 h-10 object-cover rounded" />
-                          )}
-                          <div className="flex-1">
-                            <div className="font-medium text-gray-900">{product.name}</div>
-                            <div className="text-sm text-gray-500">{currencySymbol}{(product.price / 100).toFixed(2)}</div>
-                          </div>
-                          <div className="text-sm text-gray-500">Stock: {product.inventory}</div>
-                        </button>
-                      ))
-                    ) : (
-                      <div className="px-4 py-3 text-gray-500">No products found</div>
-                    )}
-                  </div>
-                )}
-              </div>
-
-              {/* Selected Products */}
-              <div className="mt-6">
-                {orderForm.items.length > 0 ? (
-                  <div className="space-y-4">
-                    {orderForm.items.map((item) => (
-                      <div key={item.productId} className="flex items-center space-x-4 p-4 border border-gray-200 rounded-lg">
-                        {item.imageUrl && (
-                          <img src={item.imageUrl} alt={item.name} className="w-16 h-16 object-cover rounded" />
-                        )}
-                        <div className="flex-1">
-                          <h4 className="font-medium text-gray-900">{item.name}</h4>
-                          <p className="text-sm text-gray-500">{currencySymbol}{(item.price / 100).toFixed(2)} each</p>
-                        </div>
-                        <div className="flex items-center space-x-2">
-                          <input
-                            type="number"
-                            min="1"
-                            value={item.quantity}
-                            onChange={(e) => updateQuantity(item.productId, parseInt(e.target.value) || 0)}
-                            className="w-16 px-2 py-1 border border-gray-300 rounded text-center"
-                          />
-                          <button
-                            onClick={() => removeProduct(item.productId)}
-                            className="p-1 text-red-600 hover:text-red-800"
-                          >
-                            <TrashIcon className="h-5 w-5" />
-                          </button>
-                        </div>
-                        <div className="font-medium text-gray-900">
-                          {currencySymbol}{((item.price * item.quantity) / 100).toFixed(2)}
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                ) : (
-                  <div className="text-center py-12 text-gray-500">
-                    <div className="text-lg">No products added</div>
-                    <div className="text-sm">Search and add products to create an order</div>
-                  </div>
-                )}
-              </div>
-            </div>
-          </div>
-
-          {/* Payment Section */}
-          <div className="bg-white shadow rounded-lg">
-            <div className="px-6 py-4 border-b border-gray-200">
-              <h3 className="text-lg font-medium text-gray-900">Payment</h3>
-            </div>
-            <div className="p-6 space-y-4">
-              <div className="flex justify-between py-2">
-                <span className="text-gray-600">Subtotal</span>
-                <span className="font-medium">{currencySymbol}{(subtotal / 100).toFixed(2)}</span>
-              </div>
-              
-              <div className="flex justify-between items-center py-2">
-                <span className="text-gray-600">Shipping</span>
-                <div className="flex items-center space-x-2">
-                  <span className="text-gray-400">{currencySymbol}</span>
-                  <input
-                    type="number"
-                    min="0"
-                    step="0.01"
-                    value={(orderForm.shippingAmount / 100).toFixed(2)}
-                    onChange={(e) => setOrderForm(prev => ({ ...prev, shippingAmount: Math.round(parseFloat(e.target.value || '0') * 100) }))}
-                    className="w-20 px-2 py-1 border border-gray-300 rounded text-right"
-                  />
-                </div>
-              </div>
-              
-              <div className="flex justify-between items-center py-2">
-                <span className="text-gray-600">Discount</span>
-                <div className="flex items-center space-x-2">
-                  <span className="text-gray-400">{currencySymbol}</span>
-                  <input
-                    type="number"
-                    min="0"
-                    step="0.01"
-                    value={(orderForm.discountAmount / 100).toFixed(2)}
-                    onChange={(e) => setOrderForm(prev => ({ ...prev, discountAmount: Math.round(parseFloat(e.target.value || '0') * 100) }))}
-                    className="w-20 px-2 py-1 border border-gray-300 rounded text-right"
-                  />
-                </div>
-              </div>
-              
-              <div className="flex justify-between items-center py-2">
-                <span className="text-gray-600">Tax ({orderForm.taxRate}%)</span>
-                <span className="font-medium">{currencySymbol}{(taxAmount / 100).toFixed(2)}</span>
-              </div>
-              
-              <div className="border-t pt-2">
-                <div className="flex justify-between py-2">
-                  <span className="text-lg font-medium text-gray-900">Total</span>
-                  <span className="text-lg font-medium text-gray-900">{currencySymbol}{(total / 100).toFixed(2)}</span>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* Sidebar */}
-        <div className="space-y-6">
-          {/* Customer Section */}
-          <div className="bg-white shadow rounded-lg">
-            <div className="px-6 py-4 border-b border-gray-200">
-              <h3 className="text-lg font-medium text-gray-900">Customer</h3>
-            </div>
-            <div className="p-6">
-              {orderForm.customerId ? (
-                <div className="space-y-2">
-                  <div className="font-medium text-gray-900">{orderForm.customerName}</div>
-                  <div className="text-sm text-gray-500">{orderForm.customerEmail}</div>
-                  <button
-                    onClick={() => setOrderForm(prev => ({ ...prev, customerId: null, customerName: '', customerEmail: '' }))}
-                    className="text-sm text-blue-600 hover:text-blue-800"
-                  >
-                    Change customer
-                  </button>
-                </div>
-              ) : (
-                <div className="relative">
-                  <input
-                    type="text"
-                    placeholder="Search or create a customer"
+                  <Input
+                    placeholder="Search customers..."
                     value={customerSearch}
-                    onChange={(e) => setCustomerSearch(e.target.value)}
+                    onChange={(e) => {
+                      setCustomerSearch(e.target.value);
+                      setShowCustomerSearch(true);
+                    }}
                     onFocus={() => setShowCustomerSearch(true)}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
+                    className="pr-10"
                   />
+                  <Search className="absolute right-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
                   
                   {showCustomerSearch && (
-                    <div className="absolute z-10 mt-1 w-full bg-white border border-gray-300 rounded-md shadow-lg max-h-60 overflow-auto">
-                      {customerSearch && (
-                        <button
-                          onClick={() => {
-                            setOrderForm(prev => ({ ...prev, customerName: customerSearch, customerEmail: '' }));
-                            setCustomerSearch('');
-                            setShowCustomerSearch(false);
-                          }}
-                          className="w-full px-4 py-3 text-left hover:bg-gray-50 flex items-center space-x-2 border-b"
-                        >
-                          <UserPlusIcon className="h-5 w-5 text-gray-400" />
-                          <span>Create customer "{customerSearch}"</span>
-                        </button>
+                    <div className="absolute z-10 w-full mt-1 bg-white border border-gray-200 rounded-md shadow-lg max-h-60 overflow-auto">
+                      {filteredCustomers.length > 0 ? (
+                        filteredCustomers.map((customer) => (
+                          <button
+                            key={customer.id}
+                            type="button"
+                            onClick={() => selectCustomer(customer)}
+                            className="w-full text-left p-3 hover:bg-gray-50 border-b border-gray-100 last:border-b-0"
+                          >
+                            <div>
+                              <p className="font-medium">{customer.name}</p>
+                              <p className="text-sm text-gray-500">{customer.email}</p>
+                            </div>
+                          </button>
+                        ))
+                      ) : (
+                        <div className="p-3 text-gray-500 text-center">
+                          No customers found
+                        </div>
                       )}
-                      {filteredCustomers.map((customer) => (
-                        <button
-                          key={customer.id}
-                          onClick={() => selectCustomer(customer)}
-                          className="w-full px-4 py-3 text-left hover:bg-gray-50"
-                        >
-                          <div className="font-medium text-gray-900">{customer.name}</div>
-                          <div className="text-sm text-gray-500">{customer.email}</div>
-                        </button>
-                      ))}
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+
+        {/* Products Section */}
+        <Card>
+          <CardHeader>
+            <CardTitle>Order Items</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            {/* Add Product Search */}
+            <div className="relative">
+              <Input
+                placeholder="Search products to add..."
+                value={productSearch}
+                onChange={(e) => {
+                  setProductSearch(e.target.value);
+                  setShowProductSearch(true);
+                }}
+                onFocus={() => setShowProductSearch(true)}
+                className="pr-10"
+              />
+              <Search className="absolute right-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+              
+              {showProductSearch && (
+                <div className="absolute z-10 w-full mt-1 bg-white border border-gray-200 rounded-md shadow-lg max-h-60 overflow-auto">
+                  {filteredProducts.length > 0 ? (
+                    filteredProducts.map((product) => (
+                      <button
+                        key={product.id}
+                        type="button"
+                        onClick={() => addProduct(product)}
+                        className="w-full text-left p-3 hover:bg-gray-50 border-b border-gray-100 last:border-b-0"
+                      >
+                        <div className="flex items-center gap-3">
+                          {product.imageUrl && (
+                            <img
+                              src={product.imageUrl}
+                              alt={product.name}
+                              className="w-10 h-10 object-cover rounded"
+                            />
+                          )}
+                          <div className="flex-1">
+                            <p className="font-medium">{product.name}</p>
+                            <p className="text-sm text-gray-500">
+                              {currencySymbol}{product.price.toFixed(2)} • {product.inventory} in stock
+                            </p>
+                          </div>
+                        </div>
+                      </button>
+                    ))
+                  ) : (
+                    <div className="p-3 text-gray-500 text-center">
+                      No products found
                     </div>
                   )}
                 </div>
               )}
             </div>
-          </div>
 
-          {/* Notes Section */}
-          <div className="bg-white shadow rounded-lg">
-            <div className="px-6 py-4 border-b border-gray-200">
-              <h3 className="text-lg font-medium text-gray-900">Notes</h3>
-            </div>
-            <div className="p-6">
-              <textarea
-                placeholder="Add notes about this order..."
-                value={orderForm.notes}
-                onChange={(e) => setOrderForm(prev => ({ ...prev, notes: e.target.value }))}
-                rows={4}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
-              />
-            </div>
-          </div>
-
-          {/* Currency Display */}
-          <div className="bg-white shadow rounded-lg">
-            <div className="px-6 py-4 border-b border-gray-200">
-              <h3 className="text-lg font-medium text-gray-900">Currency</h3>
-            </div>
-            <div className="p-6">
-              <div className="text-sm text-gray-500">
-                {CURRENCIES[currency]?.name} ({currency})
+            {/* Order Items */}
+            {orderForm.items.length > 0 ? (
+              <div className="space-y-3">
+                {orderForm.items.map((item) => (
+                  <div key={item.productId} className="flex items-center gap-4 p-4 border border-gray-200 rounded-lg">
+                    {item.imageUrl && (
+                      <img
+                        src={item.imageUrl}
+                        alt={item.name}
+                        className="w-12 h-12 object-cover rounded"
+                      />
+                    )}
+                    <div className="flex-1">
+                      <p className="font-medium">{item.name}</p>
+                      <p className="text-sm text-gray-500">{currencySymbol}{item.price.toFixed(2)} each</p>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        onClick={() => updateQuantity(item.productId, item.quantity - 1)}
+                      >
+                        -
+                      </Button>
+                      <span className="w-12 text-center">{item.quantity}</span>
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        onClick={() => updateQuantity(item.productId, item.quantity + 1)}
+                      >
+                        +
+                      </Button>
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        onClick={() => removeProduct(item.productId)}
+                        className="text-red-600 hover:text-red-700"
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    </div>
+                    <div className="text-right">
+                      <p className="font-medium">{currencySymbol}{(item.price * item.quantity).toFixed(2)}</p>
+                    </div>
+                  </div>
+                ))}
               </div>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
+            ) : (
+              <div className="text-center py-8 text-gray-500">
+                No items added to the order yet
+              </div>
+            )}
+          </CardContent>
+        </Card>
+
+        {/* Order Summary */}
+        {orderForm.items.length > 0 && (
+          <Card>
+            <CardHeader>
+              <CardTitle>Order Summary</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="shipping">Shipping Amount</Label>
+                  <Input
+                    id="shipping"
+                    type="number"
+                    step="0.01"
+                    value={orderForm.shippingAmount}
+                    onChange={(e) => setOrderForm(prev => ({ ...prev, shippingAmount: parseFloat(e.target.value) || 0 }))}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="discount">Discount Amount</Label>
+                  <Input
+                    id="discount"
+                    type="number"
+                    step="0.01"
+                    value={orderForm.discountAmount}
+                    onChange={(e) => setOrderForm(prev => ({ ...prev, discountAmount: parseFloat(e.target.value) || 0 }))}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="tax">Tax Rate (%)</Label>
+                  <Input
+                    id="tax"
+                    type="number"
+                    step="0.1"
+                    value={orderForm.taxRate}
+                    onChange={(e) => setOrderForm(prev => ({ ...prev, taxRate: parseFloat(e.target.value) || 0 }))}
+                  />
+                </div>
+              </div>
+
+              <Separator />
+
+              <div className="space-y-2">
+                <div className="flex justify-between">
+                  <span>Subtotal:</span>
+                  <span>{currencySymbol}{subtotal.toFixed(2)}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span>Shipping:</span>
+                  <span>{currencySymbol}{orderForm.shippingAmount.toFixed(2)}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span>Discount:</span>
+                  <span>-{currencySymbol}{orderForm.discountAmount.toFixed(2)}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span>Tax ({orderForm.taxRate}%):</span>
+                  <span>{currencySymbol}{taxAmount.toFixed(2)}</span>
+                </div>
+                <Separator />
+                <div className="flex justify-between font-bold text-lg">
+                  <span>Total:</span>
+                  <span>{currencySymbol}{total.toFixed(2)}</span>
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="notes">Order Notes</Label>
+                <Textarea
+                  id="notes"
+                  value={orderForm.notes}
+                  onChange={(e) => setOrderForm(prev => ({ ...prev, notes: e.target.value }))}
+                  placeholder="Add any notes about this order..."
+                  rows={3}
+                />
+              </div>
+            </CardContent>
+          </Card>
+        )}
+      </form>
+    </FormLayout>
   );
 }
