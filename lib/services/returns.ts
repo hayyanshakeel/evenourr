@@ -146,29 +146,38 @@ export class ReturnsService {
     page: number = 1,
     limit: number = 20
   ) {
+    console.log('🔍 [ReturnsService] Starting getReturns');
+    console.log('📊 [ReturnsService] Input parameters:', { filters, page, limit });
+    
     const offset = (page - 1) * limit;
+    console.log('📊 [ReturnsService] Calculated offset:', offset);
     
     const where: any = {};
     
     if (filters.status) {
       where.status = filters.status;
+      console.log('🔍 [ReturnsService] Added status filter:', filters.status);
     }
     
     if (filters.reasonCategory) {
       where.reasonCategory = filters.reasonCategory;
+      console.log('🔍 [ReturnsService] Added reasonCategory filter:', filters.reasonCategory);
     }
     
     if (filters.priority) {
       where.priority = filters.priority;
+      console.log('🔍 [ReturnsService] Added priority filter:', filters.priority);
     }
     
     if (filters.dateFrom || filters.dateTo) {
       where.createdAt = {};
       if (filters.dateFrom) {
         where.createdAt.gte = filters.dateFrom;
+        console.log('🔍 [ReturnsService] Added dateFrom filter:', filters.dateFrom);
       }
       if (filters.dateTo) {
         where.createdAt.lte = filters.dateTo;
+        console.log('🔍 [ReturnsService] Added dateTo filter:', filters.dateTo);
       }
     }
     
@@ -189,41 +198,74 @@ export class ReturnsService {
           },
         },
       ];
+      console.log('🔍 [ReturnsService] Added search filter:', filters.search);
     }
+    
+    console.log('🔍 [ReturnsService] Final where clause:', JSON.stringify(where, null, 2));
+    console.log('📞 [ReturnsService] About to execute Prisma queries...');
 
     const [returns, total] = await Promise.all([
-      (prisma as any).returnRequest.findMany({
-        where,
-        include: {
-          order: {
+      (async () => {
+        console.log('📞 [ReturnsService] Executing findMany query...');
+        try {
+          const result = await (prisma as any).returnRequest.findMany({
+            where,
             include: {
+              order: {
+                include: {
+                  user: {
+                    select: { id: true, email: true, firstName: true, lastName: true }
+                  },
+                  customer: true,
+                },
+              },
               user: {
                 select: { id: true, email: true, firstName: true, lastName: true }
               },
               customer: true,
+              returnItems: {
+                include: {
+                  product: true,
+                  variant: true,
+                },
+              },
+              _count: {
+                select: { returnItems: true, returnUpdates: true },
+              },
             },
-          },
-          user: {
-            select: { id: true, email: true, firstName: true, lastName: true }
-          },
-          customer: true,
-          returnItems: {
-            include: {
-              product: true,
-              variant: true,
-            },
-          },
-          _count: {
-            select: { returnItems: true, returnUpdates: true },
-          },
-        },
-        orderBy: { createdAt: 'desc' },
-        skip: offset,
-        take: limit,
-      }),
-      (prisma as any).returnRequest.count({ where }),
+            orderBy: { createdAt: 'desc' },
+            skip: offset,
+            take: limit,
+          });
+          console.log('✅ [ReturnsService] findMany query completed, found', result.length, 'returns');
+          return result;
+        } catch (error) {
+          console.error('❌ [ReturnsService] findMany query failed:', error);
+          throw error;
+        }
+      })(),
+      (async () => {
+        console.log('📞 [ReturnsService] Executing count query...');
+        try {
+          const result = await (prisma as any).returnRequest.count({ where });
+          console.log('✅ [ReturnsService] count query completed, total:', result);
+          return result;
+        } catch (error) {
+          console.error('❌ [ReturnsService] count query failed:', error);
+          throw error;
+        }
+      })()
     ]);
 
+    console.log('✅ [ReturnsService] getReturns completed successfully');
+    console.log('📊 [ReturnsService] Final results:', {
+      returnsCount: returns.length,
+      totalCount: total,
+      page,
+      limit,
+      hasMore: offset + limit < total
+    });
+    
     return {
       returns,
       pagination: {
@@ -309,13 +351,25 @@ export class ReturnsService {
    * Get return statistics
    */
   static async getReturnStats(dateFrom?: Date, dateTo?: Date) {
+    console.log('📈 [ReturnsService] Starting getReturnStats');
+    console.log('📊 [ReturnsService] Date range:', { dateFrom, dateTo });
+    
     const where: any = {};
     
     if (dateFrom || dateTo) {
       where.createdAt = {};
-      if (dateFrom) where.createdAt.gte = dateFrom;
-      if (dateTo) where.createdAt.lte = dateTo;
+      if (dateFrom) {
+        where.createdAt.gte = dateFrom;
+        console.log('🔍 [ReturnsService] Added dateFrom filter:', dateFrom);
+      }
+      if (dateTo) {
+        where.createdAt.lte = dateTo;
+        console.log('🔍 [ReturnsService] Added dateTo filter:', dateTo);
+      }
     }
+    
+    console.log('🔍 [ReturnsService] Stats where clause:', JSON.stringify(where, null, 2));
+    console.log('📞 [ReturnsService] About to execute stats queries...');
 
     const [
       totalReturns,

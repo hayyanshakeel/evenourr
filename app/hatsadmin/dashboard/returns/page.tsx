@@ -31,6 +31,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
+import CreateReturnForm from '@/components/admin/CreateReturnForm';
 import { 
   Search, 
   Filter, 
@@ -118,10 +119,11 @@ export default function ReturnsPage() {
   const [loading, setLoading] = useState(true);
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
+  const [showCreateDialog, setShowCreateDialog] = useState(false);
   const [filters, setFilters] = useState<Filters>({
-    status: '',
-    reasonCategory: '',
-    priority: '',
+    status: 'all',
+    reasonCategory: 'all',
+    priority: 'all',
     search: '',
     dateFrom: '',
     dateTo: '',
@@ -145,9 +147,9 @@ export default function ReturnsPage() {
       const params = new URLSearchParams({
         page: page.toString(),
         limit: '20',
-        ...(filters.status && { status: filters.status }),
-        ...(filters.reasonCategory && { reasonCategory: filters.reasonCategory }),
-        ...(filters.priority && { priority: filters.priority }),
+        ...(filters.status !== 'all' && { status: filters.status }),
+        ...(filters.reasonCategory !== 'all' && { reasonCategory: filters.reasonCategory }),
+        ...(filters.priority !== 'all' && { priority: filters.priority }),
         ...(filters.search && { search: filters.search }),
         ...(filters.dateFrom && { dateFrom: filters.dateFrom }),
         ...(filters.dateTo && { dateTo: filters.dateTo }),
@@ -335,25 +337,24 @@ export default function ReturnsPage() {
             <RefreshCw className="w-4 h-4 mr-2" />
             Refresh
           </Button>
-          <Dialog>
+          <Dialog open={showCreateDialog} onOpenChange={setShowCreateDialog}>
             <DialogTrigger asChild>
               <Button>
                 <Plus className="w-4 h-4 mr-2" />
                 Create Return
               </Button>
             </DialogTrigger>
-            <DialogContent className="max-w-2xl">
+            <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
               <DialogHeader>
                 <DialogTitle>Create New Return</DialogTitle>
                 <DialogDescription>
                   Create a new return request for a customer order
                 </DialogDescription>
               </DialogHeader>
-              <div className="p-4 text-center text-muted-foreground">
-                <Package className="w-12 h-12 mx-auto mb-2 opacity-50" />
-                <p>Return creation form will be implemented here</p>
-                <p className="text-sm">This will allow creating returns from existing orders</p>
-              </div>
+              <CreateReturnForm onSuccess={() => {
+                setShowCreateDialog(false);
+                fetchReturns();
+              }} />
             </DialogContent>
           </Dialog>
         </div>
@@ -445,7 +446,7 @@ export default function ReturnsPage() {
                   <SelectValue placeholder="All statuses" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">All statuses</SelectItem>
+                  <SelectItem value="all">All statuses</SelectItem>
                   <SelectItem value="requested">Requested</SelectItem>
                   <SelectItem value="approved">Approved</SelectItem>
                   <SelectItem value="rejected">Rejected</SelectItem>
@@ -463,7 +464,7 @@ export default function ReturnsPage() {
                   <SelectValue placeholder="All categories" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">All categories</SelectItem>
+                  <SelectItem value="all">All categories</SelectItem>
                   <SelectItem value="defective">Defective</SelectItem>
                   <SelectItem value="wrong_item">Wrong Item</SelectItem>
                   <SelectItem value="changed_mind">Changed Mind</SelectItem>
@@ -480,7 +481,7 @@ export default function ReturnsPage() {
                   <SelectValue placeholder="All priorities" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">All priorities</SelectItem>
+                  <SelectItem value="all">All priorities</SelectItem>
                   <SelectItem value="low">Low</SelectItem>
                   <SelectItem value="normal">Normal</SelectItem>
                   <SelectItem value="high">High</SelectItem>
@@ -513,9 +514,9 @@ export default function ReturnsPage() {
               variant="outline"
               onClick={() => {
                 setFilters({
-                  status: '',
-                  reasonCategory: '',
-                  priority: '',
+                  status: 'all',
+                  reasonCategory: 'all',
+                  priority: 'all',
                   search: '',
                   dateFrom: '',
                   dateTo: '',
