@@ -75,7 +75,7 @@ export function RecentActivity() {
     }
 
     fetchActivities()
-  }, [isReady, isAuthenticated, makeAuthenticatedRequest])
+  }, [isReady, isAuthenticated])
 
   if (loading) {
     return (

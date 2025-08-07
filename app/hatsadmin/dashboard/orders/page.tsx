@@ -11,6 +11,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { HiFunnel as HiOutlineFilter, HiArrowDownTray as HiOutlineArrowDownTray, HiPlus as HiOutlinePlus, HiShoppingCart as HiOutlineShoppingCart, HiClock as HiOutlineClock, HiTruck as HiOutlineTruck, HiCheckCircle as HiOutlineCheckCircle, HiEye as HiOutlineEye, HiEllipsisHorizontal as HiOutlineEllipsisHorizontal, HiMagnifyingGlass as Search } from "react-icons/hi2"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
 import { AdminOrder } from "@/lib/admin-data"
+import { useAdminAuth } from "@/hooks/useAdminAuth"
 
 interface OrderStats {
   total: number;
@@ -21,6 +22,7 @@ interface OrderStats {
 
 export default function OrdersPage() {
   const router = useRouter()
+  const { makeAuthenticatedRequest, isReady, isAuthenticated } = useAdminAuth()
   const [orders, setOrders] = useState<AdminOrder[]>([])
   const [stats, setStats] = useState<OrderStats | null>(null)
   const [loading, setLoading] = useState(true)
@@ -39,12 +41,11 @@ export default function OrdersPage() {
   }, [searchQuery])
 
   useEffect(() => {
-    // Set filtering state when filters change (except on initial load)
-    if (!loading) {
-      setFiltering(true)
+    // Only fetch when filters actually change and user is authenticated
+    if (isReady && isAuthenticated) {
+      fetchData()
     }
-    fetchData()
-  }, [statusFilter, debouncedSearchQuery])
+  }, [statusFilter, debouncedSearchQuery, isReady, isAuthenticated])
 
   async function fetchData() {
     try {
@@ -61,8 +62,8 @@ export default function OrdersPage() {
       }
       
       const [ordersResponse, statsResponse] = await Promise.all([
-        fetch(`/api/admin/orders?${params}`),
-        fetch('/api/admin/orders/stats')
+        makeAuthenticatedRequest(`/api/admin/orders?${params}`),
+        makeAuthenticatedRequest('/api/admin/orders/stats')
       ])
 
       if (ordersResponse.ok) {

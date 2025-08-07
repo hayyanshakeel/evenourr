@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
+import { useAdminAuth } from "@/hooks/useAdminAuth"
 import { AdminPageLayout } from "@/components/admin/admin-page-layout"
 import { AdminStatsCard } from "@/components/admin/admin-stats-card"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
@@ -39,6 +40,7 @@ interface InventoryItem {
 
 export default function InventoryPage() {
   const router = useRouter()
+  const { makeAuthenticatedRequest, isReady, isAuthenticated } = useAdminAuth()
   const [inventory, setInventory] = useState<InventoryItem[]>([])
   const [stats, setStats] = useState<InventoryStats | null>(null)
   const [loading, setLoading] = useState(true)
@@ -47,21 +49,15 @@ export default function InventoryPage() {
   const [searchTerm, setSearchTerm] = useState("")
 
   useEffect(() => {
-    Promise.all([fetchInventory(), fetchStats()])
-  }, [searchTerm])
+    if (isReady && isAuthenticated) {
+      Promise.all([fetchInventory(), fetchStats()])
+    }
+  }, [isReady, isAuthenticated])
 
   const fetchInventory = async () => {
     try {
-      if (searchTerm) {
-        setSearching(true)
-      } else {
-        setLoading(true)
-      }
-      
-      const params = new URLSearchParams()
-      if (searchTerm) params.append('search', searchTerm)
-      
-      const response = await fetch(`/api/admin/inventory?${params}`)
+      setLoading(true)
+      const response = await makeAuthenticatedRequest(`/api/admin/inventory`)
       if (!response.ok) throw new Error('Failed to fetch inventory')
       
       const data = await response.json()
@@ -71,13 +67,12 @@ export default function InventoryPage() {
       setInventory([])
     } finally {
       setLoading(false)
-      setSearching(false)
     }
   }
 
   const fetchStats = async () => {
     try {
-      const response = await fetch('/api/admin/inventory/stats')
+      const response = await makeAuthenticatedRequest('/api/admin/inventory/stats')
       if (!response.ok) throw new Error('Failed to fetch stats')
       
       const data = await response.json()
@@ -110,7 +105,7 @@ export default function InventoryPage() {
   const handleExport = async () => {
     try {
       setExporting(true)
-      const response = await fetch('/api/admin/inventory/export')
+      const response = await makeAuthenticatedRequest('/api/admin/inventory/export')
       if (response.ok) {
         const blob = await response.blob()
         const url = window.URL.createObjectURL(blob)
@@ -133,7 +128,8 @@ export default function InventoryPage() {
     <>
       <AdminStatsCard
         title="Total Items"
-        value={stats.totalItems}
+        value={stats.totalItems.toString()}
+        subtitle="All items"
         icon={Package}
         color="text-blue-500"
         bgColor="bg-blue-50"
@@ -141,7 +137,8 @@ export default function InventoryPage() {
       />
       <AdminStatsCard
         title="Low Stock Items"
-        value={stats.lowStock}
+        value={stats.lowStock.toString()}
+        subtitle="Need attention"
         icon={AlertTriangle}
         color="text-yellow-500"
         bgColor="bg-yellow-50"
@@ -149,7 +146,8 @@ export default function InventoryPage() {
       />
       <AdminStatsCard
         title="Out of Stock"
-        value={stats.outOfStock}
+        value={stats.outOfStock.toString()}
+        subtitle="No inventory"
         icon={AlertTriangle}
         color="text-red-500"
         bgColor="bg-red-50"
@@ -158,6 +156,7 @@ export default function InventoryPage() {
       <AdminStatsCard
         title="Total Value"
         value={formatPrice(stats.totalValue)}
+        subtitle="Inventory value"
         icon={DollarSign}
         color="text-green-500"
         bgColor="bg-green-50"

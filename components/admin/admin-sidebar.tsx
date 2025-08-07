@@ -1,6 +1,7 @@
 "use client"
 
 import { useEffect, useState } from "react"
+import { useAdminAuth } from "@/hooks/useAdminAuth"
 import {
   BarChart3,
   Box,
@@ -33,34 +34,52 @@ interface SidebarData {
 
 export function AppSidebar() {
   const pathname = usePathname()
+  const { makeAuthenticatedRequest, isReady, isAuthenticated, token } = useAdminAuth()
   const [sidebarData, setSidebarData] = useState<SidebarData>({ pendingOrders: 0, lowStockCount: 0 })
 
   useEffect(() => {
+    let mounted = true;
+    
+    // Fetch sidebar data with proper error handling
     const fetchSidebarData = async () => {
+      if (!isReady || !isAuthenticated || !mounted) return;
+      
       try {
         // Fetch pending orders count
-        const ordersResponse = await fetch('/api/admin/orders/stats')
-        const ordersData = await ordersResponse.json()
+        const ordersResponse = await makeAuthenticatedRequest('/api/admin/orders/stats')
+        const ordersData = ordersResponse.ok ? await ordersResponse.json() : {}
         
         // Fetch low stock count
-        const inventoryResponse = await fetch('/api/admin/inventory/stats')
-        const inventoryData = await inventoryResponse.json()
+        const inventoryResponse = await makeAuthenticatedRequest('/api/admin/inventory/stats')
+        const inventoryData = inventoryResponse.ok ? await inventoryResponse.json() : {}
         
-        setSidebarData({
-          pendingOrders: ordersData.pending || 0,
-          lowStockCount: inventoryData.lowStock || 0,
-        })
+        if (mounted) {
+          setSidebarData({
+            pendingOrders: ordersData.pending || 0,
+            lowStockCount: inventoryData.lowStock || 0,
+          })
+        }
       } catch (error) {
-        console.error('Failed to fetch sidebar data:', error)
+        if (mounted) {
+          console.error('Error fetching sidebar data:', error)
+        }
       }
     }
 
-    fetchSidebarData()
-    // Refresh every 30 seconds
-    const interval = setInterval(fetchSidebarData, 30000)
+    // Only fetch when authenticated and ready
+    if (isReady && isAuthenticated && mounted) {
+      fetchSidebarData()
+    }
+    
+    // Poll every 5 minutes only when authenticated
+    const interval = setInterval(() => {
+      if (isReady && isAuthenticated && mounted) {
+        fetchSidebarData()
+      }
+    }, 300000) // 5 minutes
     
     return () => clearInterval(interval)
-  }, [])
+  }, [isReady, isAuthenticated])
 
   const navigationItems = [
     {

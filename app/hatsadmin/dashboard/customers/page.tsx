@@ -20,6 +20,7 @@ import {
   Plus
 } from "lucide-react"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
+import { useAdminAuth } from "@/hooks/useAdminAuth"
 
 interface Customer {
   id: number;
@@ -42,6 +43,7 @@ interface CustomerStats {
 
 export default function CustomersPage() {
   const router = useRouter()
+  const { makeAuthenticatedRequest } = useAdminAuth()
   const [customers, setCustomers] = useState<Customer[]>([])
   const [stats, setStats] = useState<CustomerStats | null>(null)
   const [loading, setLoading] = useState(true)
@@ -76,8 +78,8 @@ export default function CustomersPage() {
       }
       
       const [customersResponse, statsResponse] = await Promise.all([
-        fetch(`/api/admin/customers?${params}`),
-        fetch('/api/admin/customers/stats')
+        makeAuthenticatedRequest(`/api/admin/customers?${params}`),
+        makeAuthenticatedRequest('/api/admin/customers/stats')
       ])
 
       if (customersResponse.ok) {
@@ -120,9 +122,32 @@ export default function CustomersPage() {
     router.push(`/hatsadmin/dashboard/customers/${id}`)
   }
 
+  const handleDeleteCustomer = async (id: number) => {
+    if (!confirm('Are you sure you want to delete this customer?')) {
+      return
+    }
+
+    try {
+      const response = await makeAuthenticatedRequest(`/api/admin/customers/${id}`, {
+        method: 'DELETE',
+      })
+
+      if (response.ok) {
+        // Refresh the data
+        await fetchData()
+      } else {
+        console.error('Failed to delete customer:', response.status)
+        alert('Failed to delete customer')
+      }
+    } catch (error) {
+      console.error('Failed to delete customer:', error)
+      alert('Failed to delete customer')
+    }
+  }
+
   const handleExport = async () => {
     try {
-      const response = await fetch('/api/admin/customers/export')
+      const response = await makeAuthenticatedRequest('/api/admin/customers/export')
       if (response.ok) {
         const blob = await response.blob()
         const url = window.URL.createObjectURL(blob)
@@ -287,7 +312,7 @@ export default function CustomersPage() {
                             <Mail className="h-4 w-4 mr-2" />
                             Send Email
                           </DropdownMenuItem>
-                          <DropdownMenuItem className="text-red-600">
+                          <DropdownMenuItem className="text-red-600" onClick={() => handleDeleteCustomer(customer.id)}>
                             <Trash2 className="h-4 w-4 mr-2" />
                             Delete
                           </DropdownMenuItem>

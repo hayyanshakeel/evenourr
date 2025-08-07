@@ -7,33 +7,35 @@ import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { ArrowLeft, Package, User, CreditCard, Truck, Calendar, DollarSign } from "lucide-react"
 import { AdminOrder } from "@/lib/admin-data"
+import { useAdminAuth } from "@/hooks/useAdminAuth"
 
 export default function OrderDetailsPage() {
   const params = useParams()
   const router = useRouter()
+  const { makeAuthenticatedRequest, isReady, isAuthenticated } = useAdminAuth()
   const orderId = parseInt(params.id as string)
   const [order, setOrder] = useState<AdminOrder | null>(null)
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    async function fetchOrder() {
-      try {
-        const response = await fetch(`/api/admin/orders/${orderId}`)
-        if (response.ok) {
-          const data = await response.json()
-          setOrder(data)
-        }
-      } catch (error) {
-        console.error('Failed to fetch order:', error)
-      } finally {
-        setLoading(false)
-      }
-    }
-
-    if (orderId) {
+    if (isReady && isAuthenticated && orderId) {
       fetchOrder()
     }
-  }, [orderId])
+  }, [isReady, isAuthenticated, orderId])
+
+  async function fetchOrder() {
+    try {
+      const response = await makeAuthenticatedRequest(`/api/admin/orders/${orderId}`)
+      if (response.ok) {
+        const data = await response.json()
+        setOrder(data)
+      }
+    } catch (error) {
+      console.error('Failed to fetch order:', error)
+    } finally {
+      setLoading(false)
+    }
+  }
 
   const statusColors: { [key: string]: string } = {
     pending: "bg-yellow-100 text-yellow-800",

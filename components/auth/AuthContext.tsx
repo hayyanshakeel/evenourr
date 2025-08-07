@@ -35,12 +35,54 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, (user) => {
+    let refreshInterval: NodeJS.Timeout | null = null;
+
+    const unsubscribe = onAuthStateChanged(auth, async (user) => {
       setUser(user);
       setLoading(false);
+      
+      // Clear any existing refresh interval
+      if (refreshInterval) {
+        clearInterval(refreshInterval);
+        refreshInterval = null;
+      }
+      
+      // Store or clear the Firebase token in localStorage
+      if (user) {
+        try {
+          const token = await user.getIdToken();
+          localStorage.setItem('firebaseToken', token);
+          console.log('✅ Firebase token stored in localStorage');
+          
+          // Set up token refresh
+          const refreshToken = async () => {
+            try {
+              const newToken = await user.getIdToken(true); // Force refresh
+              localStorage.setItem('firebaseToken', newToken);
+              console.log('✅ Firebase token refreshed');
+            } catch (error) {
+              console.error('Token refresh failed:', error);
+            }
+          };
+          
+          // Refresh token every 30 minutes (Firebase tokens expire after 1 hour)
+          refreshInterval = setInterval(refreshToken, 30 * 60 * 1000);
+          
+        } catch (error) {
+          console.error('Failed to get initial token:', error);
+        }
+      } else {
+        localStorage.removeItem('firebaseToken');
+        console.log('✅ Firebase token removed from localStorage');
+      }
     });
 
-    return unsubscribe;
+    return () => {
+      unsubscribe();
+      if (refreshInterval) {
+        clearInterval(refreshInterval);
+      }
+    };
   }, []);
 
   const signIn = async (email: string, password: string) => {
@@ -78,7 +120,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const logout = async () => {
     try {
       await signOut(auth);
-      // Clear any local storage or session storage
+      // Clear the Firebase token specifically
+      localStorage.removeItem('firebaseToken');
+      // Clear any other local storage or session storage
       localStorage.clear();
       sessionStorage.clear();
     } catch (error) {

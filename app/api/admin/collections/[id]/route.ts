@@ -1,8 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { verifyFirebaseUser } from '@/lib/firebase-verify';
-import { DashboardService } from '@/lib/admin-data';
+import { CollectionsService } from '@/lib/admin-data';
 
-export async function GET(request: NextRequest) {
+export async function DELETE(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
     const result = await verifyFirebaseUser(request);
     if ('error' in result) {
@@ -12,10 +12,13 @@ export async function GET(request: NextRequest) {
     if (user.role !== 'admin') {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
     }
-    const metrics = await DashboardService.getMetrics();
-    return NextResponse.json(metrics);
+
+    const { id } = await params;
+    await CollectionsService.delete(parseInt(id));
+    
+    return NextResponse.json({ success: true });
   } catch (error) {
-    console.error('Failed to fetch dashboard metrics:', error);
-    return NextResponse.json({ error: 'Failed to fetch dashboard metrics' }, { status: 500 });
+    console.error('Failed to delete collection:', error);
+    return NextResponse.json({ error: 'Failed to delete collection' }, { status: 500 });
   }
 }

@@ -1,281 +1,329 @@
 "use client"
 
-import { MobileHeader } from "@/components/admin/mobile-header"
+import { useState, useEffect } from "react"
+import { useRouter } from "next/navigation"
+import { AdminPageLayout } from "@/components/admin/admin-page-layout"
+import { AdminStatsCard } from "@/components/admin/admin-stats-card"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
-import { Input } from "@/components/ui/input"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { 
-  Filter, 
-  Download, 
-  Plus, 
   Layers, 
   TrendingUp, 
   Package, 
-  Eye, 
-  Search,
+  Eye,
   MoreHorizontal,
   Edit,
   Trash2,
-  Calendar
+  Plus,
+  Filter,
+  Download
 } from "lucide-react"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
+import { useAdminAuth } from "@/hooks/useAdminAuth"
 
-const stats = [
-  {
-    title: "Total Collections",
-    value: "24",
-    change: "+3 this month",
-    icon: Layers,
-    color: "text-blue-500",
-    bgColor: "bg-blue-50",
-    borderColor: "border-blue-200",
-  },
-  {
-    title: "Active Collections",
-    value: "18",
-    change: "75% active",
-    icon: TrendingUp,
-    color: "text-green-500",
-    bgColor: "bg-green-50",
-    borderColor: "border-green-200",
-  },
-  {
-    title: "Total Products",
-    value: "2,847",
-    change: "In collections",
-    icon: Package,
-    color: "text-purple-500",
-    bgColor: "bg-purple-50",
-    borderColor: "border-purple-200",
-  },
-  {
-    title: "Views This Month",
-    value: "45,623",
-    change: "+12% vs last month",
-    icon: Eye,
-    color: "text-orange-500",
-    bgColor: "bg-orange-50",
-    borderColor: "border-orange-200",
-  },
-]
-
-const collections = [
-  {
-    id: "COL-001",
-    name: "Summer Collection",
-    description: "Light and breathable caps for summer",
-    products: 45,
-    status: "active",
-    visibility: "published",
-    created: "2024-01-15",
-    sales: 234,
-  },
-  {
-    id: "COL-002",
-    name: "Winter Essentials",
-    description: "Warm beanies and winter hats",
-    products: 28,
-    status: "active",
-    visibility: "published",
-    created: "2024-01-10",
-    sales: 156,
-  },
-  {
-    id: "COL-003",
-    name: "Premium Line",
-    description: "High-end luxury caps and accessories",
-    products: 12,
-    status: "active",
-    visibility: "published",
-    created: "2024-01-05",
-    sales: 89,
-  },
-  {
-    id: "COL-004",
-    name: "Sports Collection",
-    description: "Athletic caps for sports enthusiasts",
-    products: 36,
-    status: "draft",
-    visibility: "hidden",
-    created: "2024-01-20",
-    sales: 0,
-  },
-]
-
-const statusColors = {
-  active: "bg-green-100 text-green-800",
-  draft: "bg-yellow-100 text-yellow-800",
-  archived: "bg-gray-100 text-gray-800",
+interface Collection {
+  id: number;
+  title: string;
+  handle: string;
+  description?: string;
+  createdAt: string;
+  productCount: number;
 }
 
-const visibilityColors = {
-  published: "bg-blue-100 text-blue-800",
-  hidden: "bg-gray-100 text-gray-800",
-  scheduled: "bg-purple-100 text-purple-800",
-}
-
-function CollectionsActions() {
-  return (
-    <div className="flex items-center gap-2 lg:gap-3">
-      <Button
-        variant="outline"
-        size="sm"
-        className="bg-white border-gray-200 text-gray-900 hover:bg-gray-50"
-      >
-        <Filter className="h-4 w-4 mr-2 text-purple-500" />
-        Filter
-      </Button>
-      <Button
-        variant="outline"
-        size="sm"
-        className="bg-white border-gray-200 text-gray-900 hover:bg-gray-50"
-      >
-        <Download className="h-4 w-4 mr-2 text-green-500" />
-        Export
-      </Button>
-      <Button size="sm" className="bg-blue-600 hover:bg-blue-700 text-white">
-        <Plus className="h-4 w-4 mr-2" />
-        Create Collection
-      </Button>
-    </div>
-  )
+interface CollectionStats {
+  totalCollections: number;
+  activeCollections: number;
+  totalProducts: number;
+  averageProductsPerCollection: number;
 }
 
 export default function CollectionsPage() {
+  const router = useRouter()
+  const { makeAuthenticatedRequest, isReady, isAuthenticated } = useAdminAuth()
+  const [collections, setCollections] = useState<Collection[]>([])
+  const [stats, setStats] = useState<CollectionStats | null>(null)
+  const [loading, setLoading] = useState(true)
+  const [filtering, setFiltering] = useState(false)
+  const [searchQuery, setSearchQuery] = useState("")
+  const [debouncedSearchQuery, setDebouncedSearchQuery] = useState("")
+
+  // Debounce search query
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedSearchQuery(searchQuery)
+    }, 300)
+
+    return () => clearTimeout(timer)
+  }, [searchQuery])
+
+  useEffect(() => {
+    if (!isReady) return; // Don't proceed if auth is not ready
+    
+    if (!loading) {
+      setFiltering(true)
+    }
+    fetchData()
+  }, [debouncedSearchQuery, isReady, isAuthenticated])
+
+  async function fetchData() {
+    if (!isReady || !isAuthenticated) {
+      return;
+    }
+    
+    try {
+      if (!loading) setFiltering(true)
+      if (loading) setLoading(true)
+      
+      const params = new URLSearchParams()
+      if (debouncedSearchQuery.trim()) {
+        params.append('search', debouncedSearchQuery.trim())
+      }
+      
+      const [collectionsResponse, statsResponse] = await Promise.all([
+        makeAuthenticatedRequest(`/api/admin/collections?${params}`),
+        makeAuthenticatedRequest('/api/admin/collections/stats')
+      ])
+
+      if (collectionsResponse.ok) {
+        const collectionsData = await collectionsResponse.json()
+        const collectionsArray = collectionsData?.collections || collectionsData || []
+        setCollections(Array.isArray(collectionsArray) ? collectionsArray : [])
+      } else {
+        console.error('Failed to fetch collections:', collectionsResponse.status, await collectionsResponse.text())
+        setCollections([])
+      }
+
+      if (statsResponse.ok) {
+        const statsData = await statsResponse.json()
+        setStats(statsData)
+      } else {
+        console.error('Failed to fetch stats:', statsResponse.status, await statsResponse.text())
+        setStats(null)
+      }
+    } catch (error) {
+      console.error('Failed to fetch collections:', error)
+      setCollections([])
+      setStats(null)
+    } finally {
+      setLoading(false)
+      setFiltering(false)
+    }
+  }
+
+  const handleDelete = async (id: number) => {
+    if (!confirm('Are you sure you want to delete this collection?')) return;
+    
+    try {
+      const response = await makeAuthenticatedRequest(`/api/admin/collections/${id}`, {
+        method: 'DELETE'
+      });
+      
+      if (response.ok) {
+        await fetchData();
+      } else {
+        console.error('Failed to delete collection');
+      }
+    } catch (error) {
+      console.error('Error deleting collection:', error);
+    }
+  };
+
+  const handleEdit = (id: number) => {
+    router.push(`/hatsadmin/dashboard/collections/${id}/edit`);
+  };
+
+  const handleCreate = () => {
+    router.push('/hatsadmin/dashboard/collections/new');
+  };
+
+  const handleExport = async () => {
+    try {
+      const response = await makeAuthenticatedRequest('/api/admin/collections/export');
+      if (response.ok) {
+        const blob = await response.blob();
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = 'collections.csv';
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+      }
+    } catch (error) {
+      console.error('Failed to export collections:', error);
+    }
+  };
+
+  const getStatusColor = (status: string) => {
+    switch (status.toLowerCase()) {
+      case 'active': return 'bg-green-100 text-green-800';
+      case 'draft': return 'bg-yellow-100 text-yellow-800';
+      case 'archived': return 'bg-gray-100 text-gray-800';
+      default: return 'bg-gray-100 text-gray-800';
+    }
+  };
+
+  const getVisibilityColor = (visibility: string) => {
+    switch (visibility.toLowerCase()) {
+      case 'published': return 'bg-blue-100 text-blue-800';
+      case 'hidden': return 'bg-gray-100 text-gray-800';
+      case 'scheduled': return 'bg-purple-100 text-purple-800';
+      default: return 'bg-gray-100 text-gray-800';
+    }
+  };
+
   return (
-    <div className="flex flex-col h-full w-full overflow-hidden">
-      <MobileHeader 
-        title="Collections" 
-        subtitle="Organize products into themed collections" 
-        actions={<CollectionsActions />} 
-      />
-
-      <main className="flex-1 overflow-auto">
-        <div className="p-4 lg:p-6 xl:p-8 space-y-6 lg:space-y-8">
-          
-          {/* Stats Grid */}
-          <div className="grid gap-4 md:gap-6 lg:gap-8 grid-cols-1 sm:grid-cols-2 lg:grid-cols-4">
-            {stats.map((stat, index) => {
-              const IconComponent = stat.icon
-              return (
-                <Card
-                  key={stat.title}
-                  className={`relative overflow-hidden transition-all duration-300 hover:shadow-lg hover:-translate-y-1 border ${stat.borderColor}`}
-                >
-                  <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-3">
-                    <CardTitle className="text-sm font-medium text-gray-600">
-                      {stat.title}
-                    </CardTitle>
-                    <div className={`p-2 rounded-lg ${stat.bgColor}`}>
-                      <IconComponent className={`h-5 w-5 ${stat.color}`} />
-                    </div>
-                  </CardHeader>
-                  <CardContent className="space-y-2">
-                    <div className="text-3xl font-bold text-gray-900">
-                      {stat.value}
-                    </div>
-                    <p className="text-xs text-gray-500">
-                      {stat.change}
-                    </p>
-                  </CardContent>
-                </Card>
-              )
-            })}
-          </div>
-
-          {/* Search and Filters */}
-          <div className="flex flex-col lg:flex-row gap-4 lg:items-center lg:justify-between">
-            <div className="relative">
-              <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
-              <Input placeholder="Search collections..." className="w-full lg:w-80 pl-10" />
+    <AdminPageLayout
+      title="Collections" 
+      subtitle="Organize products into themed collections"
+      searchPlaceholder="Search collections..."
+      searchValue={searchQuery}
+      onSearchChange={setSearchQuery}
+      showFilters={true}
+      showExport={true}
+      exportText="Export"
+      onExport={handleExport}
+      addButtonText="Create Collection"
+      onAdd={handleCreate}
+      loading={loading}
+      statsCards={
+        <>
+          <AdminStatsCard
+            title="Total Collections"
+            value={stats?.totalCollections?.toString() || "0"}
+            subtitle="Total collections"
+            icon={Layers}
+            color="text-blue-500"
+            bgColor="bg-blue-50"
+            borderColor="border-blue-200"
+          />
+          <AdminStatsCard
+            title="Active Collections"
+            value={stats?.activeCollections?.toString() || "0"}
+            subtitle="Active collections"
+            icon={TrendingUp}
+            color="text-green-500"
+            bgColor="bg-green-50"
+            borderColor="border-green-200"
+          />
+          <AdminStatsCard
+            title="Total Products"
+            value={stats?.totalProducts?.toString() || "0"}
+            subtitle="In collections"
+            icon={Package}
+            color="text-purple-500"
+            bgColor="bg-purple-50"
+            borderColor="border-purple-200"
+          />
+          <AdminStatsCard
+            title="Avg Products"
+            value={stats?.averageProductsPerCollection?.toString() || "0"}
+            subtitle="Per collection"
+            icon={Eye}
+            color="text-orange-500"
+            bgColor="bg-orange-50"
+            borderColor="border-orange-200"
+          />
+        </>
+      }
+    >
+      {/* Collections Table */}
+      <Card className="border shadow-sm">
+        <CardHeader>
+          <CardTitle>All Collections</CardTitle>
+        </CardHeader>
+        <CardContent>
+          {filtering && (
+            <div className="flex items-center justify-center py-4">
+              <div className="animate-pulse">Filtering collections...</div>
             </div>
-          </div>
-
-          {/* Collections Table */}
-          <Card className="border shadow-sm">
-            <CardHeader>
-              <CardTitle>All Collections</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Collection</TableHead>
-                    <TableHead>Products</TableHead>
-                    <TableHead>Status</TableHead>
-                    <TableHead>Visibility</TableHead>
-                    <TableHead>Sales</TableHead>
-                    <TableHead>Created</TableHead>
-                    <TableHead className="text-right">Actions</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {collections.map((collection) => (
-                    <TableRow key={collection.id} className="hover:bg-gray-50">
-                      <TableCell>
-                        <div className="flex items-center space-x-3">
-                          <div className="h-10 w-10 rounded-md bg-gray-100 flex items-center justify-center">
-                            <Layers className="h-5 w-5 text-gray-500" />
-                          </div>
-                          <div>
-                            <div className="font-medium">{collection.name}</div>
+          )}
+          {!filtering && collections.length === 0 ? (
+            <div className="text-center py-8">
+              <Layers className="mx-auto h-12 w-12 text-gray-400" />
+              <h3 className="mt-2 text-sm font-semibold text-gray-900">No collections</h3>
+              <p className="mt-1 text-sm text-gray-500">Get started by creating a new collection.</p>
+              <div className="mt-6">
+                <Button onClick={handleCreate}>
+                  <Plus className="h-4 w-4 mr-2" />
+                  Create Collection
+                </Button>
+              </div>
+            </div>
+          ) : (
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Collection</TableHead>
+                  <TableHead>Products</TableHead>
+                  <TableHead>Created</TableHead>
+                  <TableHead className="text-right">Actions</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {collections.map((collection) => (
+                  <TableRow key={collection.id} className="hover:bg-gray-50">
+                    <TableCell>
+                      <div className="flex items-center space-x-3">
+                        <div className="h-10 w-10 rounded-md bg-gray-100 flex items-center justify-center">
+                          <Layers className="h-5 w-5 text-gray-500" />
+                        </div>
+                        <div>
+                          <div className="font-medium">{collection.title}</div>
+                          {collection.description && (
                             <div className="text-sm text-gray-500">{collection.description}</div>
-                          </div>
+                          )}
                         </div>
-                      </TableCell>
-                      <TableCell>
-                        <span className="inline-flex items-center px-2 py-1 rounded-full text-xs bg-gray-100 text-gray-700">
-                          {collection.products} products
-                        </span>
-                      </TableCell>
-                      <TableCell>
-                        <Badge className={statusColors[collection.status as keyof typeof statusColors]}>
-                          {collection.status.charAt(0).toUpperCase() + collection.status.slice(1)}
-                        </Badge>
-                      </TableCell>
-                      <TableCell>
-                        <Badge className={visibilityColors[collection.visibility as keyof typeof visibilityColors]}>
-                          {collection.visibility.charAt(0).toUpperCase() + collection.visibility.slice(1)}
-                        </Badge>
-                      </TableCell>
-                      <TableCell className="font-medium">{collection.sales}</TableCell>
-                      <TableCell className="text-sm text-gray-500">
-                        {new Date(collection.created).toLocaleDateString()}
-                      </TableCell>
-                      <TableCell className="text-right">
-                        <div className="flex items-center justify-end gap-2">
-                          <Button variant="ghost" size="sm">
-                            <Edit className="h-4 w-4" />
-                          </Button>
-                          <DropdownMenu>
-                            <DropdownMenuTrigger asChild>
-                              <Button variant="ghost" size="sm">
-                                <MoreHorizontal className="h-4 w-4" />
-                              </Button>
-                            </DropdownMenuTrigger>
-                            <DropdownMenuContent align="end">
-                              <DropdownMenuItem>View collection</DropdownMenuItem>
-                              <DropdownMenuItem>Edit products</DropdownMenuItem>
-                              <DropdownMenuItem>Analytics</DropdownMenuItem>
-                              <DropdownMenuItem>Duplicate</DropdownMenuItem>
-                              <DropdownMenuItem className="text-red-600">
-                                <Trash2 className="h-4 w-4 mr-2" />
-                                Delete
-                              </DropdownMenuItem>
-                            </DropdownMenuContent>
-                          </DropdownMenu>
-                        </div>
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </CardContent>
-          </Card>
-        </div>
-      </main>
-    </div>
+                      </div>
+                    </TableCell>
+                    <TableCell>
+                      <span className="inline-flex items-center px-2 py-1 rounded-full text-xs bg-gray-100 text-gray-700">
+                        {collection.productCount || 0} products
+                      </span>
+                    </TableCell>
+                    <TableCell className="text-sm text-gray-500">
+                      {new Date(collection.createdAt).toLocaleDateString()}
+                    </TableCell>
+                    <TableCell className="text-right">
+                      <div className="flex items-center justify-end gap-2">
+                        <Button 
+                          variant="ghost" 
+                          size="sm"
+                          onClick={() => handleEdit(collection.id)}
+                        >
+                          <Edit className="h-4 w-4" />
+                        </Button>
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <Button variant="ghost" size="sm">
+                              <MoreHorizontal className="h-4 w-4" />
+                            </Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="end">
+                            <DropdownMenuItem onClick={() => handleEdit(collection.id)}>
+                              Edit collection
+                            </DropdownMenuItem>
+                            <DropdownMenuItem 
+                              className="text-red-600"
+                              onClick={() => handleDelete(collection.id)}
+                            >
+                              <Trash2 className="h-4 w-4 mr-2" />
+                              Delete
+                            </DropdownMenuItem>
+                          </DropdownMenuContent>
+                        </DropdownMenu>
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          )}
+        </CardContent>
+      </Card>
+    </AdminPageLayout>
   )
 }

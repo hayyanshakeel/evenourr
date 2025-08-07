@@ -1,6 +1,7 @@
 "use client"
 
 import { useEffect, useState } from "react"
+import { useAdminAuth } from "@/hooks/useAdminAuth"
 import {
   BarChart3,
   Box,
@@ -49,6 +50,7 @@ export function ResponsiveSidebar({
   setIsCollapsed 
 }: ResponsiveSidebarProps) {
   const pathname = usePathname()
+  const { makeAuthenticatedRequest, isReady, isAuthenticated } = useAdminAuth()
   const [sidebarData, setSidebarData] = useState<SidebarData>({ pendingOrders: 0, lowStockCount: 0 })
   const [mounted, setMounted] = useState(false)
 
@@ -57,32 +59,43 @@ export function ResponsiveSidebar({
   }, [])
 
   useEffect(() => {
+    let isActive = true;
+    
     const fetchSidebarData = async () => {
+      if (!isReady || !isAuthenticated || !isActive) return;
+      
       try {
         // Fetch pending orders count
-        const ordersResponse = await fetch('/api/admin/orders/stats')
-        const ordersData = await ordersResponse.json()
+        const ordersResponse = await makeAuthenticatedRequest('/api/admin/orders/stats')
+        const ordersData = ordersResponse.ok ? await ordersResponse.json() : {}
         
         // Fetch low stock count
-        const inventoryResponse = await fetch('/api/admin/inventory/stats')
-        const inventoryData = await inventoryResponse.json()
+        const inventoryResponse = await makeAuthenticatedRequest('/api/admin/inventory/stats')
+        const inventoryData = inventoryResponse.ok ? await inventoryResponse.json() : {}
         
-        setSidebarData({
-          pendingOrders: ordersData.pending || 0,
-          lowStockCount: inventoryData.lowStock || 0,
-        })
+        if (isActive) {
+          setSidebarData({
+            pendingOrders: ordersData.pending || 0,
+            lowStockCount: inventoryData.lowStock || 0,
+          })
+        }
       } catch (error) {
-        console.error('Failed to fetch sidebar data:', error)
+        if (isActive) {
+          console.error('Failed to fetch sidebar data:', error)
+        }
       }
     }
 
-    if (mounted) {
+    if (mounted && isReady && isAuthenticated) {
       fetchSidebarData()
-      // Refresh every 30 seconds
-      const interval = setInterval(fetchSidebarData, 30000)
-      return () => clearInterval(interval)
+      // Refresh every 5 minutes
+      const interval = setInterval(fetchSidebarData, 300000)
+      return () => {
+        isActive = false
+        clearInterval(interval)
+      }
     }
-  }, [mounted])
+  }, [mounted, isReady, isAuthenticated])
 
   const navigationItems = [
     {

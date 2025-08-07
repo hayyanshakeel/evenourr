@@ -174,6 +174,15 @@ export const ProductsService = {
     }
   },
 
+  delete: async (id: number) => {
+    try {
+      await prisma.product.delete({ where: { id } });
+    } catch (error) {
+      console.error('Error in ProductsService.delete:', error);
+      throw new Error(`Failed to delete product: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    }
+  },
+
   getStats: async () => {
     try {
       const [total, active, lowStock, draft] = await Promise.all([
@@ -402,6 +411,15 @@ export const CollectionsService = {
     } catch (error) {
       console.error('Error in CollectionsService.getById:', error);
       throw new Error(`Failed to fetch collection: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    }
+  },
+
+  delete: async (id: number) => {
+    try {
+      await prisma.collection.delete({ where: { id } });
+    } catch (error) {
+      console.error('Error in CollectionsService.delete:', error);
+      throw new Error(`Failed to delete collection: ${error instanceof Error ? error.message : 'Unknown error'}`);
     }
   },
 
@@ -724,6 +742,44 @@ export const CustomersService = {
     } catch (error) {
       console.error('Error in CustomersService.getById:', error);
       throw new Error(`Failed to fetch customer: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    }
+  },
+
+  create: async (data: { name: string; email: string; phone?: string | null }) => {
+    try {
+      return await prisma.customer.create({
+        data: {
+          name: data.name,
+          email: data.email,
+        },
+      });
+    } catch (error) {
+      console.error('Error in CustomersService.create:', error);
+      throw new Error(`Failed to create customer: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    }
+  },
+
+  update: async (id: number, data: { name?: string; email?: string; phone?: string | null }) => {
+    try {
+      return await prisma.customer.update({
+        where: { id },
+        data: {
+          ...(data.name && { name: data.name }),
+          ...(data.email && { email: data.email }),
+        },
+      });
+    } catch (error) {
+      console.error('Error in CustomersService.update:', error);
+      throw new Error(`Failed to update customer: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    }
+  },
+
+  delete: async (id: number) => {
+    try {
+      await prisma.customer.delete({ where: { id } });
+    } catch (error) {
+      console.error('Error in CustomersService.delete:', error);
+      throw new Error(`Failed to delete customer: ${error instanceof Error ? error.message : 'Unknown error'}`);
     }
   },
 

@@ -10,6 +10,8 @@ export async function GET(request: NextRequest) {
 
   const user = result.user;
   
+  // For auth/me endpoint, we just need to verify the user is authenticated
+  // The actual token will be handled by the Authorization header
   return NextResponse.json({
     success: true,
     user: {
@@ -21,5 +23,6 @@ export async function GET(request: NextRequest) {
       isActive: user.isActive,
       emailVerified: user.emailVerified,
     },
+    authenticated: true,
   });
 }

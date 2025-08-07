@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
+import { useAdminAuth } from '@/hooks/useAdminAuth';
 import { FormLayout } from '@/components/admin/form-layout';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -65,6 +66,7 @@ const COUNTRIES = [
 
 export default function NewCustomerPage() {
   const router = useRouter();
+  const { makeAuthenticatedRequest } = useAdminAuth();
   const [loading, setLoading] = useState(false);
   const [showAddressForm, setShowAddressForm] = useState(false);
   const [newTag, setNewTag] = useState('');
@@ -104,21 +106,25 @@ export default function NewCustomerPage() {
     setLoading(true);
 
     try {
-      const response = await fetch('/api/admin/customers', {
+      const customerData = {
+        name: `${customerForm.firstName} ${customerForm.lastName}`.trim(),
+        email: customerForm.email,
+        phone: customerForm.phone || null,
+      };
+      
+      const response = await makeAuthenticatedRequest('/api/admin/customers', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(customerForm),
+        body: JSON.stringify(customerData),
       });
 
       if (response.ok) {
         router.push('/hatsadmin/dashboard/customers');
       } else {
-        console.error('Failed to create customer');
+        throw new Error('Failed to create customer');
       }
     } catch (error) {
       console.error('Error creating customer:', error);
+      throw error;
     } finally {
       setLoading(false);
     }

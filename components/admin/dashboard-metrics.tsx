@@ -49,7 +49,7 @@ export function DashboardMetrics() {
     }
 
     fetchMetrics()
-  }, [isReady, isAuthenticated, makeAuthenticatedRequest])
+  }, [isReady, isAuthenticated])
 
   if (loading || !metrics) {
     return (
