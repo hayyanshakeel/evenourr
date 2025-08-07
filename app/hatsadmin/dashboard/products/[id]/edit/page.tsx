@@ -4,9 +4,11 @@ import { useEffect, useState } from 'react';
 import { useParams } from 'next/navigation';
 import Header from '@/components/admin/header';
 import SimpleProductForm from '@/components/admin/forms/simple-product-form';
+import { useAdminAuth } from '@/hooks/useAdminAuth';
 
 export default function EditProductPage() {
   const params = useParams();
+  const { makeAuthenticatedRequest } = useAdminAuth();
   const productId = parseInt(params.id as string);
   const [product, setProduct] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -15,7 +17,7 @@ export default function EditProductPage() {
     const fetchProduct = async () => {
       if (isNaN(productId)) return;
       try {
-        const response = await fetch(`/api/products/${productId}`);
+        const response = await makeAuthenticatedRequest(`/api/admin/products/${productId}`);
         if (response.ok) {
           const data = await response.json();
           setProduct(data);
@@ -27,7 +29,7 @@ export default function EditProductPage() {
       }
     };
     fetchProduct();
-  }, [productId]);
+  }, [productId, makeAuthenticatedRequest]);
 
   if (loading) {
     return (

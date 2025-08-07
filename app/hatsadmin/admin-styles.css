@@ -469,6 +469,32 @@ header.sticky *,
   background: linear-gradient(135deg, rgba(59, 130, 246, 0.8), rgba(99, 102, 241, 0.8));
 }
 
+/* Global admin panel scrollbar override - no black scrollbars */
+[data-admin-panel="true"] *::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+[data-admin-panel="true"] *::-webkit-scrollbar-track {
+  background: rgba(243, 244, 246, 0.3) !important;
+  border-radius: 4px;
+}
+
+[data-admin-panel="true"] *::-webkit-scrollbar-thumb {
+  background: rgba(156, 163, 175, 0.5) !important;
+  border-radius: 4px;
+  border: 1px solid rgba(156, 163, 175, 0.2) !important;
+}
+
+[data-admin-panel="true"] *::-webkit-scrollbar-thumb:hover {
+  background: rgba(156, 163, 175, 0.7) !important;
+}
+
+[data-admin-panel="true"] {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(156, 163, 175, 0.5) transparent;
+}
+
 /* Dark mode sidebar scrollbar */
 .dark .admin-sidebar-static {
   scrollbar-color: rgba(59, 130, 246, 0.4) transparent;
@@ -577,7 +603,7 @@ header.sticky *,
 
 /* Universal light greyish background for admin panel */
 [data-admin-panel="true"] {
-  background-color: #f9fafb !important;
+  background-color: #f5f5f7 !important;
 }
 
 .dark [data-admin-panel="true"] {

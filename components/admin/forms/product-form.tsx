@@ -2,6 +2,7 @@
 
 import { useState, FormEvent, ChangeEvent, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
+import { useAdminAuth } from "@/hooks/useAdminAuth";
 import { Product } from '@prisma/client';
 import { PhotoIcon, XMarkIcon } from '@heroicons/react/24/outline';
 
@@ -12,6 +13,7 @@ interface ProductFormProps {
 
 export function ProductForm({ initialData }: ProductFormProps) {
   const router = useRouter();
+  const { makeAuthenticatedRequest } = useAdminAuth();
   
   // State for form fields, initialized with existing data if available.
   const [formData, setFormData] = useState({
@@ -32,7 +34,7 @@ export function ProductForm({ initialData }: ProductFormProps) {
   const fetchCategories = async () => {
     console.log('ProductForm: Starting to fetch categories...');
     try {
-      const res = await fetch('/api/categories', {
+      const res = await makeAuthenticatedRequest('/api/admin/categories', {
         cache: 'no-store',
         headers: {
           'Cache-Control': 'no-cache',

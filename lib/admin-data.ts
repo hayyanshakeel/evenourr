@@ -137,6 +137,9 @@ export const ProductsService = {
               select: { id: true, imageUrl: true, altText: true },
               orderBy: { sortOrder: 'asc' },
             },
+            productsToCollections: {
+              select: { collectionId: true },
+            },
           },
           orderBy: { createdAt: 'desc' },
           take: params?.limit || 20,
@@ -164,6 +167,9 @@ export const ProductsService = {
             select: { id: true, imageUrl: true, altText: true },
             orderBy: { sortOrder: 'asc' },
           },
+          productsToCollections: {
+            select: { collectionId: true },
+          },
         },
       });
 
@@ -180,6 +186,163 @@ export const ProductsService = {
     } catch (error) {
       console.error('Error in ProductsService.delete:', error);
       throw new Error(`Failed to delete product: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    }
+  },
+
+  create: async (data: {
+    name: string;
+    slug: string;
+    description?: string;
+    price: number;
+    inventory: number;
+    status: string;
+    imageUrl?: string;
+    categoryId?: number;
+    collectionIds?: number[];
+  }) => {
+    try {
+      const product = await prisma.product.create({
+        data: {
+          name: data.name,
+          slug: data.slug,
+          description: data.description || null,
+          price: data.price,
+          inventory: data.inventory,
+          status: data.status,
+          imageUrl: data.imageUrl || null,
+          categoryId: data.categoryId || null,
+        },
+        include: {
+          category: {
+            select: { id: true, name: true },
+          },
+          images: {
+            select: { id: true, imageUrl: true, altText: true },
+            orderBy: { sortOrder: 'asc' },
+          },
+          productsToCollections: {
+            select: { collectionId: true },
+          },
+        },
+      });
+
+      // Add collection relationships if specified
+      if (data.collectionIds && data.collectionIds.length > 0) {
+        await prisma.productToCollection.createMany({
+          data: data.collectionIds.map(collectionId => ({
+            productId: product.id,
+            collectionId: collectionId,
+          })),
+        });
+        
+        // Fetch the updated product with collections
+        const updatedProduct = await prisma.product.findUnique({
+          where: { id: product.id },
+          include: {
+            category: {
+              select: { id: true, name: true },
+            },
+            images: {
+              select: { id: true, imageUrl: true, altText: true },
+              orderBy: { sortOrder: 'asc' },
+            },
+            productsToCollections: {
+              select: { collectionId: true },
+            },
+          },
+        });
+        
+        return updatedProduct as AdminProduct;
+      }
+
+      return product as AdminProduct;
+    } catch (error) {
+      console.error('Error in ProductsService.create:', error);
+      throw new Error(`Failed to create product: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    }
+  },
+
+  update: async (id: number, data: {
+    name?: string;
+    slug?: string;
+    description?: string;
+    price?: number;
+    inventory?: number;
+    status?: string;
+    imageUrl?: string;
+    categoryId?: number;
+    collectionIds?: number[];
+  }) => {
+    try {
+      const updateData: any = {};
+      
+      if (data.name !== undefined) updateData.name = data.name;
+      if (data.slug !== undefined) updateData.slug = data.slug;
+      if (data.description !== undefined) updateData.description = data.description;
+      if (data.price !== undefined) updateData.price = data.price;
+      if (data.inventory !== undefined) updateData.inventory = data.inventory;
+      if (data.status !== undefined) updateData.status = data.status;
+      if (data.imageUrl !== undefined) updateData.imageUrl = data.imageUrl;
+      if (data.categoryId !== undefined) updateData.categoryId = data.categoryId;
+
+      const product = await prisma.product.update({
+        where: { id },
+        data: updateData,
+        include: {
+          category: {
+            select: { id: true, name: true },
+          },
+          images: {
+            select: { id: true, imageUrl: true, altText: true },
+            orderBy: { sortOrder: 'asc' },
+          },
+          productsToCollections: {
+            select: { collectionId: true },
+          },
+        },
+      });
+
+      // Update collection relationships if specified
+      if (data.collectionIds !== undefined) {
+        // Remove existing collection relationships
+        await prisma.productToCollection.deleteMany({
+          where: { productId: id },
+        });
+        
+        // Add new collection relationships
+        if (data.collectionIds.length > 0) {
+          await prisma.productToCollection.createMany({
+            data: data.collectionIds.map(collectionId => ({
+              productId: id,
+              collectionId: collectionId,
+            })),
+          });
+        }
+        
+        // Fetch the updated product with collections
+        const updatedProduct = await prisma.product.findUnique({
+          where: { id },
+          include: {
+            category: {
+              select: { id: true, name: true },
+            },
+            images: {
+              select: { id: true, imageUrl: true, altText: true },
+              orderBy: { sortOrder: 'asc' },
+            },
+            productsToCollections: {
+              select: { collectionId: true },
+            },
+          },
+        });
+        
+        return updatedProduct as AdminProduct;
+      }
+
+      return product as AdminProduct;
+    } catch (error) {
+      console.error('Error in ProductsService.update:', error);
+      throw new Error(`Failed to update product: ${error instanceof Error ? error.message : 'Unknown error'}`);
     }
   },
 

@@ -177,12 +177,12 @@ export default function OrdersPage() {
   ] : []
 
   const statusColors: { [key: string]: string } = {
-    pending: "bg-yellow-100 text-yellow-800",
-    processing: "bg-blue-100 text-blue-800",
-    paid: "bg-green-100 text-green-800",
-    shipped: "bg-purple-100 text-purple-800",
-    delivered: "bg-green-100 text-green-800",
-    cancelled: "bg-red-100 text-red-800",
+    pending: "bg-amber-100 text-black !bg-amber-100 !text-black",
+    processing: "bg-sky-100 text-black !bg-sky-100 !text-black",
+    paid: "bg-emerald-100 text-black !bg-emerald-100 !text-black",
+    shipped: "bg-violet-100 text-black !bg-violet-100 !text-black",
+    delivered: "bg-emerald-100 text-black !bg-emerald-100 !text-black",
+    cancelled: "bg-rose-100 text-black !bg-rose-100 !text-black",
   }
 
   if (loading) {
@@ -417,7 +417,7 @@ export default function OrdersPage() {
                           <TableCell>
                             <Badge 
                               variant="secondary"
-                              className={statusColors[order.status] || 'bg-gray-100 text-gray-800'}
+                              className={statusColors[order.status] || 'bg-slate-100 text-black !bg-slate-100 !text-black'}
                             >
                               {order.status}
                             </Badge>

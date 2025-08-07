@@ -128,7 +128,7 @@ export function DashboardMetrics() {
           <Card
             key={metric.title}
             className={cn(
-              "admin-card relative overflow-hidden transition-all duration-300 hover:shadow-lg hover:-translate-y-1",
+              "admin-card relative overflow-hidden transition-all duration-300 hover:border-slate-300",
               metric.borderColor
             )}
           >

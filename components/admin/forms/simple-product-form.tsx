@@ -6,6 +6,7 @@ import { PhotoIcon, XMarkIcon, PlusIcon } from '@heroicons/react/24/outline';
 import VariantsManager from './variants-manager';
 import { formatCurrency, CURRENCIES } from '@/lib/currencies';
 import { useSettings } from '@/hooks/useSettings';
+import { useAdminAuth } from '@/hooks/useAdminAuth';
 
 interface SimpleProductFormProps {
   initialData?: any;
@@ -28,10 +29,15 @@ interface ProductVariant {
 
 function SimpleProductForm({ initialData }: SimpleProductFormProps) {
   const router = useRouter();
+  const { makeAuthenticatedRequest } = useAdminAuth();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [categories, setCategories] = useState<{ id: number; name: string }[]>([]);
+  const [collections, setCollections] = useState<{ id: number; title: string }[]>([]);
   const [categoryId, setCategoryId] = useState<string>(initialData?.categoryId ? String(initialData.categoryId) : '');
+  const [selectedCollections, setSelectedCollections] = useState<number[]>(
+    initialData?.productsToCollections?.map((ptc: any) => ptc.collectionId) || []
+  );
   const { currency } = useSettings();
   const [formData, setFormData] = useState({
     name: initialData?.name || '',
@@ -54,10 +60,10 @@ function SimpleProductForm({ initialData }: SimpleProductFormProps) {
   const [options, setOptions] = useState<ProductOption[]>(initialData?.options || []);
   const [variants, setVariants] = useState<ProductVariant[]>(initialData?.variants || []);
 
-  // Fetch categories and currency on component mount
+  // Fetch categories and collections on component mount
   useEffect(() => {
     // Fetch categories
-    fetch('/api/categories')
+    makeAuthenticatedRequest('/api/admin/categories')
       .then(res => {
         if (!res.ok) {
           throw new Error(`Failed to fetch categories: ${res.status}`);
@@ -70,6 +76,22 @@ function SimpleProductForm({ initialData }: SimpleProductFormProps) {
       .catch(err => {
         console.error('Error fetching categories:', err);
         setError('Failed to load categories');
+      });
+
+    // Fetch collections
+    makeAuthenticatedRequest('/api/admin/collections')
+      .then(res => {
+        if (!res.ok) {
+          throw new Error(`Failed to fetch collections: ${res.status}`);
+        }
+        return res.json();
+      })
+      .then(data => {
+        setCollections(data);
+      })
+      .catch(err => {
+        console.error('Error fetching collections:', err);
+        setError('Failed to load collections');
       });
   }, []);
 
@@ -89,60 +111,45 @@ function SimpleProductForm({ initialData }: SimpleProductFormProps) {
             .trim()
         : '';
 
-      const formDataToSubmit = new FormData();
+      const productData = {
+        name: formData.name,
+        description: formData.description || '',
+        price: parseFloat(formData.price),
+        inventory: parseInt(formData.inventory),
+        status: formData.status,
+        slug: slug,
+        categoryId: categoryId ? parseInt(categoryId) : undefined,
+        collectionIds: selectedCollections,
+        // For now, use the first image URL if available
+        imageUrl: imagePreviews.length > 0 ? imagePreviews[0] : undefined,
+      };
       
-      console.log('Form data before submission:', formData);
-      console.log('Slug generated:', slug);
-      
-      formDataToSubmit.append('name', formData.name);
-      formDataToSubmit.append('description', formData.description || '');
-      formDataToSubmit.append('price', formData.price);
-      formDataToSubmit.append('inventory', formData.inventory);
-      formDataToSubmit.append('status', formData.status);
-      formDataToSubmit.append('slug', slug);
-      formDataToSubmit.append('categoryId', categoryId || '');
-      formDataToSubmit.append('hasVariants', variants.length > 0 ? 'true' : 'false');
-      
-      // Add variants and options data
-      if (variants.length > 0) {
-        formDataToSubmit.append('options', JSON.stringify(options));
-        formDataToSubmit.append('variants', JSON.stringify(variants));
-      }
-
-      // Debug: Log all FormData entries
-      console.log('FormData entries:');
-      for (let [key, value] of formDataToSubmit.entries()) {
-        console.log(key, value);
-      }
-
-      // Add new image files
-      imageFiles.forEach((file, index) => {
-        formDataToSubmit.append(`images`, file);
-      });
-
-      // Add existing image URLs (for edit mode)
-      const existingImages = imagePreviews.filter(preview => 
-        preview.startsWith('http') || preview.startsWith('/'));
-      formDataToSubmit.append('existingImages', JSON.stringify(existingImages));
+      console.log('Product data before submission:', productData);
 
       let response;
       if (initialData?.id) {
         // Update existing product
-        response = await fetch(`/api/products/${initialData.id}`, {
+        response = await makeAuthenticatedRequest(`/api/admin/products/${initialData.id}`, {
           method: 'PUT',
-          body: formDataToSubmit,
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(productData),
         });
       } else {
         // Create new product
-        response = await fetch('/api/products', {
+        response = await makeAuthenticatedRequest('/api/admin/products', {
           method: 'POST',
-          body: formDataToSubmit,
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(productData),
         });
       }
 
       if (!response.ok) {
         const errorData = await response.json();
-        throw new Error(errorData.message || 'Failed to save product');
+        throw new Error(errorData.error || 'Failed to save product');
       }
 
       const result = await response.json();
@@ -161,6 +168,14 @@ function SimpleProductForm({ initialData }: SimpleProductFormProps) {
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
     setFormData(prev => ({ ...prev, [name]: value }));
+  };
+
+  const handleCollectionToggle = (collectionId: number) => {
+    setSelectedCollections(prev => 
+      prev.includes(collectionId) 
+        ? prev.filter(id => id !== collectionId)
+        : [...prev, collectionId]
+    );
   };
 
   const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -280,7 +295,7 @@ function SimpleProductForm({ initialData }: SimpleProductFormProps) {
                             <button
                               type="button"
                               onClick={() => removeImage(index)}
-                              className="absolute top-2 right-2 p-1 bg-red-500 text-white rounded-full hover:bg-red-600 transition-colors shadow-lg opacity-0 group-hover:opacity-100"
+                              className="absolute top-2 right-2 p-1 bg-red-500 text-white rounded-full hover:bg-red-600 transition-colors opacity-0 group-hover:opacity-100"
                             >
                               <XMarkIcon className="h-4 w-4" />
                             </button>
@@ -449,6 +464,30 @@ function SimpleProductForm({ initialData }: SimpleProductFormProps) {
                 
                 <div>
                   <label className="block text-sm font-semibold text-gray-900 mb-3">
+                    Collections
+                  </label>
+                  <div className="space-y-2 max-h-40 overflow-y-auto border border-gray-300 rounded-lg p-3">
+                    {collections.length > 0 ? (
+                      collections.map(collection => (
+                        <label key={collection.id} className="flex items-center space-x-3 cursor-pointer">
+                          <input
+                            type="checkbox"
+                            checked={selectedCollections.includes(collection.id)}
+                            onChange={() => handleCollectionToggle(collection.id)}
+                            className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500 focus:ring-2"
+                          />
+                          <span className="text-sm text-gray-700">{collection.title}</span>
+                        </label>
+                      ))
+                    ) : (
+                      <p className="text-sm text-gray-500">No collections available</p>
+                    )}
+                  </div>
+                  <p className="text-xs text-gray-500 mt-2">Select the collections this product should appear in</p>
+                </div>
+                
+                <div>
+                  <label className="block text-sm font-semibold text-gray-900 mb-3">
                     Tags
                   </label>
                   <input
@@ -483,14 +522,14 @@ function SimpleProductForm({ initialData }: SimpleProductFormProps) {
             type="button"
             onClick={() => router.back()}
             disabled={isSubmitting}
-            className="w-full sm:w-auto px-6 py-3 text-sm font-semibold text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+            className="w-full sm:w-auto px-6 py-3 text-sm font-semibold text-slate-700 bg-white border border-slate-300 rounded-lg hover:bg-slate-50 hover:border-slate-400 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-slate-500 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
           >
             Cancel
           </button>
           <button
             type="submit"
             disabled={isSubmitting}
-            className="w-full sm:w-auto px-6 py-3 text-sm font-semibold text-white bg-black border border-transparent rounded-lg hover:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+            className="w-full sm:w-auto px-6 py-3 text-sm font-semibold text-white bg-slate-900 border border-slate-700 rounded-lg hover:bg-slate-800 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-slate-500 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
           >
             {isSubmitting 
               ? 'Saving...' 

@@ -159,19 +159,19 @@ export default function CollectionsPage() {
 
   const getStatusColor = (status: string) => {
     switch (status.toLowerCase()) {
-      case 'active': return 'bg-green-100 text-green-800';
-      case 'draft': return 'bg-yellow-100 text-yellow-800';
-      case 'archived': return 'bg-gray-100 text-gray-800';
-      default: return 'bg-gray-100 text-gray-800';
+      case 'active': return 'bg-emerald-100 text-black !bg-emerald-100 !text-black';
+      case 'draft': return 'bg-amber-100 text-black !bg-amber-100 !text-black';
+      case 'archived': return 'bg-slate-100 text-black !bg-slate-100 !text-black';
+      default: return 'bg-slate-100 text-black !bg-slate-100 !text-black';
     }
   };
 
   const getVisibilityColor = (visibility: string) => {
     switch (visibility.toLowerCase()) {
-      case 'published': return 'bg-blue-100 text-blue-800';
-      case 'hidden': return 'bg-gray-100 text-gray-800';
-      case 'scheduled': return 'bg-purple-100 text-purple-800';
-      default: return 'bg-gray-100 text-gray-800';
+      case 'published': return 'bg-sky-100 text-black !bg-sky-100 !text-black';
+      case 'hidden': return 'bg-slate-100 text-black !bg-slate-100 !text-black';
+      case 'scheduled': return 'bg-violet-100 text-black !bg-violet-100 !text-black';
+      default: return 'bg-slate-100 text-black !bg-slate-100 !text-black';
     }
   };
 

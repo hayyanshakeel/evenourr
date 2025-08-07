@@ -4,19 +4,24 @@ import { CustomersService } from '@/lib/admin-data';
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { id: paramId } = await params;
     const result = await verifyFirebaseUser(request);
+    
     if ('error' in result) {
       return NextResponse.json({ error: result.error }, { status: result.status });
     }
+
     const { user } = result;
+
+    // Check if user has admin role
     if (user.role !== 'admin') {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
     }
 
-    const id = parseInt(params.id);
+    const id = parseInt(paramId);
     if (isNaN(id)) {
       return NextResponse.json({ error: 'Invalid customer ID' }, { status: 400 });
     }
@@ -38,9 +43,10 @@ export async function GET(
 
 export async function PUT(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { id: paramId } = await params;
     const result = await verifyFirebaseUser(request);
     if ('error' in result) {
       return NextResponse.json({ error: result.error }, { status: result.status });
@@ -50,7 +56,7 @@ export async function PUT(
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
     }
 
-    const id = parseInt(params.id);
+    const id = parseInt(paramId);
     if (isNaN(id)) {
       return NextResponse.json({ error: 'Invalid customer ID' }, { status: 400 });
     }
@@ -82,9 +88,10 @@ export async function PUT(
 
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { id: paramId } = await params;
     const result = await verifyFirebaseUser(request);
     if ('error' in result) {
       return NextResponse.json({ error: result.error }, { status: result.status });
@@ -94,7 +101,7 @@ export async function DELETE(
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
     }
 
-    const id = parseInt(params.id);
+    const id = parseInt(paramId);
     if (isNaN(id)) {
       return NextResponse.json({ error: 'Invalid customer ID' }, { status: 400 });
     }

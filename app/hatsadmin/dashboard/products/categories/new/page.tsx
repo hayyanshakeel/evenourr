@@ -7,10 +7,12 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
-import { Save } from 'lucide-react';
+import { Save, X, Plus } from 'lucide-react';
+import { useAdminAuth } from '@/hooks/useAdminAuth';
 
 export default function NewCategoryPage() {
   const router = useRouter();
+  const { makeAuthenticatedRequest } = useAdminAuth();
   const [loading, setLoading] = useState(false);
   const [formData, setFormData] = useState({
     name: '',
@@ -21,12 +23,12 @@ export default function NewCategoryPage() {
     router.push('/hatsadmin/dashboard/products/categories');
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
+    const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
 
     try {
-      const response = await fetch('/api/categories', {
+      const response = await makeAuthenticatedRequest('/api/admin/categories', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -34,13 +36,15 @@ export default function NewCategoryPage() {
         body: JSON.stringify(formData),
       });
 
-      if (response.ok) {
-        router.push('/hatsadmin/dashboard/products/categories');
-      } else {
-        console.error('Failed to create category');
+      if (!response.ok) {
+        throw new Error(`Failed to create category: ${response.statusText}`);
       }
+
+      const result = await response.json();
+      router.push('/hatsadmin/dashboard/products/categories');
     } catch (error) {
       console.error('Error creating category:', error);
+      alert(error instanceof Error ? error.message : 'An error occurred');
     } finally {
       setLoading(false);
     }
@@ -56,13 +60,25 @@ export default function NewCategoryPage() {
 
   const actions = (
     <>
-      <Button variant="outline" onClick={handleBack} disabled={loading}>
-        Cancel
-      </Button>
-      <Button onClick={handleSubmit} disabled={loading} className="bg-blue-600 hover:bg-blue-700">
-        <Save className="h-4 w-4 mr-2" />
-        {loading ? 'Creating...' : 'Create Category'}
-      </Button>
+                  {/* Actions */}
+            <div className="flex items-center gap-3">
+              <Button 
+                variant="outline" 
+                onClick={() => router.push('/hatsadmin/dashboard/products/categories')}
+                className="border-slate-300 hover:border-slate-400 hover:bg-slate-50"
+              >
+                <X className="h-4 w-4 mr-2" />
+                Cancel
+              </Button>
+              <Button 
+                onClick={handleSubmit}
+                disabled={loading || !formData.name.trim()}
+                className="bg-slate-900 hover:bg-slate-800 text-white border border-slate-700"
+              >
+                <Plus className="h-4 w-4 mr-2" />
+                {loading ? 'Creating...' : 'Create Category'}
+              </Button>
+            </div>
     </>
   );
 

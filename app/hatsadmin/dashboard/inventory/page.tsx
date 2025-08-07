@@ -84,10 +84,10 @@ export default function InventoryPage() {
 
   const getStatusColor = (status: string) => {
     switch (status.toLowerCase()) {
-      case 'in stock': return 'bg-green-100 text-green-800 border-green-200'
-      case 'low stock': return 'bg-yellow-100 text-yellow-800 border-yellow-200'
-      case 'out of stock': return 'bg-red-100 text-red-800 border-red-200'
-      default: return 'bg-gray-100 text-gray-800 border-gray-200'
+      case 'in stock': return 'bg-emerald-100 text-black border-emerald-200 !bg-emerald-100 !text-black'
+      case 'low stock': return 'bg-amber-100 text-black border-amber-200 !bg-amber-100 !text-black'
+      case 'out of stock': return 'bg-rose-100 text-black border-rose-200 !bg-rose-100 !text-black'
+      default: return 'bg-slate-100 text-black border-slate-200 !bg-slate-100 !text-black'
     }
   }
 
@@ -98,8 +98,16 @@ export default function InventoryPage() {
     }).format(price)
   }
 
-  const handleAdjustStock = () => {
-    router.push('/hatsadmin/dashboard/inventory/adjust')
+  const handleViewDetails = (itemId: number) => {
+    router.push(`/hatsadmin/dashboard/inventory/${itemId}`)
+  }
+
+  const handleAdjustStock = (itemId: number) => {
+    router.push(`/hatsadmin/dashboard/inventory/${itemId}/adjust`)
+  }
+
+  const handleAddInventory = () => {
+    router.push('/hatsadmin/dashboard/inventory/add')
   }
 
   const handleExport = async () => {
@@ -176,7 +184,7 @@ export default function InventoryPage() {
       showExport={true}
       onExport={handleExport}
       addButtonText="Adjust Stock"
-      onAdd={handleAdjustStock}
+      onAdd={handleAddInventory}
       statsCards={statsCards}
       loading={loading}
     >
@@ -204,7 +212,7 @@ export default function InventoryPage() {
                 }
               </p>
               {!searchTerm && (
-                <Button onClick={handleAdjustStock} className="bg-blue-600 hover:bg-blue-700">
+                <Button onClick={handleAddInventory} className="bg-slate-900 hover:bg-slate-800 text-white border border-slate-700 shadow-sm">
                   <Plus className="h-4 w-4 mr-2" />
                   Add First Item
                 </Button>
@@ -260,13 +268,19 @@ export default function InventoryPage() {
                               <span className="sr-only">Open menu</span>
                             </Button>
                           </DropdownMenuTrigger>
-                          <DropdownMenuContent align="end" className="w-40">
-                            <DropdownMenuItem>
-                              <Eye className="h-4 w-4 mr-2" />
+                          <DropdownMenuContent align="end" className="w-48">
+                            <DropdownMenuItem 
+                              onClick={() => handleViewDetails(item.id)}
+                              className="text-slate-700 hover:bg-slate-50 focus:bg-slate-50"
+                            >
+                              <Eye className="h-4 w-4 mr-2 text-slate-600" />
                               View Details
                             </DropdownMenuItem>
-                            <DropdownMenuItem>
-                              <Edit className="h-4 w-4 mr-2" />
+                            <DropdownMenuItem 
+                              onClick={() => handleAdjustStock(item.id)}
+                              className="text-slate-700 hover:bg-slate-50 focus:bg-slate-50"
+                            >
+                              <Edit className="h-4 w-4 mr-2 text-slate-600" />
                               Adjust Stock
                             </DropdownMenuItem>
                           </DropdownMenuContent>

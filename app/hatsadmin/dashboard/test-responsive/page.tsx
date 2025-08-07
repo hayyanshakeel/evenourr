@@ -53,11 +53,11 @@ export default function ResponsiveTestPage() {
 
   const getStatusColor = (status: string) => {
     switch (status.toLowerCase()) {
-      case 'completed': return 'bg-green-100 text-green-800 border-green-200'
-      case 'processing': return 'bg-blue-100 text-blue-800 border-blue-200'
-      case 'shipped': return 'bg-purple-100 text-purple-800 border-purple-200'
-      case 'pending': return 'bg-yellow-100 text-yellow-800 border-yellow-200'
-      default: return 'bg-gray-100 text-gray-800 border-gray-200'
+      case 'completed': return 'bg-emerald-100 text-black border-emerald-200 !bg-emerald-100 !text-black'
+      case 'processing': return 'bg-sky-100 text-black border-sky-200 !bg-sky-100 !text-black'
+      case 'shipped': return 'bg-violet-100 text-black border-violet-200 !bg-violet-100 !text-black'
+      case 'pending': return 'bg-amber-100 text-black border-amber-200 !bg-amber-100 !text-black'
+      default: return 'bg-slate-100 text-black border-slate-200 !bg-slate-100 !text-black'
     }
   }
 

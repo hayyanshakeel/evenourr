@@ -27,7 +27,7 @@ export default function AuthTestPage() {
       const data = await response.json();
       setAuthTest({ response: response.status, data });
     } catch (error) {
-      setAuthTest({ error: error.message });
+      setAuthTest({ error: error instanceof Error ? error.message : 'Unknown error' });
     }
   };
 

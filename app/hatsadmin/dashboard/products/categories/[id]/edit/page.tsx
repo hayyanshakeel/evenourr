@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter, useParams } from 'next/navigation';
+import { useAdminAuth } from "@/hooks/useAdminAuth";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -18,6 +19,7 @@ interface Category {
 export default function EditCategoryPage() {
   const router = useRouter();
   const params = useParams();
+  const { makeAuthenticatedRequest } = useAdminAuth();
   const [loading, setLoading] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [category, setCategory] = useState<Category | null>(null);
@@ -33,7 +35,7 @@ export default function EditCategoryPage() {
 
   const fetchCategory = async () => {
     try {
-      const response = await fetch(`/api/categories/${params.id}`);
+      const response = await makeAuthenticatedRequest(`/api/admin/categories/${params.id}`);
       if (response.ok) {
         const data = await response.json();
         setCategory(data);
@@ -51,7 +53,7 @@ export default function EditCategoryPage() {
     setLoading(true);
 
     try {
-      const response = await fetch(`/api/categories/${params.id}`, {
+      const response = await makeAuthenticatedRequest(`/api/admin/categories/${params.id}`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
@@ -78,7 +80,7 @@ export default function EditCategoryPage() {
 
     setDeleting(true);
     try {
-      const response = await fetch(`/api/categories/${params.id}`, {
+      const response = await makeAuthenticatedRequest(`/api/admin/categories/${params.id}`, {
         method: 'DELETE',
       });
 
@@ -144,7 +146,7 @@ export default function EditCategoryPage() {
                   variant="outline" 
                   onClick={handleDelete}
                   disabled={deleting}
-                  className="text-red-600 border-red-300 hover:bg-red-50"
+                  className="text-red-600 border-red-300 hover:bg-red-50 hover:border-red-400"
                 >
                   <Trash2 className="h-4 w-4 mr-2" />
                   {deleting ? 'Deleting...' : 'Delete'}
@@ -152,14 +154,15 @@ export default function EditCategoryPage() {
                 <Button 
                   variant="outline" 
                   onClick={() => router.back()}
+                  className="border-slate-300 hover:border-slate-400 hover:bg-slate-50"
                 >
                   <X className="h-4 w-4 mr-2" />
                   Cancel
                 </Button>
                 <Button 
-                  variant="black" 
                   onClick={handleSubmit}
                   disabled={loading || !formData.name.trim()}
+                  className="bg-slate-900 hover:bg-slate-800 text-white border border-slate-700"
                 >
                   <Save className="h-4 w-4 mr-2" />
                   {loading ? 'Saving...' : 'Save Changes'}

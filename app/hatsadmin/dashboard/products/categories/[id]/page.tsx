@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter, useParams } from 'next/navigation';
+import { useAdminAuth } from "@/hooks/useAdminAuth";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
@@ -17,6 +18,7 @@ interface Category {
 export default function CategoryDetailsPage() {
   const router = useRouter();
   const params = useParams();
+  const { makeAuthenticatedRequest } = useAdminAuth();
   const [category, setCategory] = useState<Category | null>(null);
   const [loading, setLoading] = useState(true);
 
@@ -29,7 +31,7 @@ export default function CategoryDetailsPage() {
   const fetchCategory = async () => {
     try {
       setLoading(true);
-      const response = await fetch(`/api/categories/${params.id}`);
+      const response = await makeAuthenticatedRequest(`/api/admin/categories/${params.id}`);
       if (response.ok) {
         const data = await response.json();
         setCategory(data);
@@ -53,7 +55,7 @@ export default function CategoryDetailsPage() {
     }
 
     try {
-      const response = await fetch(`/api/categories/${params.id}`, {
+      const response = await makeAuthenticatedRequest(`/api/admin/categories/${params.id}`, {
         method: 'DELETE',
       });
 

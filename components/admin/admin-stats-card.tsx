@@ -26,7 +26,7 @@ export function AdminStatsCard({
   return (
     <Card
       className={cn(
-        "admin-card relative overflow-hidden transition-all duration-300 hover:shadow-lg hover:-translate-y-1",
+        "admin-card relative overflow-hidden transition-all duration-300 hover:border-slate-300",
         borderColor,
         className
       )}

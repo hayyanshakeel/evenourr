@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
+import { useAdminAuth } from "@/hooks/useAdminAuth";
 import { AdminPageLayout } from "@/components/admin/admin-page-layout"
 import { AdminStatsCard } from "@/components/admin/admin-stats-card"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
@@ -20,6 +21,7 @@ interface Category {
 
 export default function CategoriesPage() {
   const router = useRouter();
+  const { makeAuthenticatedRequest } = useAdminAuth();
   const [categories, setCategories] = useState<Category[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
@@ -31,7 +33,7 @@ export default function CategoriesPage() {
   const fetchCategories = async () => {
     try {
       setLoading(true);
-      const response = await fetch('/api/categories');
+      const response = await makeAuthenticatedRequest('/api/admin/categories');
       if (!response.ok) {
         throw new Error('Failed to fetch categories');
       }
@@ -59,7 +61,7 @@ export default function CategoriesPage() {
   const handleDeleteCategory = async (id: number) => {
     if (confirm('Are you sure you want to delete this category?')) {
       try {
-        const response = await fetch(`/api/categories/${id}`, {
+        const response = await makeAuthenticatedRequest(`/api/admin/categories/${id}`, {
           method: 'DELETE',
         });
         if (response.ok) {
@@ -170,16 +172,19 @@ export default function CategoriesPage() {
                             <MoreHorizontal className="h-4 w-4" />
                           </Button>
                         </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end">
-                          <DropdownMenuItem onClick={() => handleEditCategory(category.id)}>
-                            <Edit className="h-4 w-4 mr-2" />
+                        <DropdownMenuContent align="end" className="w-44">
+                          <DropdownMenuItem 
+                            onClick={() => handleEditCategory(category.id)}
+                            className="text-slate-700 hover:bg-slate-50 focus:bg-slate-50"
+                          >
+                            <Edit className="h-4 w-4 mr-2 text-slate-600" />
                             Edit
                           </DropdownMenuItem>
                           <DropdownMenuItem 
-                            className="text-red-600"
+                            className="text-red-600 hover:bg-red-50 focus:bg-red-50"
                             onClick={() => handleDeleteCategory(category.id)}
                           >
-                            <Trash2 className="h-4 w-4 mr-2" />
+                            <Trash2 className="h-4 w-4 mr-2 text-red-500" />
                             Delete
                           </DropdownMenuItem>
                         </DropdownMenuContent>

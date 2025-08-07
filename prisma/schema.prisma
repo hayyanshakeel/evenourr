@@ -31,6 +31,7 @@ model User {
   orders    Order[]
   carts     Cart[]
   sessions  UserSession[]
+  returns   ReturnRequest[]
 }
 
 // User sessions for secure session management
@@ -75,6 +76,7 @@ model Product {
   images               ProductImage[]
   variants             ProductVariant[]
   options              ProductOption[]
+  returnItems          ReturnItem[]
 }
 
 model ProductOption {
@@ -103,27 +105,21 @@ model ProductOptionValue {
 }
 
 model ProductVariant {
-  id             Int      @id @default(autoincrement())
-  productId      Int
-  title          String   // e.g., "Small / Red"
-  price          Float
-  compareAtPrice Float?   // Original price for sale pricing
-  sku            String?
-  barcode        String?
-  inventory      Int      @default(0)
-  weight         Float?
-  requiresShipping Boolean @default(true)
-  taxable        Boolean  @default(true)
-  position       Int      @default(0)
-  createdAt      DateTime @default(now())
-  updatedAt      DateTime @updatedAt
+  id        Int      @id @default(autoincrement())
+  productId Int
+  title     String
+  price     Float
+  sku       String?  @unique
+  inventory Int      @default(0)
+  position  Int      @default(0)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
-  product     Product              @relation(fields: [productId], references: [id], onDelete: Cascade)
-  optionValues VariantOptionValue[]
-  cartItems   CartItem[]
-  orderItems  OrderItem[]
-
-  @@unique([productId, title])
+  product    Product              @relation(fields: [productId], references: [id], onDelete: Cascade)
+  cartItems  CartItem[]
+  orderItems OrderItem[]
+  options    VariantOptionValue[]
+  returnItems ReturnItem[]
 }
 
 model VariantOptionValue {
@@ -212,6 +208,7 @@ model Customer {
   updatedAt DateTime @updatedAt
 
   orders Order[]
+  returns ReturnRequest[]
 }
 
 model Order {
@@ -229,6 +226,7 @@ model Order {
   user       User?      @relation(fields: [userId], references: [id], onDelete: SetNull)
   customer   Customer?  @relation(fields: [customerId], references: [id])
   orderItems OrderItem[]
+  returns    ReturnRequest[]
 }
 
 model OrderItem {
@@ -255,4 +253,82 @@ model Coupon {
   isActive   Boolean  @default(true)
   createdAt  DateTime @default(now())
   updatedAt  DateTime @updatedAt
+}
+
+// Returns and RMA Management
+model ReturnRequest {
+  id             String      @id @default(cuid())
+  rmaNumber      String      @unique
+  orderId        Int
+  userId         Int?
+  customerId     Int?
+  status         String      @default("requested") // requested, approved, rejected, processing, completed, cancelled
+  reason         String
+  reasonCategory String      // defective, wrong_item, changed_mind, damaged, other
+  description    String?
+  refundAmount   Float       @default(0)
+  refundMethod   String?     // original_payment, store_credit, exchange
+  priority       String      @default("normal") // low, normal, high, urgent
+  
+  // Tracking Information
+  trackingNumber String?
+  carrierName    String?
+  returnLabel    String?     // URL to return shipping label
+  
+  // Processing Details
+  processedBy    String?     // Admin user who processed the return
+  processedAt    DateTime?
+  approvedAt     DateTime?
+  rejectedAt     DateTime?
+  completedAt    DateTime?
+  
+  // Customer Communication
+  customerNotes  String?
+  adminNotes     String?
+  
+  // Timestamps
+  createdAt      DateTime    @default(now())
+  updatedAt      DateTime    @updatedAt
+
+  // Relations
+  order          Order       @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  user           User?       @relation(fields: [userId], references: [id], onDelete: SetNull)
+  customer       Customer?   @relation(fields: [customerId], references: [id], onDelete: SetNull)
+  returnItems    ReturnItem[]
+  returnUpdates  ReturnUpdate[]
+}
+
+model ReturnItem {
+  id          Int     @id @default(autoincrement())
+  returnId    String
+  productId   Int
+  variantId   Int?
+  quantity    Int
+  unitPrice   Float
+  totalPrice  Float
+  condition   String  @default("returned") // returned, damaged, defective, missing
+  
+  // Product details at time of return
+  productName String
+  variantTitle String?
+  
+  createdAt   DateTime @default(now())
+
+  // Relations
+  return      ReturnRequest   @relation(fields: [returnId], references: [id], onDelete: Cascade)
+  product     Product         @relation(fields: [productId], references: [id], onDelete: Cascade)
+  variant     ProductVariant? @relation(fields: [variantId], references: [id], onDelete: Cascade)
+}
+
+model ReturnUpdate {
+  id          Int      @id @default(autoincrement())
+  returnId    String
+  status      String   // Status when this update was made
+  message     String
+  isPublic    Boolean  @default(true) // Whether customer can see this update
+  createdBy   String   // Admin user who created this update
+  createdAt   DateTime @default(now())
+
+  // Relations
+  return      ReturnRequest @relation(fields: [returnId], references: [id], onDelete: Cascade)
 }
