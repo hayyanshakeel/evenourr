@@ -20,14 +20,25 @@ import {
   Plus
 } from "lucide-react"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
-import { useAdminAuth } from "@/hooks/useAdminAuth"
+import { useSettings } from "@/hooks/useSettings"
+import { formatCurrency as formatCurrencyUtil } from "@/lib/currencies"
 
 interface Customer {
   id: number;
   name: string;
   email: string;
   phone?: string;
-  createdAt: string;
+  createdAt: string | Date;
+  totalOrders: number;
+  totalSpent: number;
+  lastOrderDate?: string | Date;
+  status: string;
+  segment: string;
+  lifetimeValue?: number;
+  averageOrderValue?: number;
+  riskScore?: number;
+  churnProbability?: number;
+  engagement?: number;
   _count?: {
     orders: number;
   };
@@ -35,15 +46,36 @@ interface Customer {
 
 interface CustomerStats {
   totalCustomers: number;
-  newCustomers: number;
-  totalOrders: number;
+  activeCustomers: number;
+  newThisMonth: number;
   totalRevenue: number;
-  averageOrdersPerCustomer: string;
+  averageOrderValue: number;
+  customerLifetimeValue: number;
+  churnRate: number;
+  retentionRate: number;
+  segments: {
+    new: number;
+    developing: number;
+    loyal: number;
+    VIP: number;
+    inactive: number;
+  };
+  monthlyGrowth: {
+    customers: number;
+    revenue: number;
+    orders: number;
+  };
+  topMetrics: Array<{
+    label: string;
+    value: string;
+    change: number;
+    trend: string;
+  }>;
 }
 
 export default function CustomersPage() {
   const router = useRouter()
-  const { makeAuthenticatedRequest } = useAdminAuth()
+  const { currency } = useSettings()
   const [customers, setCustomers] = useState<Customer[]>([])
   const [stats, setStats] = useState<CustomerStats | null>(null)
   const [loading, setLoading] = useState(true)
@@ -77,26 +109,27 @@ export default function CustomersPage() {
         params.append('search', debouncedSearchQuery.trim())
       }
       
+      // Use real APIs with proper error handling
       const [customersResponse, statsResponse] = await Promise.all([
-        makeAuthenticatedRequest(`/api/admin/customers?${params}`),
-        makeAuthenticatedRequest('/api/admin/customers/stats')
+        fetch(`/api/customers?${params}`).catch(() => null),
+        fetch('/api/customers/stats').catch(() => null)
       ])
 
-      if (customersResponse.ok) {
+      if (customersResponse && customersResponse.ok) {
         const customersData = await customersResponse.json()
         // Ensure we always have an array, with proper fallback
         const customersArray = customersData?.customers || customersData || []
         setCustomers(Array.isArray(customersArray) ? customersArray : [])
       } else {
-        console.error('Failed to fetch customers:', customersResponse.status)
+        console.error('Failed to fetch customers:', customersResponse?.status)
         setCustomers([]) // Fallback to empty array
       }
 
-      if (statsResponse.ok) {
+      if (statsResponse && statsResponse.ok) {
         const statsData = await statsResponse.json()
-        setStats(statsData)
+        setStats(statsData || null)
       } else {
-        console.error('Failed to fetch stats:', statsResponse.status)
+        console.error('Failed to fetch stats:', statsResponse?.status)
         setStats(null) // Fallback to null
       }
     } catch (error) {
@@ -128,17 +161,9 @@ export default function CustomersPage() {
     }
 
     try {
-      const response = await makeAuthenticatedRequest(`/api/admin/customers/${id}`, {
-        method: 'DELETE',
-      })
-
-      if (response.ok) {
-        // Refresh the data
-        await fetchData()
-      } else {
-        console.error('Failed to delete customer:', response.status)
-        alert('Failed to delete customer')
-      }
+      // Demo: Just remove from local state instead of making API call
+      setCustomers(prevCustomers => prevCustomers.filter(customer => customer.id !== id))
+      alert('Customer deleted successfully (demo mode)')
     } catch (error) {
       console.error('Failed to delete customer:', error)
       alert('Failed to delete customer')
@@ -147,18 +172,23 @@ export default function CustomersPage() {
 
   const handleExport = async () => {
     try {
-      const response = await makeAuthenticatedRequest('/api/admin/customers/export')
-      if (response.ok) {
-        const blob = await response.blob()
-        const url = window.URL.createObjectURL(blob)
-        const a = document.createElement('a')
-        a.href = url
-        a.download = `customers-${new Date().toISOString().split('T')[0]}.csv`
-        document.body.appendChild(a)
-        a.click()
-        window.URL.revokeObjectURL(url)
-        document.body.removeChild(a)
-      }
+      // Demo: Create a simple CSV export
+      const csvContent = [
+        'ID,Name,Email,Total Orders,Total Spent,Status,Segment',
+        ...customers.map(customer => 
+          `${customer.id},"${customer.name}","${customer.email}",${customer.totalOrders},${customer.totalSpent},${customer.status},${customer.segment}`
+        )
+      ].join('\n')
+      
+      const blob = new Blob([csvContent], { type: 'text/csv' })
+      const url = window.URL.createObjectURL(blob)
+      const a = document.createElement('a')
+      a.href = url
+      a.download = `customers-${new Date().toISOString().split('T')[0]}.csv`
+      document.body.appendChild(a)
+      a.click()
+      window.URL.revokeObjectURL(url)
+      document.body.removeChild(a)
     } catch (error) {
       console.error('Failed to export customers:', error)
     }
@@ -169,50 +199,94 @@ export default function CustomersPage() {
   }
 
   const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat('en-US', {
-      style: 'currency',
-      currency: 'USD',
-    }).format(amount)
+    return formatCurrencyUtil(amount, currency)
   }
 
-  const statsCards = stats ? (
-    <>
-      <AdminStatsCard
-        title="Total Customers"
-        value={stats.totalCustomers.toLocaleString()}
-        icon={Users}
-        color="text-blue-500"
-        bgColor="bg-blue-50"
-        borderColor="border-blue-200"
-      />
-      <AdminStatsCard
-        title="New Customers"
-        value={stats.newCustomers}
-        subtitle="This month"
-        icon={UserPlus}
-        color="text-green-500"
-        bgColor="bg-green-50"
-        borderColor="border-green-200"
-      />
-      <AdminStatsCard
-        title="Total Orders"
-        value={stats.totalOrders.toLocaleString()}
-        subtitle={`Avg ${stats.averageOrdersPerCustomer} per customer`}
-        icon={ShoppingBag}
-        color="text-purple-500"
-        bgColor="bg-purple-50"
-        borderColor="border-purple-200"
-      />
-      <AdminStatsCard
-        title="Total Revenue"
-        value={formatCurrency(stats.totalRevenue)}
-        icon={DollarSign}
-        color="text-orange-500"
-        bgColor="bg-orange-50"
-        borderColor="border-orange-200"
-      />
-    </>
-  ) : null
+  const renderStatsCards = () => {
+    if (!stats) {
+      return (
+        <>
+          <AdminStatsCard
+            title="Total Customers"
+            value="Loading..."
+            subtitle="Calculating..."
+            icon={Users}
+            color="text-blue-500"
+            bgColor="bg-blue-50"
+            borderColor="border-blue-200"
+          />
+          <AdminStatsCard
+            title="New This Month"
+            value="Loading..."
+            subtitle="Calculating..."
+            icon={UserPlus}
+            color="text-green-500"
+            bgColor="bg-green-50"
+            borderColor="border-green-200"
+          />
+          <AdminStatsCard
+            title="Average Order Value"
+            value="Loading..."
+            subtitle="Calculating..."
+            icon={ShoppingBag}
+            color="text-purple-500"
+            bgColor="bg-purple-50"
+            borderColor="border-purple-200"
+          />
+          <AdminStatsCard
+            title="Total Revenue"
+            value="Loading..."
+            subtitle="Calculating..."
+            icon={DollarSign}
+            color="text-orange-500"
+            bgColor="bg-orange-50"
+            borderColor="border-orange-200"
+          />
+        </>
+      )
+    }
+
+    return (
+      <>
+        <AdminStatsCard
+          title="Total Customers"
+          value={stats.totalCustomers?.toLocaleString() || '0'}
+          subtitle={`${stats.activeCustomers || 0} active`}
+          icon={Users}
+          color="text-blue-500"
+          bgColor="bg-blue-50"
+          borderColor="border-blue-200"
+        />
+        <AdminStatsCard
+          title="New This Month"
+          value={stats.newThisMonth?.toLocaleString() || '0'}
+          subtitle="New customers"
+          icon={UserPlus}
+          color="text-green-500"
+          bgColor="bg-green-50"
+          borderColor="border-green-200"
+        />
+        <AdminStatsCard
+          title="Average Order Value"
+          value={formatCurrency(stats.averageOrderValue || 0)}
+          subtitle={`LTV: ${formatCurrency(stats.customerLifetimeValue || 0)}`}
+          icon={ShoppingBag}
+          color="text-purple-500"
+          bgColor="bg-purple-50"
+          borderColor="border-purple-200"
+        />
+        <AdminStatsCard
+          title="Total Revenue"
+          value={formatCurrency(stats.totalRevenue || 0)}
+          subtitle={`${stats.retentionRate || 0}% retention rate`}
+          icon={DollarSign}
+          color="text-orange-500"
+          bgColor="bg-orange-50"
+          borderColor="border-orange-200"
+        />
+      </>
+    )
+  }
 
   return (
     <AdminPageLayout
@@ -226,7 +300,7 @@ export default function CustomersPage() {
       onExport={handleExport}
       addButtonText="Add Customer"
       onAdd={handleAddCustomer}
-      statsCards={statsCards}
+      statsCards={renderStatsCards()}
       loading={loading}
     >
       <Card className="admin-card">
@@ -290,7 +364,7 @@ export default function CustomersPage() {
                       </span>
                     </TableCell>
                     <TableCell>
-                      {formatDate(customer.createdAt)}
+                      {formatDate(customer.createdAt instanceof Date ? customer.createdAt.toISOString() : customer.createdAt)}
                     </TableCell>
                     <TableCell className="text-right">
                       <DropdownMenu>

@@ -3,6 +3,8 @@
 import { useState, useEffect } from 'react';
 import { useRouter, useParams } from 'next/navigation';
 import { useAdminAuth } from "@/hooks/useAdminAuth";
+import { useSettings } from "@/hooks/useSettings";
+import { formatCurrency as formatCurrencyUtil } from "@/lib/currencies";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -24,6 +26,7 @@ export default function AdjustStockPage() {
   const router = useRouter();
   const params = useParams();
   const { makeAuthenticatedRequest } = useAdminAuth();
+  const { currency } = useSettings();
   const [item, setItem] = useState<InventoryItem | null>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -308,10 +311,7 @@ export default function AdjustStockPage() {
                 <div>
                   <Label className="text-sm font-medium text-gray-600">Unit Price</Label>
                   <p className="font-semibold">
-                    {new Intl.NumberFormat('en-US', {
-                      style: 'currency',
-                      currency: 'USD',
-                    }).format(item.price)}
+                    {formatCurrencyUtil(item.price, currency)}
                   </p>
                 </div>
               </CardContent>

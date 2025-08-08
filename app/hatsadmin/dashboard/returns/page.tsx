@@ -2,6 +2,8 @@
 
 import { useState, useEffect } from 'react';
 import { useAdminAuth } from '@/hooks/useAdminAuth';
+import { useSettings } from '@/hooks/useSettings';
+import { formatCurrency as formatCurrencyUtil } from '@/lib/currencies';
 import { auth } from '@/lib/firebase';
 import { onAuthStateChanged, User as FirebaseUser } from 'firebase/auth';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -112,8 +114,8 @@ interface Filters {
 }
 
 export default function ReturnsPage() {
-  const { token, isReady, isAuthenticated } = useAdminAuth();
-  const [user, setUser] = useState<FirebaseUser | null>(null);
+  const { token, isReady, isAuthenticated, makeAuthenticatedRequest } = useAdminAuth();
+  const { currency } = useSettings();
   const [returns, setReturns] = useState<Return[]>([]);
   const [stats, setStats] = useState<ReturnStats | null>(null);
   const [loading, setLoading] = useState(true);
@@ -129,18 +131,9 @@ export default function ReturnsPage() {
     dateTo: '',
   });
 
-  // Firebase auth state listener
-  useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, (firebaseUser) => {
-      setUser(firebaseUser);
-    });
-
-    return () => unsubscribe();
-  }, []);
-
   // Fetch returns data
   const fetchReturns = async () => {
-    if (!user) return;
+    if (!isAuthenticated) return;
     
     try {
       setLoading(true);
@@ -155,20 +148,10 @@ export default function ReturnsPage() {
         ...(filters.dateTo && { dateTo: filters.dateTo }),
       });
 
-      const token = await user.getIdToken();
-      const response = await fetch(`/api/admin/returns?${params}`, {
-        headers: {
-          'Authorization': `Bearer ${token}`,
-        },
-      });
-
-      if (!response.ok) {
-        throw new Error('Failed to fetch returns');
-      }
-
+      const response = await makeAuthenticatedRequest(`/api/admin/returns?${params}`);
       const data = await response.json();
-      setReturns(data.returns);
-      setTotalPages(data.pagination.totalPages);
+      setReturns(data.returns || []);
+      setTotalPages(data.totalPages || 1);
     } catch (error) {
       console.error('Error fetching returns:', error);
     } finally {
@@ -178,25 +161,14 @@ export default function ReturnsPage() {
 
   // Fetch stats
   const fetchStats = async () => {
-    if (!user) return;
+    if (!isAuthenticated) return;
     
     try {
       const params = new URLSearchParams({
         ...(filters.dateFrom && { dateFrom: filters.dateFrom }),
         ...(filters.dateTo && { dateTo: filters.dateTo }),
       });
-
-      const token = await user.getIdToken();
-      const response = await fetch(`/api/admin/returns/stats?${params}`, {
-        headers: {
-          'Authorization': `Bearer ${token}`,
-        },
-      });
-
-      if (!response.ok) {
-        throw new Error('Failed to fetch stats');
-      }
-
+      const response = await makeAuthenticatedRequest(`/api/admin/returns/stats?${params}`);
       const data = await response.json();
       setStats(data);
     } catch (error) {
@@ -205,9 +177,11 @@ export default function ReturnsPage() {
   };
 
   useEffect(() => {
-    fetchReturns();
-    fetchStats();
-  }, [user, page, filters]);
+    if (isAuthenticated) {
+      fetchReturns();
+      fetchStats();
+    }
+  }, [isAuthenticated, page, filters]);
 
   // Status badge styling
   const getStatusBadge = (status: string) => {
@@ -294,10 +268,7 @@ export default function ReturnsPage() {
 
   // Format currency
   const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat('en-US', {
-      style: 'currency',
-      currency: 'USD',
-    }).format(amount);
+    return formatCurrencyUtil(amount, currency);
   };
 
   // Format date

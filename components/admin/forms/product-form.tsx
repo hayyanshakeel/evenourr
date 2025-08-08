@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, FormEvent, ChangeEvent, useEffect } from 'react';
+import { useState, FormEvent, ChangeEvent, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAdminAuth } from "@/hooks/useAdminAuth";
 import { Product } from '@prisma/client';
@@ -13,7 +13,8 @@ interface ProductFormProps {
 
 export function ProductForm({ initialData }: ProductFormProps) {
   const router = useRouter();
-  const { makeAuthenticatedRequest } = useAdminAuth();
+  const { makeAuthenticatedRequest, isReady, isAuthenticated } = useAdminAuth();
+  const loadedRef = useRef(false);
   
   // State for form fields, initialized with existing data if available.
   const [formData, setFormData] = useState({
@@ -45,8 +46,9 @@ export function ProductForm({ initialData }: ProductFormProps) {
         throw new Error(`Failed to fetch categories: ${res.status}`);
       }
       const data = await res.json();
-      console.log('ProductForm: Categories loaded:', data);
-      setCategories(data);
+      const list = Array.isArray(data) ? data : (data?.data ?? []);
+      console.log('ProductForm: Categories loaded:', list);
+      setCategories(list);
     } catch (err) {
       console.error('ProductForm: Error fetching categories:', err);
       setError('Failed to load categories');
@@ -54,8 +56,10 @@ export function ProductForm({ initialData }: ProductFormProps) {
   };
 
   useEffect(() => {
+    if (!isReady || !isAuthenticated || loadedRef.current) return;
+    loadedRef.current = true;
     fetchCategories();
-  }, []);
+  }, [isReady, isAuthenticated]);
 
   // Handles changes in text inputs, textareas, and selects.
   const handleChange = (e: ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {

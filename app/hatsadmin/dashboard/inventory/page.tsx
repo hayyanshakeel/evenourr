@@ -3,6 +3,8 @@
 import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
 import { useAdminAuth } from "@/hooks/useAdminAuth"
+import { useSettings } from "@/hooks/useSettings"
+import { formatCurrency as formatCurrencyUtil } from "@/lib/currencies"
 import { AdminPageLayout } from "@/components/admin/admin-page-layout"
 import { AdminStatsCard } from "@/components/admin/admin-stats-card"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
@@ -41,6 +43,7 @@ interface InventoryItem {
 export default function InventoryPage() {
   const router = useRouter()
   const { makeAuthenticatedRequest, isReady, isAuthenticated } = useAdminAuth()
+  const { currency } = useSettings()
   const [inventory, setInventory] = useState<InventoryItem[]>([])
   const [stats, setStats] = useState<InventoryStats | null>(null)
   const [loading, setLoading] = useState(true)
@@ -92,10 +95,7 @@ export default function InventoryPage() {
   }
 
   const formatPrice = (price: number) => {
-    return new Intl.NumberFormat('en-US', {
-      style: 'currency',
-      currency: 'USD',
-    }).format(price)
+    return formatCurrencyUtil(price, currency)
   }
 
   const handleViewDetails = (itemId: number) => {

@@ -4,7 +4,7 @@ import prisma from '@/lib/db';
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: { orderId: string } }
+  context: { params: Promise<{ orderId: string }> }
 ) {
   try {
     const result = await verifyFirebaseUser(request);
@@ -16,8 +16,9 @@ export async function GET(
     }
     const user = result.user;
 
-    const orderId = parseInt(params.orderId);
-    if (isNaN(orderId)) {
+    const { orderId } = await context.params;
+    const orderIdNum = parseInt(orderId);
+    if (isNaN(orderIdNum)) {
       return NextResponse.json(
         { success: false, message: 'Invalid order ID' },
         { status: 400 }
@@ -26,7 +27,7 @@ export async function GET(
 
     const order = await prisma.order.findFirst({
       where: {
-        id: orderId,
+        id: orderIdNum,
         customerId: user.uid,
       },
       include: {

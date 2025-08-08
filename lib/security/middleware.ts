@@ -5,37 +5,10 @@ import { ValidationError } from './validation';
 // Rate limiting storage (in production, use Redis or external service)
 const rateLimitStore = new Map<string, { count: number; resetTime: number }>();
 
-// Authentication token validation
-export async function validateAuthToken(request: NextRequest): Promise<{ valid: boolean; userId?: string; role?: string }> {
-  try {
-    const authHeader = request.headers.get('authorization');
-    const token = authHeader?.replace('Bearer ', '');
-    
-    if (!token) {
-      return { valid: false };
-    }
-
-    // For now, using simple JWT validation
-    // In production, implement proper JWT verification with your auth provider
-    const tokenParts = token.split('.');
-    if (tokenParts.length !== 3) {
-      return { valid: false };
-    }
-    
-    const payload = JSON.parse(atob(tokenParts[1] || ''));
-    
-    if (payload.exp && payload.exp < Date.now() / 1000) {
-      return { valid: false };
-    }
-
-    return {
-      valid: true,
-      userId: payload.sub,
-      role: payload.role || 'user',
-    };
-  } catch (error) {
-    return { valid: false };
-  }
+// Authentication token validation (placeholder - always invalid without real verification)
+export async function validateAuthToken(_request: NextRequest): Promise<{ valid: boolean; userId?: string; role?: string }> {
+  // Intentionally disabled insecure base64 decode implementation.
+  return { valid: false };
 }
 
 // Rate limiting middleware

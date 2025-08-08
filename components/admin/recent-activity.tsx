@@ -4,6 +4,8 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Activity, ShoppingCart, Package, Users, CreditCard } from "lucide-react"
 import { useEffect, useState } from "react"
 import { useAdminAuth } from "@/hooks/useAdminAuth"
+import { useSettings } from "@/hooks/useSettings"
+import { formatCurrency } from "@/lib/currencies"
 
 interface ActivityItem {
   type: string;
@@ -33,6 +35,7 @@ export function RecentActivity() {
   const [activities, setActivities] = useState<ActivityItem[]>([])
   const [loading, setLoading] = useState(true)
   const { makeAuthenticatedRequest, isReady, isAuthenticated } = useAdminAuth()
+  const { currency } = useSettings()
 
   useEffect(() => {
     async function fetchActivities() {
@@ -45,22 +48,33 @@ export function RecentActivity() {
       }
 
       try {
-        const response = await makeAuthenticatedRequest('/api/hatsadmin/dashboard/stats')
+        // Use real dashboard metrics endpoint
+        const response = await makeAuthenticatedRequest('/api/admin/dashboard/metrics')
         
         if (response.ok) {
-          const data = await response.json()
-          if (data.recentActivity) {
-            const mappedActivities: ActivityItem[] = data.recentActivity.map((activity: any) => ({
-              type: activity.type,
-              title: activity.title,
-              description: activity.description,
-              time: activity.time,
-              icon: iconMap[activity.icon as keyof typeof iconMap] || iconMap.default,
-              status: activity.type === 'payment' ? 'error' : 
-                      activity.type === 'order' ? 'success' : 
-                      activity.type === 'customer' ? 'success' : 'info'
-            }))
+          const raw = await response.json()
+          const data = raw?.data ?? raw
+          // Map recent orders from real data to activity items
+          if (Array.isArray(data.recentOrders)) {
+            const mappedActivities: ActivityItem[] = data.recentOrders.map((order: any) => {
+              const createdAt = order.createdAt ? new Date(order.createdAt) : new Date()
+              const customerName = order.customer?.name || 'Guest'
+              const totalPrice = typeof order.totalPrice === 'number' ? order.totalPrice : 0
+              const numItems = Array.isArray(order.orderItems) ? order.orderItems.length : 0
+              const status = (order.status || '').toLowerCase()
+              const activityStatus: ActivityItem['status'] = status === 'cancelled' ? 'error' : status === 'pending' ? 'warning' : 'success'
+              return {
+                type: 'order',
+                title: `Order #${order.id} - ${order.status || 'unknown'}`,
+                description: `${customerName} • ${formatCurrency(totalPrice, currency)} • ${numItems} items`,
+                time: createdAt.toLocaleString(),
+                icon: iconMap.order,
+                status: activityStatus,
+              }
+            })
             setActivities(mappedActivities)
+          } else {
+            setActivities([])
           }
         } else {
           console.error('Failed to fetch recent activities:', response.status)

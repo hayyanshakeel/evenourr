@@ -1,87 +1,64 @@
-import { firebaseAdminAuth } from './firebase-admin';
-import { NextRequest, NextResponse } from 'next/server';
+import { NextRequest } from 'next/server';
 import prisma from '@/lib/db';
+import { getFirebaseAdminAuth } from './firebase-admin';
 
 interface VerifyResult {
   error?: string;
   status?: number;
   user?: any;
+  reasonCode?: string;
 }
 
 export async function verifyFirebaseUser(request: NextRequest): Promise<VerifyResult> {
+  // Basic structured debug (only in dev)
+  const debug = process.env.NODE_ENV !== 'production';
+  function log(...args: any[]) {
+    if (debug) console.log('[auth]', ...args);
+  }
+
   try {
-    // Remove sensitive header logging in production
-    if (process.env.NODE_ENV !== 'production') {
-      const headers = Object.fromEntries(request.headers.entries());
-      console.log('Request Headers:', headers);
-    }
-    
-    // Check Authorization header with case-insensitive matching
     const authHeader = request.headers.get('authorization') || request.headers.get('Authorization');
-    
-    if (process.env.NODE_ENV !== 'production') {
-      console.log('Authorization Header:', authHeader ? 'Present' : 'Missing');
+    if (!authHeader) {
+      log('missing authorization header');
+      return { error: 'Unauthorized', status: 401, reasonCode: 'NO_HEADER' };
     }
-    
-    const idToken = authHeader?.replace('Bearer ', '')?.trim();
-    
+
+    const idToken = authHeader.replace(/^Bearer /i, '').trim();
     if (!idToken) {
-      console.error('No token found in Authorization header');
-      return { error: 'Unauthorized - No token provided', status: 401 };
+      log('empty bearer token');
+      return { error: 'Unauthorized', status: 401, reasonCode: 'EMPTY_TOKEN' };
     }
 
-    // Remove token logging completely for security
-    if (process.env.NODE_ENV !== 'production') {
-      console.log('Token received: [REDACTED]');
-    }
-
-    let decodedToken;
+    let decodedToken: any;
     try {
-      decodedToken = await firebaseAdminAuth.verifyIdToken(idToken);
-      if (process.env.NODE_ENV !== 'production') {
-        console.log('Token verified successfully for:', decodedToken.email);
+      const auth = await getFirebaseAdminAuth();
+      if (!auth) {
+        log('admin auth instance undefined');
+        return { error: 'Invalid token', status: 401, reasonCode: 'NO_ADMIN_AUTH' };
       }
-    } catch (error) {
-      console.error('Token verification failed:', error);
-      return { error: 'Invalid token', status: 401 };
+      decodedToken = await auth.verifyIdToken(idToken);
+      log('token verified uid=', decodedToken.uid, 'email=', decodedToken.email);
+    } catch (e: any) {
+      log('verifyIdToken failed', e?.code, e?.message);
+      return { error: 'Invalid token', status: 401, reasonCode: e?.code || 'VERIFY_FAILED' };
     }
 
     const userEmail = decodedToken.email;
     if (!userEmail) {
-      console.error('No email in token payload');
-      return { error: 'Invalid token payload', status: 401 };
+      log('decoded token missing email');
+      return { error: 'Invalid token payload', status: 401, reasonCode: 'NO_EMAIL' };
     }
 
-    // Check if user is admin - use environment variables for security
     const adminEmails = [
       ...(process.env.ADMIN_EMAIL ? [process.env.ADMIN_EMAIL] : []),
       ...(process.env.ADMIN_EMAILS?.split(',') || [])
     ].filter(Boolean);
-    
     const adminUids = process.env.ADMIN_UIDS?.split(',') || [];
-    
-    // Remove debug logging in production
-    if (process.env.NODE_ENV !== 'production') {
-      console.log('Checking admin status for:', userEmail);
-      console.log('Admin emails configured:', adminEmails.length);
-      console.log('Admin UIDs configured:', adminUids.length);
-    }
-    
     const isAdmin = adminEmails.includes(userEmail) || adminUids.includes(decodedToken.uid);
-    
-    if (process.env.NODE_ENV !== 'production') {
-      console.log('Is admin:', isAdmin);
-    }
 
-    // Find or create user
-    let user = await prisma.user.findUnique({
-      where: { email: userEmail }
-    });
-
+    let user = await prisma.user.findUnique({ where: { email: userEmail } });
     if (!user) {
-      if (process.env.NODE_ENV !== 'production') {
-        console.log('Creating new user:', userEmail);
-      }
+      log('provisioning user record for', userEmail, 'admin?', isAdmin);
       user = await prisma.user.create({
         data: {
           email: userEmail,
@@ -93,15 +70,10 @@ export async function verifyFirebaseUser(request: NextRequest): Promise<VerifyRe
           emailVerified: decodedToken.email_verified || false,
         }
       });
-    } else {
-      if (process.env.NODE_ENV !== 'production') {
-        console.log('Found existing user:', userEmail);
-      }
     }
-
     return { user };
   } catch (error) {
-    console.error('Authentication error:', error);
-    return { error: 'Internal Server Error', status: 500 };
+    console.error('Authentication internal error:', error);
+    return { error: 'Internal Server Error', status: 500, reasonCode: 'INTERNAL' };
   }
 }

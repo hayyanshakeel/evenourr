@@ -57,6 +57,11 @@ export default function LoginForm({ redirectPath = '/', isAdminLogin = false }: 
         errorMessage = 'No account found with this email address.';
       } else if (error.code === 'auth/wrong-password') {
         errorMessage = 'Incorrect password.';
+      } else if (error.code === 'auth/invalid-credential') {
+        // Firebase v10+ often returns auth/invalid-credential for wrong email/password
+        errorMessage = isAdminLogin
+          ? 'Invalid admin credentials. Check the email and password.'
+          : 'Incorrect email or password.';
       } else if (error.code === 'auth/invalid-email') {
         errorMessage = 'Invalid email address.';
       } else if (error.code === 'auth/too-many-requests') {

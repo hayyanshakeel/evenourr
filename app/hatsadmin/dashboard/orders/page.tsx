@@ -12,6 +12,8 @@ import { HiFunnel as HiOutlineFilter, HiArrowDownTray as HiOutlineArrowDownTray,
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
 import { AdminOrder } from "@/lib/admin-data"
 import { useAdminAuth } from "@/hooks/useAdminAuth"
+import { useSettings } from "@/hooks/useSettings"
+import { formatCurrency } from "@/lib/currencies"
 
 interface OrderStats {
   total: number;
@@ -30,6 +32,7 @@ export default function OrdersPage() {
   const [searchQuery, setSearchQuery] = useState("")
   const [statusFilter, setStatusFilter] = useState<string>("all")
   const [debouncedSearchQuery, setDebouncedSearchQuery] = useState("")
+  const { currency } = useSettings()
 
   // Debounce search query
   useEffect(() => {
@@ -67,9 +70,10 @@ export default function OrdersPage() {
       ])
 
       if (ordersResponse.ok) {
-        const ordersData = await ordersResponse.json()
+        const raw = await ordersResponse.json()
+        const payload = raw?.data ?? raw
         // Ensure we always have an array, with proper fallback
-        const ordersArray = ordersData?.orders || ordersData || []
+        const ordersArray = payload?.orders || []
         setOrders(Array.isArray(ordersArray) ? ordersArray : [])
       } else {
         console.error('Failed to fetch orders:', ordersResponse.status)
@@ -77,7 +81,8 @@ export default function OrdersPage() {
       }
 
       if (statsResponse.ok) {
-        const statsData = await statsResponse.json()
+        const rawStats = await statsResponse.json()
+        const statsData = rawStats?.data ?? rawStats
         setStats(statsData)
       } else {
         console.error('Failed to fetch stats:', statsResponse.status)
@@ -141,10 +146,17 @@ export default function OrdersPage() {
   // Ensure filteredOrders is always an array
   const filteredOrders = Array.isArray(orders) ? orders : []
 
+  const safeTotals = {
+    total: stats?.total ?? 0,
+    pending: stats?.pending ?? 0,
+    shipped: stats?.shipped ?? 0,
+    cancelled: stats?.cancelled ?? 0,
+  }
+
   const statsCards = stats ? [
     {
       title: "Total Orders",
-      value: stats.total.toString(),
+      value: String(safeTotals.total),
       icon: HiOutlineShoppingCart,
       color: "text-blue-500",
       bgColor: "bg-blue-50",
@@ -152,7 +164,7 @@ export default function OrdersPage() {
     },
     {
       title: "Pending",
-      value: stats.pending.toString(),
+      value: String(safeTotals.pending),
       icon: HiOutlineClock,
       color: "text-orange-500",
       bgColor: "bg-orange-50",
@@ -160,7 +172,7 @@ export default function OrdersPage() {
     },
     {
       title: "Shipped",
-      value: stats.shipped.toString(),
+      value: String(safeTotals.shipped),
       icon: HiOutlineTruck,
       color: "text-purple-500",
       bgColor: "bg-purple-50",
@@ -168,7 +180,7 @@ export default function OrdersPage() {
     },
     {
       title: "Cancelled",
-      value: stats.cancelled.toString(),
+      value: String(safeTotals.cancelled),
       icon: HiOutlineCheckCircle,
       color: "text-red-500",
       bgColor: "bg-red-50",
@@ -183,6 +195,21 @@ export default function OrdersPage() {
     shipped: "bg-violet-100 text-black !bg-violet-100 !text-black",
     delivered: "bg-emerald-100 text-black !bg-emerald-100 !text-black",
     cancelled: "bg-rose-100 text-black !bg-rose-100 !text-black",
+  }
+
+  async function updateOrderStatus(orderId: number, nextStatus: string) {
+    try {
+      const res = await makeAuthenticatedRequest(`/api/admin/orders/${orderId}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ status: nextStatus }),
+      })
+      if (!res.ok) throw new Error(`Failed to update status (${res.status})`)
+      await fetchData()
+    } catch (err) {
+      console.error('updateOrderStatus failed', err)
+      alert(err instanceof Error ? err.message : 'Failed to update status')
+    }
   }
 
   if (loading) {
@@ -413,7 +440,7 @@ export default function OrdersPage() {
                               <div className="text-sm text-gray-500">{customerEmail}</div>
                             </div>
                           </TableCell>
-                          <TableCell className="font-semibold">₹{order.totalPrice}</TableCell>
+                          <TableCell className="font-semibold">{formatCurrency(order.totalPrice, currency)}</TableCell>
                           <TableCell>
                             <Badge 
                               variant="secondary"
@@ -442,10 +469,15 @@ export default function OrdersPage() {
                                   <HiOutlineEye className="h-4 w-4 mr-2" />
                                   View Details
                                 </DropdownMenuItem>
-                                <DropdownMenuItem>
-                                  Update Status
-                                </DropdownMenuItem>
-                                <DropdownMenuItem className="text-red-600">
+                                <DropdownMenuItem onClick={() => updateOrderStatus(order.id, 'processing')}>Mark Processing</DropdownMenuItem>
+                                <DropdownMenuItem onClick={() => updateOrderStatus(order.id, 'paid')}>Mark Paid</DropdownMenuItem>
+                                <DropdownMenuItem onClick={() => updateOrderStatus(order.id, 'shipped')}>Mark Shipped</DropdownMenuItem>
+                                <DropdownMenuItem onClick={() => updateOrderStatus(order.id, 'delivered')}>Mark Delivered</DropdownMenuItem>
+                                <DropdownMenuItem className="text-red-600" onClick={() => {
+                                  if (confirm('Are you sure you want to cancel this order?')) {
+                                    updateOrderStatus(order.id, 'cancelled')
+                                  }
+                                }}>
                                   Cancel Order
                                 </DropdownMenuItem>
                               </DropdownMenuContent>

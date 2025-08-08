@@ -1,68 +1,45 @@
-import { NextRequest, NextResponse } from 'next/server';
-import { verifyFirebaseUser } from '@/lib/firebase-verify';
+import { NextRequest } from 'next/server';
+import { requireAdmin } from '@/lib/admin-guard';
+import { ok, fail } from '@/lib/api-error';
 import prisma from '@/lib/db';
 
-export async function GET(request: NextRequest) {
-  try {
-    // Verify authentication
-    const verification = await verifyFirebaseUser(request);
-    
-    if (!verification.user) {
-      return NextResponse.json(
-        { 
-          error: verification.error || 'Unauthorized',
-          details: 'Please ensure you are logged in and have a valid authentication token'
-        },
-        { status: verification.status || 401 }
-      );
-    }
+export const runtime = 'nodejs';
 
+export async function GET(request: NextRequest) {
+  const guard = await requireAdmin(request);
+  if (guard.response) return guard.response;
+
+  try {
     const categories = await prisma.category.findMany({ 
       orderBy: { name: 'asc' } 
     });
     
-    return NextResponse.json(categories);
+    return ok(categories);
   } catch (error) {
     console.error('Error fetching categories:', error);
-    return NextResponse.json({ error: 'Failed to fetch categories' }, { status: 500 });
+    return fail('INTERNAL_ERROR', 'Failed to fetch categories', 500);
   }
 }
 
 export async function POST(request: NextRequest) {
-  try {
-    // Verify authentication
-    const verification = await verifyFirebaseUser(request);
-    
-    if (!verification.user) {
-      return NextResponse.json(
-        { 
-          error: verification.error || 'Unauthorized',
-          details: 'Please ensure you are logged in and have a valid authentication token'
-        },
-        { status: verification.status || 401 }
-      );
-    }
+  const guard = await requireAdmin(request);
+  if (guard.response) return guard.response;
 
+  try {
     const body = await request.json();
     const { name } = body;
     
     if (!name || typeof name !== 'string') {
-      return NextResponse.json(
-        { error: 'Category name is required' }, 
-        { status: 400 }
-      );
+      return fail('VALIDATION_ERROR', 'Category name is required', 400);
     }
 
     const category = await prisma.category.create({ 
       data: { name: name.trim() } 
     });
     
-    return NextResponse.json(category, { status: 201 });
+    return ok(category, { status: 201 });
   } catch (error) {
     console.error('Error creating category:', error);
-    return NextResponse.json(
-      { error: 'Failed to create category' }, 
-      { status: 500 }
-    );
+    return fail('INTERNAL_ERROR', 'Failed to create category', 500);
   }
 }

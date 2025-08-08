@@ -21,24 +21,30 @@ interface Category {
 
 export default function CategoriesPage() {
   const router = useRouter();
-  const { makeAuthenticatedRequest } = useAdminAuth();
+  const { makeAuthenticatedRequest, isReady, isAuthenticated } = useAdminAuth();
   const [categories, setCategories] = useState<Category[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
 
   useEffect(() => {
-    fetchCategories();
-  }, []);
+    if (isReady && isAuthenticated) {
+      fetchCategories();
+    }
+  }, [isReady, isAuthenticated]);
 
   const fetchCategories = async () => {
     try {
       setLoading(true);
+      if (!isReady || !isAuthenticated) {
+        return;
+      }
       const response = await makeAuthenticatedRequest('/api/admin/categories');
       if (!response.ok) {
         throw new Error('Failed to fetch categories');
       }
       const data = await response.json();
-      setCategories(data);
+      const list = Array.isArray(data) ? data : (data?.data ?? []);
+      setCategories(list);
     } catch (error) {
       console.error('Error fetching categories:', error);
     } finally {

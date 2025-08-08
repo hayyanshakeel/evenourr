@@ -25,7 +25,11 @@ export default function FirebaseTest() {
         // This will fail if there's a network issue
         await signInWithEmailAndPassword(auth, 'test@test.com', 'wrongpassword');
       } catch (error: any) {
-        if (error.code === 'auth/user-not-found' || error.code === 'auth/wrong-password') {
+        if (
+          error.code === 'auth/user-not-found' ||
+          error.code === 'auth/wrong-password' ||
+          error.code === 'auth/invalid-credential'
+        ) {
           setTestResult(prev => prev + '\n✅ Firebase Auth service is reachable');
         } else if (error.code === 'auth/network-request-failed') {
           setTestResult(prev => prev + '\n❌ Network request failed - Firebase unreachable');

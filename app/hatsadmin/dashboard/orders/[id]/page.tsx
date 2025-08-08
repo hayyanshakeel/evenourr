@@ -5,9 +5,11 @@ import { useParams, useRouter } from "next/navigation"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
-import { ArrowLeft, Package, User, CreditCard, Truck, Calendar, DollarSign } from "lucide-react"
+import { ArrowLeft, Package, User, CreditCard, Truck, Calendar, DollarSign, MapPin, FileText } from "lucide-react"
 import { AdminOrder } from "@/lib/admin-data"
 import { useAdminAuth } from "@/hooks/useAdminAuth"
+import { useSettings } from "@/hooks/useSettings"
+import { formatCurrency } from "@/lib/currencies"
 
 export default function OrderDetailsPage() {
   const params = useParams()
@@ -16,6 +18,8 @@ export default function OrderDetailsPage() {
   const orderId = parseInt(params.id as string)
   const [order, setOrder] = useState<AdminOrder | null>(null)
   const [loading, setLoading] = useState(true)
+  const [updating, setUpdating] = useState(false)
+  const { currency } = useSettings()
 
   useEffect(() => {
     if (isReady && isAuthenticated && orderId) {
@@ -35,6 +39,29 @@ export default function OrderDetailsPage() {
     } finally {
       setLoading(false)
     }
+  }
+
+  async function updateStatus(nextStatus: string) {
+    try {
+      setUpdating(true)
+      const res = await makeAuthenticatedRequest(`/api/admin/orders/${orderId}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ status: nextStatus })
+      })
+      if (!res.ok) throw new Error(`Failed to update status (${res.status})`)
+      await fetchOrder()
+    } catch (err) {
+      console.error('updateStatus failed', err)
+      alert(err instanceof Error ? err.message : 'Failed to update status')
+    } finally {
+      setUpdating(false)
+    }
+  }
+
+  async function cancelOrder() {
+    if (!confirm('Are you sure you want to cancel this order?')) return
+    await updateStatus('cancelled')
   }
 
   const statusColors: { [key: string]: string } = {
@@ -135,7 +162,7 @@ export default function OrderDetailsPage() {
                         <p className="text-sm text-gray-500">Quantity: {item.quantity}</p>
                       </div>
                       <div className="text-right">
-                        <p className="font-medium">${item.price.toFixed(2)}</p>
+                        <p className="font-medium">{formatCurrency(item.price, currency)}</p>
                         <p className="text-sm text-gray-500">each</p>
                       </div>
                     </div>
@@ -164,6 +191,38 @@ export default function OrderDetailsPage() {
               </CardContent>
             </Card>
 
+            {/* Shipping & Billing */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <MapPin className="h-5 w-5" />
+                  Shipping & Billing
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-4 text-sm">
+                  <div>
+                    <div className="font-semibold">Shipping Address</div>
+                    <div className="text-gray-600 break-words">{(order as any).shippingAddress || '—'}</div>
+                  </div>
+                  <div>
+                    <div className="font-semibold">Billing Address</div>
+                    <div className="text-gray-600 break-words">{(order as any).billingAddress || '—'}</div>
+                  </div>
+                  <div className="grid grid-cols-2 gap-3">
+                    <div>
+                      <div className="font-semibold">Shipping Method</div>
+                      <div className="text-gray-600">{(order as any).shippingMethod || '—'}</div>
+                    </div>
+                    <div>
+                      <div className="font-semibold">Payment Method</div>
+                      <div className="text-gray-600">{(order as any).paymentMethod || '—'}</div>
+                    </div>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
             {/* Order Summary */}
             <Card>
               <CardHeader>
@@ -176,7 +235,7 @@ export default function OrderDetailsPage() {
                 <div className="space-y-2">
                   <div className="flex justify-between">
                     <span>Subtotal</span>
-                    <span>${order.totalPrice.toFixed(2)}</span>
+                    <span>{formatCurrency(order.totalPrice, currency)}</span>
                   </div>
                   <div className="flex justify-between">
                     <span>Shipping</span>
@@ -184,14 +243,33 @@ export default function OrderDetailsPage() {
                   </div>
                   <div className="flex justify-between">
                     <span>Tax</span>
-                    <span>$0.00</span>
+                    <span>{typeof (order as any).taxRate === 'number' ? `${((order as any).taxRate as number).toFixed(2)}%` : '$0.00'}</span>
                   </div>
                   <hr className="my-2" />
                   <div className="flex justify-between font-bold">
                     <span>Total</span>
-                    <span>${order.totalPrice.toFixed(2)}</span>
+                    <span>{formatCurrency(order.totalPrice, currency)}</span>
                   </div>
                 </div>
+              </CardContent>
+            </Card>
+
+            {/* Actions: Update Status / Cancel */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <FileText className="h-5 w-5" />
+                  Manage Order
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-3">
+                <div className="grid grid-cols-2 gap-2">
+                  <Button variant="outline" disabled={updating} onClick={() => updateStatus('processing')}>Mark Processing</Button>
+                  <Button variant="outline" disabled={updating} onClick={() => updateStatus('paid')}>Mark Paid</Button>
+                  <Button variant="outline" disabled={updating} onClick={() => updateStatus('shipped')}>Mark Shipped</Button>
+                  <Button variant="outline" disabled={updating} onClick={() => updateStatus('delivered')}>Mark Delivered</Button>
+                </div>
+                <Button variant="destructive" disabled={updating} onClick={cancelOrder}>Cancel Order</Button>
               </CardContent>
             </Card>
 

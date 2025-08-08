@@ -11,6 +11,8 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
 import { Package, TrendingUp, AlertTriangle, Eye, Edit, Trash2, MoreHorizontal } from 'lucide-react';
 import { useAdminAuth } from "@/hooks/useAdminAuth"
+import { useSettings } from "@/hooks/useSettings"
+import { formatCurrency } from "@/lib/currencies"
 
 interface Product {
   id: number;
@@ -30,6 +32,7 @@ export default function ProductsPage() {
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
   const [debouncedSearchTerm, setDebouncedSearchTerm] = useState('');
+  const { currency } = useSettings()
 
   // Debounce search term
   useEffect(() => {
@@ -140,12 +143,7 @@ export default function ProductsPage() {
     return { status: 'In Stock', color: 'bg-emerald-100 text-black !bg-emerald-100 !text-black' };
   };
 
-  const formatPrice = (price: number) => {
-    return new Intl.NumberFormat('en-IN', {
-      style: 'currency',
-      currency: 'INR',
-    }).format(price);
-  };
+  const formatPrice = (price: number) => formatCurrency(price, currency)
 
   const totalProducts = products.length;
   const activeProducts = products.filter(p => p.status === 'active').length;

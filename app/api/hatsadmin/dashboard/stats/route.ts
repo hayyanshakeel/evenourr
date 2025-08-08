@@ -148,46 +148,9 @@ export async function GET(request: NextRequest) {
       ? ((productsSold._sum.quantity || 0) - (lastMonthProductsSold._sum.quantity || 0)) / (lastMonthProductsSold._sum.quantity || 1) * 100
       : -2.4;
 
-    // Generate recent activity
-    const recentActivity = [
-      {
-        type: 'order',
-        title: 'New order #ORD-2024-001',
-        description: `₹${recentOrders[0]?.totalPrice || 2340} from ${recentOrders[0]?.customer?.name || 'John Doe'}`,
-        time: '2 minutes ago',
-        icon: 'order'
-      },
-      {
-        type: 'product',
-        title: 'Product updated',
-        description: 'iPhone 15 Pro inventory updated',
-        time: '5 minutes ago',
-        icon: 'product'
-      },
-      {
-        type: 'customer',
-        title: 'New customer registered',
-        description: 'Sarah Wilson joined',
-        time: '10 minutes ago',
-        icon: 'customer'
-      },
-      {
-        type: 'payment',
-        title: 'Payment failed',
-        description: 'Order #ORD-2024-002 payment declined',
-        time: '15 minutes ago',
-        icon: 'payment'
-      }
-    ];
-
-    // Live orders data
-    const liveOrders = [
-      { location: 'Mumbai, India', amount: 2340, time: '2s ago' },
-      { location: 'New York, USA', amount: 890, time: '5s ago' },
-      { location: 'London, UK', amount: 1560, time: '12s ago' },
-      { location: 'Tokyo, Japan', amount: 6900, time: '18s ago' },
-      { location: 'Sydney, Australia', amount: 2340, time: '25s ago' }
-    ];
+    // Remove placeholder data; only derive from actual DB records
+    const recentActivity: any[] = [];
+    const liveOrders: any[] = [];
 
     const stats = {
       totalRevenue: {
@@ -219,37 +182,10 @@ export async function GET(request: NextRequest) {
     };
 
     // Only show live orders if there are actual recent orders
-    const activeLiveOrders = recentOrders.length > 0 ? [
-      { location: 'Mumbai, India', amount: recentOrders[0]?.totalPrice || 2340, time: '2s ago' },
-      { location: 'New York, USA', amount: recentOrders[1]?.totalPrice || 890, time: '5s ago' },
-      { location: 'London, UK', amount: recentOrders[2]?.totalPrice || 1560, time: '12s ago' },
-      { location: 'Tokyo, Japan', amount: recentOrders[3]?.totalPrice || 6900, time: '18s ago' },
-    ].filter(order => order.amount > 0) : [];
+    const activeLiveOrders = [] as any[];
 
     // Only show recent activity if there are actual recent events
-    const activeRecentActivity = recentOrders.length > 0 ? [
-      {
-        type: 'order',
-        title: `New order #ORD-${new Date().getFullYear()}-${String(recentOrders[0]?.id || 1).padStart(3, '0')}`,
-        description: `₹${recentOrders[0]?.totalPrice || 2340} from ${recentOrders[0]?.customer?.name || 'Customer'}`,
-        time: '2 minutes ago',
-        icon: 'order'
-      },
-      {
-        type: 'product',
-        title: 'Product updated',
-        description: `${recentOrders[0]?.orderItems?.[0]?.product?.name || 'Product'} inventory updated`,
-        time: '5 minutes ago',
-        icon: 'product'
-      },
-      {
-        type: 'customer',
-        title: 'New customer registered',
-        description: `${recentOrders[0]?.customer?.name || 'Customer'} joined`,
-        time: '10 minutes ago',
-        icon: 'customer'
-      }
-    ] : [];
+    const activeRecentActivity = [] as any[];
 
     return NextResponse.json({ 
       success: true, 

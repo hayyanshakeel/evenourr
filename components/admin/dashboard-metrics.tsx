@@ -5,6 +5,8 @@ import { ArrowUpIcon, ArrowDownIcon, DollarSign, ShoppingCart, Users, Package } 
 import { cn } from "@/lib/utils"
 import { useEffect, useState } from "react"
 import { useAdminAuth } from "@/hooks/useAdminAuth"
+import { useSettings } from "@/hooks/useSettings"
+import { formatCurrency } from "@/lib/currencies"
 
 interface DashboardMetricsData {
   totalRevenue: number;
@@ -15,12 +17,17 @@ interface DashboardMetricsData {
   ordersChange: number;
   productsChange: number;
   customersChange: number;
+  lowStockCount?: number;
+  pendingOrdersCount?: number;
+  recentOrders?: any[];
+  topProducts?: any[];
 }
 
 export function DashboardMetrics() {
   const [metrics, setMetrics] = useState<DashboardMetricsData | null>(null)
   const [loading, setLoading] = useState(true)
   const { makeAuthenticatedRequest, isReady, isAuthenticated } = useAdminAuth()
+  const { currency } = useSettings()
 
   useEffect(() => {
     async function fetchMetrics() {
@@ -36,20 +43,50 @@ export function DashboardMetrics() {
         const response = await makeAuthenticatedRequest('/api/admin/dashboard/metrics')
         
         if (response.ok) {
-          const data = await response.json()
+          const raw = await response.json()
+          const data = raw?.data ?? raw
           setMetrics(data)
         } else {
           console.error('Failed to fetch metrics:', response.status, response.statusText)
+          // Set default metrics on error
+          setMetrics({
+            totalRevenue: 0,
+            totalOrders: 0,
+            totalProducts: 0,
+            totalCustomers: 0,
+            revenueChange: 0,
+            ordersChange: 0,
+            productsChange: 0,
+            customersChange: 0,
+            lowStockCount: 0,
+            pendingOrdersCount: 0,
+            recentOrders: [],
+            topProducts: [],
+          })
         }
       } catch (error) {
-        console.error('Failed to fetch dashboard metrics:', error)
-      } finally {
-        setLoading(false)
+        console.error('Error fetching metrics:', error)
+        // Set default metrics on error instead of throwing
+        setMetrics({
+          totalRevenue: 0,
+          totalOrders: 0,
+          totalProducts: 0,
+          totalCustomers: 0,
+          revenueChange: 0,
+          ordersChange: 0,
+          productsChange: 0,
+          customersChange: 0,
+          lowStockCount: 0,
+          pendingOrdersCount: 0,
+          recentOrders: [],
+          topProducts: [],
+        })
       }
+      setLoading(false)
     }
 
     fetchMetrics()
-  }, [isReady, isAuthenticated])
+  }, [isReady, isAuthenticated, makeAuthenticatedRequest])
 
   if (loading || !metrics) {
     return (
@@ -73,7 +110,7 @@ export function DashboardMetrics() {
   const metricCards = [
     {
       title: "Total Revenue",
-      value: `₹${(metrics?.totalRevenue || 0).toLocaleString()}`,
+      value: formatCurrency(metrics?.totalRevenue || 0, currency),
       change: `${(metrics?.revenueChange || 0) > 0 ? '+' : ''}${(metrics?.revenueChange || 0).toFixed(1)}%`,
       trend: (metrics?.revenueChange || 0) >= 0 ? "up" : "down",
       icon: DollarSign,

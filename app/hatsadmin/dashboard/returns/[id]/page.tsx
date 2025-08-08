@@ -2,6 +2,8 @@
 
 import { useState, useEffect } from 'react';
 import { useAdminAuth } from '@/hooks/useAdminAuth';
+import { useSettings } from '@/hooks/useSettings';
+import { formatCurrency as formatCurrencyUtil } from '@/lib/currencies';
 import { auth } from '@/lib/firebase';
 import { onAuthStateChanged, User as FirebaseUser } from 'firebase/auth';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -134,6 +136,7 @@ export default function ReturnDetailPage() {
   const params = useParams();
   const router = useRouter();
   const { token, isReady, isAuthenticated } = useAdminAuth();
+  const { currency } = useSettings();
   const [user, setUser] = useState<FirebaseUser | null>(null);
   const [returnData, setReturnData] = useState<ReturnDetail | null>(null);
   const [loading, setLoading] = useState(true);
@@ -343,10 +346,7 @@ export default function ReturnDetailPage() {
 
   // Format currency
   const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat('en-US', {
-      style: 'currency',
-      currency: 'USD',
-    }).format(amount);
+    return formatCurrencyUtil(amount, currency);
   };
 
   // Format date

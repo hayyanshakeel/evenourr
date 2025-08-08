@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { PhotoIcon, XMarkIcon, PlusIcon } from '@heroicons/react/24/outline';
 import VariantsManager from './variants-manager';
@@ -29,7 +29,8 @@ interface ProductVariant {
 
 function SimpleProductForm({ initialData }: SimpleProductFormProps) {
   const router = useRouter();
-  const { makeAuthenticatedRequest } = useAdminAuth();
+  const { makeAuthenticatedRequest, isReady, isAuthenticated } = useAdminAuth();
+  const loadedRef = useRef(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [categories, setCategories] = useState<{ id: number; name: string }[]>([]);
@@ -60,40 +61,35 @@ function SimpleProductForm({ initialData }: SimpleProductFormProps) {
   const [options, setOptions] = useState<ProductOption[]>(initialData?.options || []);
   const [variants, setVariants] = useState<ProductVariant[]>(initialData?.variants || []);
 
-  // Fetch categories and collections on component mount
+  // Fetch categories and collections once after auth is ready
   useEffect(() => {
-    // Fetch categories
-    makeAuthenticatedRequest('/api/admin/categories')
-      .then(res => {
-        if (!res.ok) {
-          throw new Error(`Failed to fetch categories: ${res.status}`);
-        }
-        return res.json();
-      })
-      .then(data => {
-        setCategories(data);
-      })
-      .catch(err => {
-        console.error('Error fetching categories:', err);
-        setError('Failed to load categories');
-      });
+    if (!isReady || !isAuthenticated || loadedRef.current) return;
+    loadedRef.current = true;
 
-    // Fetch collections
-    makeAuthenticatedRequest('/api/admin/collections')
-      .then(res => {
-        if (!res.ok) {
-          throw new Error(`Failed to fetch collections: ${res.status}`);
-        }
-        return res.json();
-      })
-      .then(data => {
-        setCollections(data);
-      })
-      .catch(err => {
-        console.error('Error fetching collections:', err);
-        setError('Failed to load collections');
-      });
-  }, []);
+    const abort = new AbortController();
+    const { signal } = abort;
+
+    const fetchLists = async () => {
+      try {
+        const [catRes, colRes] = await Promise.all([
+          makeAuthenticatedRequest('/api/admin/categories', { signal }),
+          makeAuthenticatedRequest('/api/admin/collections', { signal }),
+        ]);
+
+        const cats = await catRes.json().catch(() => []);
+        const cols = await colRes.json().catch(() => []);
+        setCategories(Array.isArray(cats) ? cats : (cats?.data ?? []));
+        setCollections(Array.isArray(cols) ? cols : (cols?.data ?? []));
+      } catch (err) {
+        if ((err as any)?.name === 'AbortError') return;
+        console.error('Loading categories/collections failed', err);
+        setError('Failed to load categories or collections');
+      }
+    };
+
+    fetchLists();
+    return () => abort.abort();
+  }, [isReady, isAuthenticated]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -101,6 +97,14 @@ function SimpleProductForm({ initialData }: SimpleProductFormProps) {
     setError(null);
 
     try {
+      // Validate required fields
+      if (!formData.name.trim()) {
+        throw new Error('Product name is required');
+      }
+      if (!formData.price || parseFloat(formData.price) <= 0) {
+        throw new Error('Valid price is required');
+      }
+
       // Generate slug from name
       const slug = formData.name
         ? formData.name
@@ -114,8 +118,8 @@ function SimpleProductForm({ initialData }: SimpleProductFormProps) {
       const productData = {
         name: formData.name,
         description: formData.description || '',
-        price: parseFloat(formData.price),
-        inventory: parseInt(formData.inventory),
+        price: parseFloat(formData.price) || 0,
+        inventory: parseInt(formData.inventory) || 0,
         status: formData.status,
         slug: slug,
         categoryId: categoryId ? parseInt(categoryId) : undefined,

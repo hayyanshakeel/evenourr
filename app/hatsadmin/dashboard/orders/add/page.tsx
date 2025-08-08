@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useEffect, useMemo, useRef, useState } from "react"
 import { useRouter } from "next/navigation"
 import { PageHeader } from "@/components/admin/page-header"
 import { Button } from "@/components/ui/button"
@@ -9,16 +9,27 @@ import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { HiArrowLeft, HiPlus, HiTrash } from "react-icons/hi2"
+import { useAdminAuth } from "@/hooks/useAdminAuth"
 
 interface OrderItem {
   id: string
+  productId?: number
   productName: string
   quantity: number
+  price: number
+  isManual: boolean
+  productSearch: string
+}
+
+interface SearchProduct {
+  id: number
+  name: string
   price: number
 }
 
 export default function AddOrderPage() {
   const router = useRouter()
+  const { makeAuthenticatedRequest, isReady, isAuthenticated } = useAdminAuth()
   const [formData, setFormData] = useState({
     customerName: "",
     customerEmail: "",
@@ -33,20 +44,56 @@ export default function AddOrderPage() {
   })
 
   const [orderItems, setOrderItems] = useState<OrderItem[]>([])
+  const searchAbortRef = useRef<Record<string, AbortController>>({})
+  const [searchResults, setSearchResults] = useState<Record<string, SearchProduct[]>>({})
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    const orderData = {
-      ...formData,
-      items: orderItems,
-      subtotal: orderItems.reduce((sum, item) => sum + (item.price * item.quantity), 0),
-      tax: (orderItems.reduce((sum, item) => sum + (item.price * item.quantity), 0) * parseFloat(formData.taxRate)) / 100,
-      total: orderItems.reduce((sum, item) => sum + (item.price * item.quantity), 0) * (1 + parseFloat(formData.taxRate) / 100),
-      orderNumber: `ORD-${Date.now()}`,
-      createdAt: new Date().toISOString()
+    // Client-side validation
+    if (orderItems.length === 0) {
+      alert('Please add at least one item')
+      return
     }
-    console.log("Creating order:", orderData)
-    router.push("/hatsadmin/dashboard/orders")
+    const invalidRow = orderItems.find(i => !i.isManual && !i.productId)
+    if (invalidRow) {
+      alert('Please select a product for each non-manual item')
+      return
+    }
+    const subtotal = orderItems.reduce((sum, item) => sum + (item.price * item.quantity), 0)
+    const tax = (subtotal * parseFloat(formData.taxRate || "0")) / 100
+    const total = subtotal + tax
+
+    const payload = {
+      customer: { name: formData.customerName, email: formData.customerEmail },
+      shippingAddress: formData.shippingAddress,
+      billingAddress: formData.billingAddress || formData.shippingAddress,
+      status: formData.orderStatus,
+      totalPrice: total,
+      items: orderItems.map(i => ({
+        isManual: i.isManual,
+        productId: i.isManual ? undefined : i.productId,
+        productName: i.isManual ? (i.productName || 'Manual Item') : undefined,
+        quantity: i.quantity,
+        price: i.price,
+      })),
+    } as any
+
+    try {
+      if (!isReady || !isAuthenticated) throw new Error('Not authenticated')
+      const res = await makeAuthenticatedRequest('/api/admin/orders', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      })
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}))
+        throw new Error(err?.error?.message || `Failed to create order (${res.status})`)
+      }
+      router.push("/hatsadmin/dashboard/orders")
+    } catch (err) {
+      console.error('Create order failed', err)
+      alert(err instanceof Error ? err.message : 'Failed to create order')
+    }
   }
 
   const handleInputChange = (field: string, value: string) => {
@@ -59,9 +106,12 @@ export default function AddOrderPage() {
   const addOrderItem = () => {
     const newItem: OrderItem = {
       id: Date.now().toString(),
+      productId: undefined,
       productName: "",
       quantity: 1,
-      price: 0
+      price: 0,
+      isManual: false,
+      productSearch: ""
     }
     setOrderItems(prev => [...prev, newItem])
   }
@@ -74,6 +124,55 @@ export default function AddOrderPage() {
 
   const removeOrderItem = (id: string) => {
     setOrderItems(prev => prev.filter(item => item.id !== id))
+  }
+
+  const toggleManual = (id: string, manual: boolean) => {
+    setOrderItems(prev => prev.map(item =>
+      item.id === id ? {
+        ...item,
+        isManual: manual,
+        // clear selection when switching modes
+        productId: manual ? undefined : item.productId,
+        productName: manual ? item.productName : item.productName,
+      } : item
+    ))
+  }
+
+  const searchProducts = async (id: string, query: string) => {
+    // basic guard
+    if (!isReady || !isAuthenticated) return;
+    if (query.trim().length < 1) {
+      setSearchResults(prev => ({ ...prev, [id]: [] }))
+      return
+    }
+    // cancel previous
+    if (searchAbortRef.current[id]) searchAbortRef.current[id].abort()
+    const ac = new AbortController()
+    searchAbortRef.current[id] = ac
+    try {
+      const res = await makeAuthenticatedRequest(`/api/admin/products?limit=8&search=${encodeURIComponent(query)}`, { signal: ac.signal })
+      if (!res.ok) return
+      const data = await res.json()
+      const products: SearchProduct[] = (data?.products || data || []).map((p: any) => ({ id: p.id, name: p.name, price: p.price }))
+      setSearchResults(prev => ({ ...prev, [id]: products }))
+    } catch (err: any) {
+      if (err?.name === 'AbortError') return
+      console.warn('product search failed', err)
+    }
+  }
+
+  const selectSearchProduct = (rowId: string, p: SearchProduct) => {
+    setOrderItems(prev => prev.map(item =>
+      item.id === rowId ? {
+        ...item,
+        productId: p.id,
+        productName: p.name,
+        price: item.price > 0 ? item.price : (Number(p.price) || 0),
+        isManual: false,
+        productSearch: p.name,
+      } : item
+    ))
+    setSearchResults(prev => ({ ...prev, [rowId]: [] }))
   }
 
   const subtotal = orderItems.reduce((sum, item) => sum + (item.price * item.quantity), 0)
@@ -220,13 +319,56 @@ export default function AddOrderPage() {
                           <div className="text-sm font-medium text-gray-500 w-8">
                             #{index + 1}
                           </div>
-                          <div className="flex-1 grid grid-cols-1 md:grid-cols-4 gap-4">
-                            <div className="md:col-span-2">
-                              <Input
-                                placeholder="Product name"
-                                value={item.productName}
-                                onChange={(e) => updateOrderItem(item.id, "productName", e.target.value)}
-                              />
+                          <div className="flex-1 grid grid-cols-1 md:grid-cols-5 gap-4">
+                            <div className="md:col-span-3">
+                              {/* Product Selector / Manual Toggle */}
+                              <div className="space-y-2">
+                                <div className="flex items-center gap-2">
+                                  <input
+                                    id={`manual-${item.id}`}
+                                    type="checkbox"
+                                    checked={item.isManual}
+                                    onChange={(e) => toggleManual(item.id, e.target.checked)}
+                                  />
+                                  <label htmlFor={`manual-${item.id}`} className="text-sm">Manual item</label>
+                                </div>
+                                {item.isManual ? (
+                                  <Input
+                                    placeholder="Manual product name"
+                                    value={item.productName}
+                                    onChange={(e) => updateOrderItem(item.id, "productName", e.target.value)}
+                                  />
+                                ) : (
+                                  <div className="relative">
+                                    <Input
+                                      placeholder="Search products by name"
+                                      value={item.productSearch}
+                                      onChange={(e) => {
+                                        const q = e.target.value
+                                        updateOrderItem(item.id, "productSearch", q)
+                                        searchProducts(item.id, q)
+                                      }}
+                                    />
+                                    {searchResults[item.id] && searchResults[item.id]!.length > 0 && (
+                                      <div className="absolute z-10 mt-1 w-full bg-white border rounded shadow">
+                                        {searchResults[item.id]!.map(p => (
+                                          <button
+                                            key={p.id}
+                                            type="button"
+                                            className="w-full text-left px-3 py-2 hover:bg-gray-50"
+                                            onClick={() => selectSearchProduct(item.id, p)}
+                                          >
+                                            <div className="flex justify-between">
+                                              <span>{p.name}</span>
+                                              <span className="text-sm text-gray-500">₹{Number(p.price || 0).toFixed(2)}</span>
+                                            </div>
+                                          </button>
+                                        ))}
+                                      </div>
+                                    )}
+                                  </div>
+                                )}
+                              </div>
                             </div>
                             <Input
                               type="number"

@@ -5,7 +5,7 @@ generator client {
 
 datasource db {
   provider = "sqlite"
-  url      = "file:./dev.db"
+  url      = env("DATABASE_URL") // switched to env var (set to file:./prisma/dev.db in .env)
 }
 
 // User model for authentication and authorization
@@ -222,6 +222,14 @@ model Order {
   cancelledAt DateTime?
   closedAt    DateTime?
   processedAt DateTime?
+
+  // Extended order fields for enterprise-grade detail visibility
+  shippingAddress String?
+  billingAddress  String?
+  shippingMethod  String?
+  paymentMethod   String?
+  taxRate         Float?
+  notes           String?
 
   user       User?      @relation(fields: [userId], references: [id], onDelete: SetNull)
   customer   Customer?  @relation(fields: [customerId], references: [id])

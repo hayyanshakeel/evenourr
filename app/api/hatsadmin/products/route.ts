@@ -2,9 +2,9 @@ import { NextRequest, NextResponse } from 'next/server';
 import prisma from '@/lib/db';
 import { productSchemas, validateInput, ValidationError } from '@/lib/security/validation';
 import { v2 as cloudinary } from 'cloudinary';
-import { firebaseAdminAuth } from '@/lib/firebase-admin';
+import { verifyFirebaseUser } from '@/lib/firebase-verify';
 
-// Updated to work with Prisma v6
+export const runtime = 'nodejs';
 
 // Configure Cloudinary
 cloudinary.config({
@@ -12,41 +12,6 @@ cloudinary.config({
   api_key: process.env.CLOUDINARY_API_KEY,
   api_secret: process.env.CLOUDINARY_API_SECRET,
 });
-
-
-// Middleware to verify Firebase ID token and map to local user
-async function verifyFirebaseUser(request: NextRequest) {
-  const authHeader = request.headers.get('authorization');
-  const idToken = authHeader?.split('Bearer ')[1];
-
-  if (!idToken) {
-    return { error: 'Unauthorized', status: 401 };
-  }
-
-  let decodedToken;
-  try {
-    decodedToken = await firebaseAdminAuth.verifyIdToken(idToken);
-  } catch {
-    return { error: 'Invalid token', status: 401 };
-  }
-
-  // Find or create user in local DB
-  let user = await prisma.user.findUnique({ where: { email: decodedToken.email } });
-  if (!user) {
-    user = await prisma.user.create({
-      data: {
-        email: decodedToken.email!,
-        firstName: decodedToken.name?.split(' ')[0] || 'User',
-        lastName: decodedToken.name?.split(' ').slice(1).join(' ') || '',
-        password: '', // Not used
-        role: 'user',
-        isActive: true,
-        emailVerified: decodedToken.email_verified || false,
-      },
-    });
-  }
-  return { user };
-}
 
 // GET /api/admin/products - Get all products (Admin only)
 export async function GET(request: NextRequest) {

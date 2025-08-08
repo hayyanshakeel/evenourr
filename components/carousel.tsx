@@ -3,9 +3,13 @@
 import Link from 'next/link';
 import { GridTileImage } from 'components/grid/tile';
 import prisma from '@/lib/db';
+import { getStoreCurrency } from '@/lib/currency-utils';
 
 export async function Carousel() {
   try {
+    // Get store currency
+    const currency = await getStoreCurrency();
+    
     // Fetch the 8 most recent products
     const products = await prisma.product.findMany({
       orderBy: { createdAt: 'desc' },
@@ -26,7 +30,7 @@ export async function Carousel() {
       priceRange: {
         maxVariantPrice: {
           amount: product.price.toString(),
-          currencyCode: 'USD'
+          currencyCode: currency
         }
       },
       featuredImage: {
@@ -66,6 +70,9 @@ export async function Carousel() {
   } catch (error) {
     console.error('Error fetching carousel products:', error);
     
+    // Get currency for fallback as well
+    const currency = await getStoreCurrency();
+    
     // Fallback to mock data if database fails
     const mockProducts = [
       {
@@ -74,7 +81,7 @@ export async function Carousel() {
         priceRange: {
           maxVariantPrice: {
             amount: '299.99',
-            currencyCode: 'USD'
+            currencyCode: currency
           }
         },
         featuredImage: {
@@ -88,7 +95,7 @@ export async function Carousel() {
         priceRange: {
           maxVariantPrice: {
             amount: '199.99',
-            currencyCode: 'USD'
+            currencyCode: currency
           }
         },
         featuredImage: {
@@ -102,7 +109,7 @@ export async function Carousel() {
         priceRange: {
           maxVariantPrice: {
             amount: '399.99',
-            currencyCode: 'USD'
+            currencyCode: currency
           }
         },
         featuredImage: {

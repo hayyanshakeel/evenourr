@@ -3,6 +3,8 @@ import { verifyFirebaseUser } from '@/lib/firebase-verify';
 import { securityHeaders } from '@/lib/security';
 import { ReturnsService } from '@/lib/services/returns';
 
+export const runtime = 'nodejs';
+
 export async function GET(request: NextRequest) {
   console.log('📈 [RETURNS STATS API] Starting GET request');
   

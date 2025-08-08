@@ -1,6 +1,8 @@
 'use client';
 
 import { PlusIcon } from '@heroicons/react/24/outline';
+import { useBehaviorTracking } from '@/hooks/useBehaviorTracking';
+import { useUser } from '@/hooks/useUser';
 import { useState } from 'react';
 
 function SubmitButton({
@@ -54,12 +56,16 @@ function SubmitButton({
 export function AddToCart({
   availableForSale,
   selectedVariantId,
+  product,
 }: {
   availableForSale: boolean;
   selectedVariantId?: number;
+  product?: any;
 }) {
   const [isPending, setIsPending] = useState(false);
   const [message, setMessage] = useState('');
+  const { user } = useUser();
+  const { trackCartAdd, trackError } = useBehaviorTracking({ userId: user?.id });
 
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -80,10 +86,26 @@ export function AddToCart({
         throw new Error(result.message || 'Failed to add item to cart.');
       }
 
+      // Track successful cart addition
+      if (product) {
+        trackCartAdd(product, 1);
+      }
+
       setMessage('Item added successfully!');
-      // You might want to update cart state globally here
+      
+      // Clear success message after 3 seconds
+      setTimeout(() => setMessage(''), 3000);
+      
     } catch (error: any) {
       setMessage(error.message);
+      
+      // Track cart addition error
+      trackError('cart_add_error', {
+        error: error.message,
+        productId: product?.id,
+        variantId: selectedVariantId
+      });
+      
     } finally {
       setIsPending(false);
     }
@@ -97,7 +119,12 @@ export function AddToCart({
         isPending={isPending}
       />
       {message && (
-        <p aria-live="polite" className="mt-2 text-sm text-red-500">
+        <p 
+          aria-live="polite" 
+          className={`mt-2 text-sm ${
+            message.includes('successfully') ? 'text-green-500' : 'text-red-500'
+          }`}
+        >
           {message}
         </p>
       )}

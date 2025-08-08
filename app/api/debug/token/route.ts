@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { verifyFirebaseUser } from '@/lib/firebase-verify';
+export const runtime = 'nodejs';
 
 export async function GET(request: NextRequest) {
   console.log('=== DEBUG TOKEN VERIFICATION ===');

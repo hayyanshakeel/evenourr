@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from 'next/server';
 import { verifyFirebaseUser } from '@/lib/firebase-verify';
 import { CustomersService } from '@/lib/admin-data';
 
+export const runtime = 'nodejs';
+
 export async function GET(request: NextRequest) {
   try {
     // Verify Firebase token and get user
