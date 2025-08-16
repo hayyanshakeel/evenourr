@@ -161,46 +161,98 @@ button {
   }
 }
 
-/* Custom smooth slider styles for CMS - Optimized for performance */
-.slider-smooth {
-  transition: none; /* Remove transition from root to prevent conflicts */
-  contain: layout style; /* Optimize rendering */
+/* Smooth sliding range input with arrow cursor */
+.slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  height: 4px;
+  background: linear-gradient(to right, #3b82f6 0%, #3b82f6 var(--slider-progress, 0%), #e5e7eb var(--slider-progress, 0%), #e5e7eb 100%);
+  border-radius: 2px;
+  outline: none;
+  cursor: pointer;
+  transition: all 0.15s ease;
 }
 
-.slider-smooth [data-radix-slider-track] {
-  transition: all 120ms cubic-bezier(0.4, 0, 0.2, 1);
-  will-change: background-color;
-  transform: translateZ(0); /* Hardware acceleration */
+.slider-thumb::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: #ffffff;
+  border: 2px solid #3b82f6;
+  cursor: pointer;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  transition: all 0.15s ease;
 }
 
-.slider-smooth [data-radix-slider-range] {
-  transition: all 120ms cubic-bezier(0.4, 0, 0.2, 1);
-  will-change: width;
-  transform: translateZ(0); /* Hardware acceleration */
+.slider-thumb::-webkit-slider-thumb:hover {
+  background: #f8fafc;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.15);
+  cursor: pointer;
 }
 
-.slider-smooth [data-radix-slider-thumb] {
-  transition: all 120ms cubic-bezier(0.4, 0, 0.2, 1);
-  will-change: transform, box-shadow;
-  transform: translateZ(0); /* Hardware acceleration */
-  cursor: grab;
+.slider-thumb::-webkit-slider-thumb:active {
+  background: #f1f5f9;
+  cursor: pointer;
+  transform: scale(0.95);
 }
 
-.slider-smooth [data-radix-slider-thumb]:hover {
-  transform: translateZ(0) scale(1.08);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25);
-  cursor: grab;
+.slider-thumb::-moz-range-thumb {
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: #ffffff;
+  border: 2px solid #3b82f6;
+  cursor: pointer;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  -moz-appearance: none;
+  transition: all 0.15s ease;
 }
 
-.slider-smooth [data-radix-slider-thumb]:active {
-  transform: translateZ(0) scale(1.02);
-  cursor: grabbing;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+.slider-thumb::-moz-range-thumb:hover {
+  background: #f8fafc;
+  cursor: pointer;
 }
 
-/* Smooth dragging performance */
-.slider-smooth [data-radix-slider-thumb]:active {
-  transition: box-shadow 120ms cubic-bezier(0.4, 0, 0.2, 1); /* Only animate shadow while dragging */
+.slider-thumb::-moz-range-thumb:active {
+  background: #f1f5f9;
+  cursor: pointer;
+}
+
+/* Track styling for clean appearance */
+.slider-thumb::-webkit-slider-track {
+  height: 4px;
+  background: #e5e7eb;
+  border-radius: 2px;
+  cursor: pointer;
+}
+
+.slider-thumb::-moz-range-track {
+  height: 4px;
+  background: #e5e7eb;
+  border-radius: 2px;
+  cursor: pointer;
+  border: none;
+}
+
+/* Smooth behavior */
+.slider-thumb {
+  touch-action: pan-x;
+  user-select: none;
+  -webkit-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
+}
+
+/* Focus styles */
+.slider-thumb:focus {
+  outline: 2px solid #3b82f6;
+  outline-offset: 2px;
+}
+
+.slider-thumb:focus::-webkit-slider-thumb {
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
 }
 
 /* Optimized scrolling */
@@ -226,4 +278,69 @@ input[type="color"]:focus {
   -webkit-transform: translateZ(0);
   backface-visibility: hidden;
   -webkit-backface-visibility: hidden;
+}
+
+/* Optimized CMS panel scrolling */
+.cms-panel-smooth {
+  overflow-y: auto;
+  scroll-behavior: smooth;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(255, 255, 255, 0.2) transparent;
+}
+
+.cms-panel-smooth::-webkit-scrollbar {
+  width: 6px;
+}
+
+.cms-panel-smooth::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.cms-panel-smooth::-webkit-scrollbar-thumb {
+  background-color: rgba(255, 255, 255, 0.2);
+  border-radius: 3px;
+}
+
+.cms-panel-smooth::-webkit-scrollbar-thumb:hover {
+  background-color: rgba(255, 255, 255, 0.3);
+}
+
+/* Ultra-responsive, zero-delay slider interactions */
+.slider-smooth [data-radix-slider-root] {
+  touch-action: none;
+  -webkit-user-drag: none;
+}
+
+.slider-smooth [data-radix-slider-track] {
+  /* Slightly taller track for easier targeting */
+  min-height: 12px;
+  display: flex;
+  align-items: center;
+}
+
+.slider-smooth [data-radix-slider-thumb] {
+  /* Larger thumb for easier grabbing */
+  min-width: 24px;
+  min-height: 24px;
+  /* Ensure thumb is always above track */
+  z-index: 10;
+  /* Immediate response */
+  pointer-events: auto;
+}
+
+/* Ultra-responsive track interaction */
+.slider-smooth [data-radix-slider-track]:hover {
+  background-color: rgba(156, 163, 175, 0.4);
+}
+
+.dark .slider-smooth [data-radix-slider-track]:hover {
+  background-color: rgba(75, 85, 99, 0.6);
+}
+
+/* Immediate response - no user selection interference */
+.slider-smooth * {
+  user-select: none;
+  -webkit-user-select: none;
+  -webkit-touch-callout: none;
 }

@@ -1,7 +1,6 @@
 "use client";
 
 import React, { useEffect, useRef, useState } from "react";
-import { Slider } from "@/components/ui/slider";
 import { RotateCcw, Palette, ChevronRight, Menu, User, ShoppingCart, Heart, Type, GripVertical } from "lucide-react";
 import IconLibraryModal from "@/components/cms/modals/IconLibraryModal";
 import {
@@ -424,21 +423,65 @@ function ItemSettingsPanel({
                             {height}px
                           </span>
                         </div>
-                        <div className="col-span-6">
-                          <Slider 
-                            value={[height]} 
-                            min={minHeight} 
-                            max={maxHeight}
-                            step={0.5}
-                            onValueChange={(vals) => {
-                              const newHeight = Number(vals?.[0] ?? height);
+                        <div className="col-span-6 relative py-2">
+                          <div 
+                            className="relative w-full h-8 flex items-center cursor-pointer select-none"
+                            onMouseDown={(e) => {
+                              e.preventDefault();
+                              e.stopPropagation();
+
+                              const rect = e.currentTarget.getBoundingClientRect();
+                              const percentage = Math.max(0, Math.min(1, (e.clientX - rect.left) / rect.width));
+                              const newValue = minHeight + percentage * (maxHeight - minHeight);
+                              const roundedValue = Math.round(newValue * 2) / 2; // 0.5 step
+                              
                               const currentHeights = item.heights || { mobile: 35, tablet: 51, desktop: 55 };
                               updateHeaderItem(itemType, { 
-                                heights: { ...currentHeights, [device]: newHeight } 
+                                heights: { ...currentHeights, [device]: roundedValue } 
                               });
+
+                              const handleMouseMove = (moveE: MouseEvent) => {
+                                moveE.preventDefault();
+                                const rect = e.currentTarget.getBoundingClientRect();
+                                const percentage = Math.max(0, Math.min(1, (moveE.clientX - rect.left) / rect.width));
+                                const newValue = minHeight + percentage * (maxHeight - minHeight);
+                                const roundedValue = Math.round(newValue * 2) / 2;
+                                
+                                const currentHeights = item.heights || { mobile: 35, tablet: 51, desktop: 55 };
+                                updateHeaderItem(itemType, { 
+                                  heights: { ...currentHeights, [device]: roundedValue } 
+                                });
+                              };
+
+                              const handleMouseUp = (upE: MouseEvent) => {
+                                upE.preventDefault();
+                                document.removeEventListener('mousemove', handleMouseMove);
+                                document.removeEventListener('mouseup', handleMouseUp);
+                                document.removeEventListener('selectstart', preventSelect);
+                              };
+
+                              const preventSelect = (e: Event) => e.preventDefault();
+
+                              document.addEventListener('mousemove', handleMouseMove);
+                              document.addEventListener('mouseup', handleMouseUp);
+                              document.addEventListener('selectstart', preventSelect);
                             }}
-                            className="slider-smooth"
-                          />
+                            style={{ userSelect: 'none' }}
+                          >
+                            {/* Track */}
+                            <div className="w-full h-2 bg-gray-300 rounded-full relative">
+                              {/* Active track */}
+                              <div 
+                                className="h-full bg-blue-500 rounded-full transition-all duration-100 ease-out"
+                                style={{ width: `${((height - minHeight) / (maxHeight - minHeight)) * 100}%` }}
+                              />
+                              {/* Thumb */}
+                              <div 
+                                className="absolute top-1/2 w-5 h-5 bg-blue-500 rounded-full border-2 border-white shadow-lg transform -translate-y-1/2 -translate-x-1/2 cursor-grab transition-all duration-100 ease-out hover:scale-110 select-none"
+                                style={{ left: `${((height - minHeight) / (maxHeight - minHeight)) * 100}%` }}
+                              />
+                            </div>
+                          </div>
                         </div>
                         <div className="col-span-1 flex justify-end">
                           <button
@@ -906,8 +949,8 @@ export default function HeaderOverviewPanel({
     </span>
   );
 
-  // Reusable row layout: Label | Chip | Slider | IconBtn with optimized performance
-  const ControlRow = ({
+  // Reusable row layout: Label | Chip | Custom Draggable Slider | IconBtn
+  const ControlRow = React.memo(({
     label,
     valueText,
     value,
@@ -924,46 +967,88 @@ export default function HeaderOverviewPanel({
     onChange: (v: number) => void;
     action?: { icon: React.ReactNode; onClick: () => void; title?: string };
   }) => {
-    // Debounce slider changes to reduce lag
-    const [localValue, setLocalValue] = React.useState(value);
-    const timeoutRef = React.useRef<NodeJS.Timeout | null>(null);
+    const [isDragging, setIsDragging] = React.useState(false);
+    const sliderRef = React.useRef<HTMLDivElement>(null);
 
-    React.useEffect(() => {
-      setLocalValue(value);
-    }, [value]);
-
-    const handleSliderChange = (vals: number[]) => {
-      const newValue = Number(vals?.[0] ?? value);
-      setLocalValue(newValue);
-      
-      // Clear existing timeout
-      if (timeoutRef.current) {
-        clearTimeout(timeoutRef.current);
-      }
-      
-      // Debounce the onChange call to reduce updates
-      timeoutRef.current = setTimeout(() => {
-        onChange(newValue);
-      }, 50); // 50ms debounce
+    const calculateValueFromEvent = (clientX: number) => {
+      if (!sliderRef.current) return value;
+      const rect = sliderRef.current.getBoundingClientRect();
+      const percentage = Math.max(0, Math.min(1, (clientX - rect.left) / rect.width));
+      const newValue = min + percentage * (max - min);
+      return Math.round(newValue * 10) / 10;
     };
+
+    const handleMouseDown = (e: React.MouseEvent) => {
+      e.preventDefault();
+      e.stopPropagation();
+      
+      const newValue = calculateValueFromEvent(e.clientX);
+      onChange(newValue);
+      setIsDragging(true);
+
+      const handleMouseMove = (moveE: MouseEvent) => {
+        moveE.preventDefault();
+        const newValue = calculateValueFromEvent(moveE.clientX);
+        onChange(newValue);
+      };
+
+      const handleMouseUp = (upE: MouseEvent) => {
+        upE.preventDefault();
+        setIsDragging(false);
+        document.removeEventListener('mousemove', handleMouseMove);
+        document.removeEventListener('mouseup', handleMouseUp);
+        document.removeEventListener('selectstart', preventSelect);
+      };
+
+      const preventSelect = (e: Event) => e.preventDefault();
+
+      document.addEventListener('mousemove', handleMouseMove);
+      document.addEventListener('mouseup', handleMouseUp);
+      document.addEventListener('selectstart', preventSelect);
+    };
+
+    const percentage = ((value - min) / (max - min)) * 100;
 
     return (
       <div className="grid grid-cols-12 items-center gap-2">
         <span className="col-span-3 text-sm text-gray-200">{label}</span>
         <div className="col-span-2">
-          <span className="px-2 py-1 rounded bg-[#0b0c0f] border border-[#2a2a30] text-xs text-gray-100 font-mono">
-            {typeof valueText === 'string' ? valueText : localValue}
+          <span className="px-2 py-1 rounded bg-[#0b0c0f] border border-[#2a2a30] text-xs text-gray-100 font-mono min-w-[60px] text-center block">
+            {typeof valueText === 'string' ? valueText : Math.round(value * 10) / 10}
           </span>
         </div>
-        <div className="col-span-6">
-          <Slider 
-            value={[localValue]} 
-            min={min} 
-            max={max} 
-            step={0.1}
-            onValueChange={handleSliderChange}
-            className="slider-smooth"
-          />
+        <div className="col-span-6 relative py-2">
+          <div 
+            ref={sliderRef}
+            className="relative w-full h-8 flex items-center cursor-pointer select-none"
+            onMouseDown={handleMouseDown}
+            style={{ userSelect: 'none' }}
+          >
+            {/* Track */}
+            <div className="w-full h-2 bg-gray-300 rounded-full relative">
+              {/* Active track */}
+              <div 
+                className="h-full bg-blue-500 rounded-full transition-all duration-100 ease-out"
+                style={{ width: `${percentage}%` }}
+              />
+              {/* Thumb */}
+              <div 
+                className={`absolute top-1/2 w-5 h-5 bg-blue-500 rounded-full border-2 border-white shadow-lg transform -translate-y-1/2 -translate-x-1/2 cursor-grab transition-all duration-100 ease-out ${
+                  isDragging ? 'scale-125 shadow-xl cursor-grabbing' : 'hover:scale-110'
+                }`}
+                style={{ left: `${percentage}%` }}
+              />
+            </div>
+            {/* Value tooltip on drag */}
+            {isDragging && (
+              <div 
+                className="absolute -top-10 transform -translate-x-1/2 bg-gray-900 text-white px-2 py-1 rounded text-xs whitespace-nowrap z-50 pointer-events-none"
+                style={{ left: `${percentage}%` }}
+              >
+                {Math.round(value * 10) / 10}
+              </div>
+            )}
+          </div>
         </div>
         <div className="col-span-1 flex justify-end">
           {action ? (
@@ -978,10 +1063,10 @@ export default function HeaderOverviewPanel({
         </div>
       </div>
     );
-  };
+  });
 
   return (
-    <div className="space-y-4 scroll-smooth overflow-y-auto" style={{ scrollBehavior: 'smooth' }}>
+    <div className="space-y-4 cms-panel-smooth" style={{ maxHeight: 'calc(100vh - 200px)' }}>
       {/* Header Heights */}
       <div className="rounded-lg border border-[#2a2a30] bg-black transition-all duration-200 ease-out">
         <div className="flex items-center justify-between px-4 py-3 border-b border-[#2a2a30]">
