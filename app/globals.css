@@ -6,6 +6,11 @@
 @plugin "@tailwindcss/container-queries";
 @plugin "@tailwindcss/typography";
 
+/* Transparent page background for globe overlay */
+html, body {
+  background: transparent !important;
+}
+
 @layer base {
   *,
   ::after,
@@ -146,6 +151,79 @@ button {
     @apply border-border outline-ring/50;
   }
   body {
-    @apply bg-background text-foreground;
+    /* override theme solids to allow globe through */
+    @apply bg-transparent text-foreground;
   }
+  
+  /* Smooth scrolling for the entire application */
+  html {
+    scroll-behavior: smooth;
+  }
+}
+
+/* Custom smooth slider styles for CMS - Optimized for performance */
+.slider-smooth {
+  transition: none; /* Remove transition from root to prevent conflicts */
+  contain: layout style; /* Optimize rendering */
+}
+
+.slider-smooth [data-radix-slider-track] {
+  transition: all 120ms cubic-bezier(0.4, 0, 0.2, 1);
+  will-change: background-color;
+  transform: translateZ(0); /* Hardware acceleration */
+}
+
+.slider-smooth [data-radix-slider-range] {
+  transition: all 120ms cubic-bezier(0.4, 0, 0.2, 1);
+  will-change: width;
+  transform: translateZ(0); /* Hardware acceleration */
+}
+
+.slider-smooth [data-radix-slider-thumb] {
+  transition: all 120ms cubic-bezier(0.4, 0, 0.2, 1);
+  will-change: transform, box-shadow;
+  transform: translateZ(0); /* Hardware acceleration */
+  cursor: grab;
+}
+
+.slider-smooth [data-radix-slider-thumb]:hover {
+  transform: translateZ(0) scale(1.08);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25);
+  cursor: grab;
+}
+
+.slider-smooth [data-radix-slider-thumb]:active {
+  transform: translateZ(0) scale(1.02);
+  cursor: grabbing;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+}
+
+/* Smooth dragging performance */
+.slider-smooth [data-radix-slider-thumb]:active {
+  transition: box-shadow 120ms cubic-bezier(0.4, 0, 0.2, 1); /* Only animate shadow while dragging */
+}
+
+/* Optimized scrolling */
+.scroll-smooth {
+  scroll-behavior: smooth;
+  -webkit-overflow-scrolling: touch; /* iOS smooth scrolling */
+}
+
+/* Color input optimization */
+input[type="color"] {
+  transition: all 150ms ease-out;
+  will-change: background-color;
+}
+
+input[type="color"]:focus {
+  outline: none;
+  box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.3);
+}
+
+/* Hardware acceleration for animations */
+.hw-accel {
+  transform: translateZ(0);
+  -webkit-transform: translateZ(0);
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
 }

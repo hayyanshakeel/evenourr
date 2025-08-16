@@ -1,0 +1,143 @@
+{
+  "type": "ActivityCollection",
+  "activities": [
+    {
+      "id": 1,
+      "type": "connection",
+      "lat": 40.7128,
+      "lng": -74.0060,
+      "city": "New York",
+      "country": "USA",
+      "intensity": 0.8,
+      "timestamp": "2024-01-01T12:00:00Z"
+    },
+    {
+      "id": 2,
+      "type": "connection",
+      "lat": 51.5074,
+      "lng": -0.1278,
+      "city": "London",
+      "country": "UK",
+      "intensity": 0.9,
+      "timestamp": "2024-01-01T12:01:00Z"
+    },
+    {
+      "id": 3,
+      "type": "connection",
+      "lat": 35.6762,
+      "lng": 139.6503,
+      "city": "Tokyo",
+      "country": "Japan",
+      "intensity": 0.7,
+      "timestamp": "2024-01-01T12:02:00Z"
+    },
+    {
+      "id": 4,
+      "type": "connection",
+      "lat": -33.8688,
+      "lng": 151.2093,
+      "city": "Sydney",
+      "country": "Australia",
+      "intensity": 0.6,
+      "timestamp": "2024-01-01T12:03:00Z"
+    },
+    {
+      "id": 5,
+      "type": "connection",
+      "lat": 37.7749,
+      "lng": -122.4194,
+      "city": "San Francisco",
+      "country": "USA",
+      "intensity": 0.85,
+      "timestamp": "2024-01-01T12:04:00Z"
+    },
+    {
+      "id": 6,
+      "type": "connection",
+      "lat": 48.8566,
+      "lng": 2.3522,
+      "city": "Paris",
+      "country": "France",
+      "intensity": 0.75,
+      "timestamp": "2024-01-01T12:05:00Z"
+    },
+    {
+      "id": 7,
+      "type": "connection",
+      "lat": 52.5200,
+      "lng": 13.4050,
+      "city": "Berlin",
+      "country": "Germany",
+      "intensity": 0.65,
+      "timestamp": "2024-01-01T12:06:00Z"
+    },
+    {
+      "id": 8,
+      "type": "connection",
+      "lat": 55.7558,
+      "lng": 37.6176,
+      "city": "Moscow",
+      "country": "Russia",
+      "intensity": 0.55,
+      "timestamp": "2024-01-01T12:07:00Z"
+    },
+    {
+      "id": 9,
+      "type": "connection",
+      "lat": 39.9042,
+      "lng": 116.4074,
+      "city": "Beijing",
+      "country": "China",
+      "intensity": 0.95,
+      "timestamp": "2024-01-01T12:08:00Z"
+    },
+    {
+      "id": 10,
+      "type": "connection",
+      "lat": 19.0760,
+      "lng": 72.8777,
+      "city": "Mumbai",
+      "country": "India",
+      "intensity": 0.8,
+      "timestamp": "2024-01-01T12:09:00Z"
+    }
+  ],
+  "connections": [
+    {
+      "from": { "lat": 40.7128, "lng": -74.0060 },
+      "to": { "lat": 51.5074, "lng": -0.1278 },
+      "intensity": 0.8,
+      "type": "data_transfer"
+    },
+    {
+      "from": { "lat": 51.5074, "lng": -0.1278 },
+      "to": { "lat": 35.6762, "lng": 139.6503 },
+      "intensity": 0.7,
+      "type": "data_transfer"
+    },
+    {
+      "from": { "lat": 35.6762, "lng": 139.6503 },
+      "to": { "lat": -33.8688, "lng": 151.2093 },
+      "intensity": 0.6,
+      "type": "data_transfer"
+    },
+    {
+      "from": { "lat": 37.7749, "lng": -122.4194 },
+      "to": { "lat": 40.7128, "lng": -74.0060 },
+      "intensity": 0.9,
+      "type": "high_priority"
+    },
+    {
+      "from": { "lat": 48.8566, "lng": 2.3522 },
+      "to": { "lat": 52.5200, "lng": 13.4050 },
+      "intensity": 0.5,
+      "type": "regional"
+    },
+    {
+      "from": { "lat": 39.9042, "lng": 116.4074 },
+      "to": { "lat": 19.0760, "lng": 72.8777 },
+      "intensity": 0.85,
+      "type": "data_transfer"
+    }
+  ]
+}

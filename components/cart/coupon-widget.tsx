@@ -7,6 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/components/ui/use-toast";
 import { formatCurrency } from "@/lib/currencies";
+import { useSettings } from "@/hooks/useSettings";
 import {
   TicketPercent,
   Zap,
@@ -48,6 +49,7 @@ export function CartCouponWidget({
   appliedCoupon 
 }: CartCouponWidgetProps) {
   const { toast } = useToast();
+  const { currency } = useSettings();
   const [loading, setLoading] = useState(true);
   const [applying, setApplying] = useState(false);
   const [eligibleCoupons, setEligibleCoupons] = useState<EligibleCoupon[]>([]);
@@ -116,7 +118,7 @@ export function CartCouponWidget({
         
         toast({
           title: isAutoApply ? "Coupon Auto-Applied!" : "Coupon Applied!",
-          description: result.personalizedMessage || `You saved ${formatCurrency(result.discountAmount, 'USD')}`,
+          description: result.personalizedMessage || `You saved ${formatCurrency(result.discountAmount, currency)}`,
           variant: "default",
         });
 
@@ -264,11 +266,11 @@ export function CartCouponWidget({
                       
                       <div className="flex items-center gap-4 mt-2 text-sm">
                         <span className="font-semibold text-green-600">
-                          Save {formatCurrency(coupon.estimatedSavings, 'USD')}
+                          Save {formatCurrency(coupon.estimatedSavings, currency)}
                         </span>
                         <span className="text-gray-500">
                           {coupon.type === 'percentage' ? `${coupon.discount}% off` : 
-                           coupon.type === 'flat' ? `${formatCurrency(coupon.discount, 'USD')} off` :
+                           coupon.type === 'flat' ? `${formatCurrency(coupon.discount, currency)} off` :
                            coupon.type}
                         </span>
                       </div>

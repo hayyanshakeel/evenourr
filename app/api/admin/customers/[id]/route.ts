@@ -1,6 +1,30 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { verifyFirebaseUser } from '@/lib/firebase-verify';
-import { CustomersService } from '@/lib/admin-data';
+import { customerService } from '@/lib/services/customer-service';
+
+// Enterprise-grade error response
+function createErrorResponse(message: string, status: number = 500, details?: any) {
+  const response = {
+    error: message,
+    status,
+    timestamp: new Date().toISOString(),
+    ...(details && { details })
+  };
+  
+  console.error(`[Customer API Error ${status}]:`, message, details);
+  return NextResponse.json(response, { status });
+}
+
+// Enterprise-grade success response
+function createSuccessResponse(data: any, status: number = 200) {
+  const response = {
+    success: true,
+    data,
+    timestamp: new Date().toISOString()
+  };
+  
+  return NextResponse.json(response, { status });
+}
 
 export async function GET(
   request: NextRequest,
@@ -11,32 +35,33 @@ export async function GET(
     const result = await verifyFirebaseUser(request);
     
     if ('error' in result) {
-      return NextResponse.json({ error: result.error }, { status: result.status });
+      return createErrorResponse(result.error || 'Authentication failed', result.status);
     }
 
     const { user } = result;
 
     // Check if user has admin role
     if (user.role !== 'admin') {
-      return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+      return createErrorResponse('Forbidden - Admin access required', 403);
     }
 
     const id = parseInt(paramId);
-    if (isNaN(id)) {
-      return NextResponse.json({ error: 'Invalid customer ID' }, { status: 400 });
+    if (isNaN(id) || id <= 0) {
+      return createErrorResponse('Invalid customer ID format', 400);
     }
 
-    const customer = await CustomersService.getById(id);
+    const customer = await customerService.getCustomerById(id);
     if (!customer) {
-      return NextResponse.json({ error: 'Customer not found' }, { status: 404 });
+      return createErrorResponse('Customer not found', 404);
     }
 
-    return NextResponse.json(customer);
+    return createSuccessResponse(customer);
+
   } catch (error) {
-    console.error('GET /api/admin/customers/[id] error:', error);
-    return NextResponse.json(
-      { error: 'Internal server error' },
-      { status: 500 }
+    return createErrorResponse(
+      'Failed to fetch customer',
+      500,
+      error instanceof Error ? error.message : 'Unknown error'
     );
   }
 }
@@ -48,40 +73,60 @@ export async function PUT(
   try {
     const { id: paramId } = await params;
     const result = await verifyFirebaseUser(request);
+    
     if ('error' in result) {
-      return NextResponse.json({ error: result.error }, { status: result.status });
+      return createErrorResponse(result.error || 'Authentication failed', result.status);
     }
+
     const { user } = result;
+
+    // Check if user has admin role
     if (user.role !== 'admin') {
-      return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+      return createErrorResponse('Forbidden - Admin access required', 403);
     }
 
     const id = parseInt(paramId);
-    if (isNaN(id)) {
-      return NextResponse.json({ error: 'Invalid customer ID' }, { status: 400 });
+    if (isNaN(id) || id <= 0) {
+      return createErrorResponse('Invalid customer ID format', 400);
     }
 
-    const body = await request.json();
-    const { name, email } = body;
-
-    if (!name && !email) {
-      return NextResponse.json(
-        { error: 'At least one field (name or email) is required' },
-        { status: 400 }
-      );
+    // Parse and validate request body
+    let body;
+    try {
+      body = await request.json();
+    } catch (error) {
+      return createErrorResponse('Invalid JSON in request body', 400);
     }
 
-    const updatedCustomer = await CustomersService.update(id, {
-      name,
-      email,
-    });
+    // Validate content type
+    const contentType = request.headers.get('content-type');
+    if (!contentType || !contentType.includes('application/json')) {
+      return createErrorResponse('Content-Type must be application/json', 400);
+    }
 
-    return NextResponse.json(updatedCustomer);
+    // Update customer using enterprise service
+    const updatedCustomer = await customerService.updateCustomer(id, body);
+
+    return createSuccessResponse(updatedCustomer);
+
   } catch (error) {
-    console.error('PUT /api/admin/customers/[id] error:', error);
-    return NextResponse.json(
-      { error: 'Internal server error' },
-      { status: 500 }
+    // Handle specific error types
+    if (error instanceof Error) {
+      if (error.message.includes('Validation failed')) {
+        return createErrorResponse(error.message, 400);
+      }
+      if (error.message.includes('already exists')) {
+        return createErrorResponse(error.message, 409);
+      }
+      if (error.message.includes('not found')) {
+        return createErrorResponse(error.message, 404);
+      }
+    }
+
+    return createErrorResponse(
+      'Failed to update customer',
+      500,
+      error instanceof Error ? error.message : 'Unknown error'
     );
   }
 }
@@ -93,27 +138,43 @@ export async function DELETE(
   try {
     const { id: paramId } = await params;
     const result = await verifyFirebaseUser(request);
+    
     if ('error' in result) {
-      return NextResponse.json({ error: result.error }, { status: result.status });
+      return createErrorResponse(result.error || 'Authentication failed', result.status);
     }
+
     const { user } = result;
+
+    // Check if user has admin role
     if (user.role !== 'admin') {
-      return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+      return createErrorResponse('Forbidden - Admin access required', 403);
     }
 
     const id = parseInt(paramId);
-    if (isNaN(id)) {
-      return NextResponse.json({ error: 'Invalid customer ID' }, { status: 400 });
+    if (isNaN(id) || id <= 0) {
+      return createErrorResponse('Invalid customer ID format', 400);
     }
 
-    await CustomersService.delete(id);
+    // Delete customer using enterprise service
+    await customerService.deleteCustomer(id);
 
-    return NextResponse.json({ message: 'Customer deleted successfully' });
+    return createSuccessResponse({ message: 'Customer deleted successfully' });
+
   } catch (error) {
-    console.error('DELETE /api/admin/customers/[id] error:', error);
-    return NextResponse.json(
-      { error: 'Internal server error' },
-      { status: 500 }
+    // Handle specific error types
+    if (error instanceof Error) {
+      if (error.message.includes('not found')) {
+        return createErrorResponse(error.message, 404);
+      }
+      if (error.message.includes('Cannot delete')) {
+        return createErrorResponse(error.message, 409);
+      }
+    }
+
+    return createErrorResponse(
+      'Failed to delete customer',
+      500,
+      error instanceof Error ? error.message : 'Unknown error'
     );
   }
 }

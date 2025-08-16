@@ -12,9 +12,11 @@ import Price from 'components/price';
 import Image from 'next/image';
 import Link from 'next/link';
 import { Fragment, useEffect, useRef, useState } from 'react';
+import { useSettings } from '@/hooks/useSettings';
 
 export default function CartModal() {
   const { cart, loading } = useCart();
+  const { currency } = useSettings();
   const [isOpen, setIsOpen] = useState(false);
   const quantityRef = useRef(cart?.totalQuantity);
   const openCart = () => setIsOpen(true);
@@ -118,7 +120,7 @@ export default function CartModal() {
                             <Price
                               className="flex justify-end space-y-2 text-right text-sm"
                               amount={formatPrice(item.price * item.quantity)}
-                              currencyCode="USD"
+                              currencyCode={currency}
                             />
                             <div className="ml-auto flex h-9 flex-row items-center rounded-full border border-neutral-200 dark:border-neutral-700">
                               <EditItemQuantityButton item={item} type="minus" />
@@ -146,7 +148,7 @@ export default function CartModal() {
                       <Price
                         className="text-right text-base text-black dark:text-white"
                         amount={formatPrice(cart.totalPrice)}
-                        currencyCode="USD"
+                        currencyCode={currency}
                       />
                     </div>
                   </div>

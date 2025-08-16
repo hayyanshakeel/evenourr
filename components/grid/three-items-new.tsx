@@ -2,8 +2,9 @@
 
 import Link from 'next/link';
 import { GridTileImage } from 'components/grid/tile';
+import { useSettings } from '@/hooks/useSettings';
 
-// Mock data for three items grid
+// Mock data for three items grid - will be updated with dynamic currency
 const mockHomepageItems = [
   {
     handle: 'sample-product-1',
@@ -11,7 +12,7 @@ const mockHomepageItems = [
     priceRange: {
       maxVariantPrice: {
         amount: '299.99',
-        currencyCode: 'USD'
+        currencyCode: 'USD' // Will be overridden dynamically
       }
     },
     featuredImage: {
@@ -25,7 +26,7 @@ const mockHomepageItems = [
     priceRange: {
       maxVariantPrice: {
         amount: '199.99',
-        currencyCode: 'USD'
+        currencyCode: 'USD' // Will be overridden dynamically
       }
     },
     featuredImage: {
@@ -39,7 +40,7 @@ const mockHomepageItems = [
     priceRange: {
       maxVariantPrice: {
         amount: '399.99',
-        currencyCode: 'USD'
+        currencyCode: 'USD' // Will be overridden dynamically
       }
     },
     featuredImage: {
@@ -50,9 +51,15 @@ const mockHomepageItems = [
 ];
 
 function ThreeItemGridItems() {
+  const { currency } = useSettings();
   const [firstProduct, secondProduct, thirdProduct] = mockHomepageItems;
 
   if (!firstProduct || !secondProduct || !thirdProduct) return null;
+
+  // Update currency code for mock items
+  firstProduct.priceRange.maxVariantPrice.currencyCode = currency;
+  secondProduct.priceRange.maxVariantPrice.currencyCode = currency;
+  thirdProduct.priceRange.maxVariantPrice.currencyCode = currency;
 
   return (
     <>
@@ -68,7 +75,7 @@ function ThreeItemGridItems() {
             label={{
               title: firstProduct.title as string,
               amount: firstProduct.priceRange.maxVariantPrice.amount,
-              currencyCode: firstProduct.priceRange.maxVariantPrice.currencyCode
+              currencyCode: currency
             }}
           />
         </Link>
@@ -85,7 +92,7 @@ function ThreeItemGridItems() {
             label={{
               title: secondProduct.title as string,
               amount: secondProduct.priceRange.maxVariantPrice.amount,
-              currencyCode: secondProduct.priceRange.maxVariantPrice.currencyCode
+              currencyCode: currency
             }}
           />
         </Link>
@@ -102,7 +109,7 @@ function ThreeItemGridItems() {
             label={{
               title: thirdProduct.title as string,
               amount: thirdProduct.priceRange.maxVariantPrice.amount,
-              currencyCode: thirdProduct.priceRange.maxVariantPrice.currencyCode
+              currencyCode: currency
             }}
           />
         </Link>

@@ -1,7 +1,6 @@
-import { Suspense } from 'react';
-import { Carousel } from '@/components/carousel';
-import { ThreeItemGrid } from '@/components/grid/three-items';
-import Footer from '@/components/layout/footer';
+import prisma from '@/lib/db';
+import { CmsRenderer } from '@/components/cms/Renderer';
+import { DEFAULT_LAYOUT } from '@/lib/cms/schema';
 
 export const metadata = {
   description: 'High-performance ecommerce store built with Next.js, Vercel, and Turso.',
@@ -10,16 +9,14 @@ export const metadata = {
   }
 };
 
-export default function HomePage() {
+export default async function HomePage() {
+  const layout = await prisma.cmsLayout.findFirst({ where: { slug: 'home', published: true } });
+  const data = (layout?.data as any) ?? DEFAULT_LAYOUT;
   return (
-    <>
-      <ThreeItemGrid />
-      <Suspense>
-        <Carousel />
-      </Suspense>
-      <Suspense>
-        <Footer />
-      </Suspense>
-    </>
+    <section className="px-4 py-8">
+      <div className="mx-auto max-w-6xl">
+        <CmsRenderer layout={data} />
+      </div>
+    </section>
   );
 }

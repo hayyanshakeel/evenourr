@@ -9,27 +9,52 @@ declare global { var __prisma: InstanceType<typeof PrismaClient> | undefined; }
 let prismaInstance: InstanceType<typeof PrismaClient> | undefined;
 
 function buildClient(): InstanceType<typeof PrismaClient> {
+  const preferLocal = process.env.USE_LOCAL_SQLITE === 'true' && process.env.NODE_ENV !== 'production';
   const url = process.env.TURSO_DATABASE_URL;
   const token = process.env.TURSO_AUTH_TOKEN;
-  const forceLocal = process.env.FORCE_SQLITE_DEV === 'true';
-  
+
+  if (preferLocal) {
+    console.log('[db] Using local SQLite via Prisma datasource (USE_LOCAL_SQLITE=true)');
+    // Use the default Prisma datasource (e.g., file:./dev.db)
+    return new PrismaClient({ log: ['error', 'warn'] } as any);
+  }
+
   console.log('[db] buildClient config:', {
-    adapter: !!url && !!token && !forceLocal ? 'turso' : 'sqlite',
+    adapter: 'turso',
     NODE_ENV: process.env.NODE_ENV,
-    DATABASE_URL: process.env.DATABASE_URL,
     hasUrl: !!url,
     hasToken: !!token,
-    forceLocal
+    tokenLength: token?.length,
+    usingTurso: true,
   });
-  
-  if (process.env.NODE_ENV === 'production') {
-    if (!url || !token) throw new Error('Missing Turso env vars in production');
-    return new PrismaClient({ adapter: new PrismaLibSQL({ url, authToken: token }) } as any);
+
+  // Require Turso credentials in non-local mode
+  if (!url || !token) {
+    throw new Error('❌ Missing Turso credentials. Please set TURSO_DATABASE_URL and TURSO_AUTH_TOKEN');
   }
-  if (url && token && !forceLocal) {
-    return new PrismaClient({ adapter: new PrismaLibSQL({ url, authToken: token }) } as any);
+
+  try {
+    console.log('🚀 Connecting to Turso database:', url);
+    const client = new PrismaClient({
+      adapter: new PrismaLibSQL({ url, authToken: token }),
+      log: ['error', 'warn'],
+    } as any);
+
+    // Test the connection
+    client.$connect()
+      .then(() => {
+        console.log('✅ Successfully connected to Turso database');
+      })
+      .catch((error) => {
+        console.error('❌ Turso connection failed during connect:', error.message);
+        console.warn('🔄 Will retry connection on next query...');
+      });
+
+    return client;
+  } catch (error) {
+    console.error('❌ Failed to create Turso client:', error);
+    throw new Error('❌ Turso database connection failed');
   }
-  return new PrismaClient();
 }
 
 function initPrisma(): InstanceType<typeof PrismaClient> {
@@ -42,9 +67,28 @@ function initPrisma(): InstanceType<typeof PrismaClient> {
 export const prisma = initPrisma();
 export function getPrisma() { return prisma; }
 
+// Enhanced error handling for database connection issues
+export async function testDatabaseConnection(): Promise<boolean> {
+  try {
+    await prisma.$queryRaw`SELECT 1`;
+    console.log('✅ Database connection test successful');
+    return true;
+  } catch (error) {
+    console.error('❌ Database connection test failed:', error);
+    return false;
+  }
+}
+
 if (typeof process !== 'undefined') {
   ['SIGINT','SIGTERM'].forEach(sig => {
-    process.once(sig as any, async () => { try { await prisma.$disconnect(); } finally { process.exit(0); } });
+    process.once(sig as any, async () => { 
+      try { 
+        await prisma.$disconnect(); 
+        console.log('📤 Database disconnected gracefully');
+      } finally { 
+        process.exit(0); 
+      } 
+    });
   });
 }
 

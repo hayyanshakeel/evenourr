@@ -10,6 +10,7 @@ import {
   signInWithPopup
 } from 'firebase/auth';
 import { auth } from '@/lib/firebase';
+import { getCookie, setCookie, deleteCookie } from 'cookies-next';
 
 interface AuthContextType {
   user: User | null;
@@ -20,7 +21,8 @@ interface AuthContextType {
   getIdToken: () => Promise<string | null>;
 }
 
-const AuthContext = createContext<AuthContextType>({} as AuthContextType);
+// This context manages the Firebase authentication state
+const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export const useAuth = () => {
   const context = useContext(AuthContext);
@@ -30,59 +32,50 @@ export const useAuth = () => {
   return context;
 };
 
-export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
+  const [token, setToken] = useState<string | null>(null);
 
   useEffect(() => {
-    let refreshInterval: NodeJS.Timeout | null = null;
+    // Attempt to get the token from cookies on initial load
+    const initialToken = getCookie('firebaseToken');
+    if (typeof initialToken === 'string') {
+      setToken(initialToken);
+    }
 
-    const unsubscribe = onAuthStateChanged(auth, async (user) => {
-      setUser(user);
-      setLoading(false);
-      
-      // Clear any existing refresh interval
-      if (refreshInterval) {
-        clearInterval(refreshInterval);
-        refreshInterval = null;
-      }
-      
-      // Store or clear the Firebase token in localStorage
-      if (user) {
+    const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
+      setLoading(true);
+      if (firebaseUser) {
+        setUser(firebaseUser);
         try {
-          const token = await user.getIdToken();
-          localStorage.setItem('firebaseToken', token);
-          console.log('✅ Firebase token stored in localStorage');
-          
-          // Set up token refresh
-          const refreshToken = async () => {
-            try {
-              const newToken = await user.getIdToken(true); // Force refresh
-              localStorage.setItem('firebaseToken', newToken);
-              console.log('✅ Firebase token refreshed');
-            } catch (error) {
-              console.error('Token refresh failed:', error);
-            }
-          };
-          
-          // Refresh token every 30 minutes (Firebase tokens expire after 1 hour)
-          refreshInterval = setInterval(refreshToken, 30 * 60 * 1000);
-          
+          const idToken = await firebaseUser.getIdToken(true); // Force refresh
+          setToken(idToken);
+          // Store token in an HttpOnly cookie for security
+          setCookie('firebaseToken', idToken, {
+            // httpOnly: true, // Cannot be set from client-side script
+            secure: process.env.NODE_ENV === 'production',
+            path: '/',
+            maxAge: 60 * 60 * 24 * 7, // 1 week
+          });
+          console.log('✅ Firebase token stored in cookie');
         } catch (error) {
-          console.error('Failed to get initial token:', error);
+          console.error("Error getting ID token:", error);
+          setToken(null);
+          deleteCookie('firebaseToken');
         }
       } else {
-        localStorage.removeItem('firebaseToken');
-        console.log('✅ Firebase token removed from localStorage');
+        setUser(null);
+        setToken(null);
+        // Clear the token from cookies on sign out
+        deleteCookie('firebaseToken');
+        console.log('🔥 Firebase token cleared from cookie');
       }
+      setLoading(false);
     });
 
-    return () => {
-      unsubscribe();
-      if (refreshInterval) {
-        clearInterval(refreshInterval);
-      }
-    };
+    // Cleanup subscription on unmount
+    return () => unsubscribe();
   }, []);
 
   const signIn = async (email: string, password: string) => {
@@ -121,7 +114,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     try {
       await signOut(auth);
       // Clear the Firebase token specifically
-      localStorage.removeItem('firebaseToken');
+      deleteCookie('firebaseToken');
       // Clear any other local storage or session storage
       localStorage.clear();
       sessionStorage.clear();

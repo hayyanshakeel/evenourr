@@ -21,6 +21,7 @@ import {
 } from "lucide-react"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
 import { useSettings } from "@/hooks/useSettings"
+import { useAdminAuth } from "@/hooks/useAdminAuth"
 import { formatCurrency as formatCurrencyUtil } from "@/lib/currencies"
 
 interface Customer {
@@ -76,6 +77,7 @@ interface CustomerStats {
 export default function CustomersPage() {
   const router = useRouter()
   const { currency } = useSettings()
+  const { makeAuthenticatedRequest, isReady, isAuthenticated } = useAdminAuth()
   const [customers, setCustomers] = useState<Customer[]>([])
   const [stats, setStats] = useState<CustomerStats | null>(null)
   const [loading, setLoading] = useState(true)
@@ -96,11 +98,29 @@ export default function CustomersPage() {
     if (!loading) {
       setFiltering(true)
     }
-    fetchData()
-  }, [debouncedSearchQuery])
+    // Only fetch when auth is ready
+    if (isReady) {
+      fetchData()
+    }
+  }, [debouncedSearchQuery, isReady])
 
   async function fetchData() {
     try {
+      console.log('🔧 [fetchData] Starting customer fetch...');
+      console.log('🔧 [fetchData] Auth state:', { isReady, isAuthenticated });
+      
+      if (!isReady) {
+        console.log('🔧 [fetchData] Auth not ready, skipping fetch');
+        return;
+      }
+      
+      if (!isAuthenticated) {
+        console.log('🔧 [fetchData] Not authenticated, skipping fetch');
+        setLoading(false);
+        setFiltering(false);
+        return;
+      }
+      
       if (!loading) setFiltering(true)
       if (loading) setLoading(true)
       
@@ -109,17 +129,42 @@ export default function CustomersPage() {
         params.append('search', debouncedSearchQuery.trim())
       }
       
-      // Use real APIs with proper error handling
+      console.log('🔧 [fetchData] URL params:', params.toString());
+      console.log('🔧 [fetchData] Making authenticated request to:', `/api/admin/customers?${params}`);
+      
+      // Use authenticated requests for admin APIs
       const [customersResponse, statsResponse] = await Promise.all([
-        fetch(`/api/customers?${params}`).catch(() => null),
-        fetch('/api/customers/stats').catch(() => null)
+        makeAuthenticatedRequest(`/api/admin/customers?${params}`).catch((error) => {
+          console.error('❌ [fetchData] Failed to fetch customers:', error);
+          return null;
+        }),
+        fetch('/api/customers/stats', {
+          headers: {
+            'Content-Type': 'application/json',
+          },
+        }).catch((error) => {
+          console.error('❌ [fetchData] Failed to fetch stats:', error);
+          return null;
+        })
       ])
 
+      console.log('🔧 [fetchData] Responses received:', { 
+        customersResponse: customersResponse?.status, 
+        statsResponse: statsResponse?.status 
+      });
+
       if (customersResponse && customersResponse.ok) {
-        const customersData = await customersResponse.json()
-        // Ensure we always have an array, with proper fallback
-        const customersArray = customersData?.customers || customersData || []
-        setCustomers(Array.isArray(customersArray) ? customersArray : [])
+        const response = await customersResponse.json()
+        
+        // Handle enterprise response format
+        if (response.success && response.data) {
+          const { customers } = response.data
+          setCustomers(Array.isArray(customers) ? customers : [])
+        } else {
+          // Fallback for old format
+          const customersArray = response?.customers || response || []
+          setCustomers(Array.isArray(customersArray) ? customersArray : [])
+        }
       } else {
         console.error('Failed to fetch customers:', customersResponse?.status)
         setCustomers([]) // Fallback to empty array
@@ -156,17 +201,63 @@ export default function CustomersPage() {
   }
 
   const handleDeleteCustomer = async (id: number) => {
-    if (!confirm('Are you sure you want to delete this customer?')) {
+    const customer = customers.find(c => c.id === id);
+    const customerName = customer?.name || 'this customer';
+    
+    if (!confirm(`Are you sure you want to delete ${customerName}? This action cannot be undone.`)) {
       return
     }
 
     try {
-      // Demo: Just remove from local state instead of making API call
-      setCustomers(prevCustomers => prevCustomers.filter(customer => customer.id !== id))
-      alert('Customer deleted successfully (demo mode)')
+      const response = await makeAuthenticatedRequest(`/api/admin/customers/${id}`, {
+        method: 'DELETE',
+      })
+
+      if (response.ok) {
+        const result = await response.json()
+        
+        // Handle enterprise response format
+        const message = result.data?.message || result.message || 'Customer deleted successfully'
+        
+        // Remove from local state immediately for better UX
+        setCustomers(prevCustomers => prevCustomers.filter(customer => customer.id !== id))
+        
+        // Show success message
+        alert(message)
+        
+        // Refresh data to ensure consistency
+        fetchData()
+      } else {
+        const errorData = await response.json().catch(() => ({}))
+        
+        // Handle enterprise error format
+        const errorMessage = errorData.error || errorData.message || `Failed to delete customer (${response.status})`
+        
+        // Show specific error messages
+        if (errorMessage.includes('Cannot delete')) {
+          alert('Cannot delete this customer because they have existing orders. Consider archiving instead.')
+        } else if (errorMessage.includes('not found')) {
+          alert('Customer not found. It may have already been deleted.')
+          // Remove from local state if not found
+          setCustomers(prevCustomers => prevCustomers.filter(customer => customer.id !== id))
+        } else {
+          alert(`Failed to delete customer: ${errorMessage}`)
+        }
+      }
     } catch (error) {
       console.error('Failed to delete customer:', error)
-      alert('Failed to delete customer')
+      
+      let errorMessage = 'Failed to delete customer'
+      if (error instanceof Error) {
+        errorMessage = error.message
+      }
+      
+      // Show user-friendly error messages
+      if (errorMessage.includes('network') || errorMessage.includes('fetch')) {
+        alert('Network error. Please check your connection and try again.')
+      } else {
+        alert(`Error deleting customer: ${errorMessage}`)
+      }
     }
   }
 

@@ -3,8 +3,11 @@ import { GridTileImage } from 'components/grid/tile';
 import { ProductViewTracker } from '@/components/tracking/BehaviorTracking';
 import { Product } from '@prisma/client';
 import Link from 'next/link';
+import { useSettings } from '@/hooks/useSettings';
 
 export default function ProductGridItems({ products }: { products: Product[] }) {
+  const { currency } = useSettings();
+  
   return (
     <>
       {products.map((product) => {
@@ -34,7 +37,7 @@ export default function ProductGridItems({ products }: { products: Product[] }) 
                   label={{
                     title: product.name,
                     amount: product.price.toString(),
-                    currencyCode: 'USD'
+                    currencyCode: currency
                   }}
                   src={imageUrl || '/placeholder.jpg'}
                   fill

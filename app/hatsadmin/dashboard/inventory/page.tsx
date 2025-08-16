@@ -40,6 +40,8 @@ interface InventoryItem {
   lastUpdated: string;
 }
 
+interface Warehouse { id: number; code: string; name: string }
+
 export default function InventoryPage() {
   const router = useRouter()
   const { makeAuthenticatedRequest, isReady, isAuthenticated } = useAdminAuth()
@@ -50,17 +52,42 @@ export default function InventoryPage() {
   const [searching, setSearching] = useState(false)
   const [exporting, setExporting] = useState(false)
   const [searchTerm, setSearchTerm] = useState("")
+  const [warehouses, setWarehouses] = useState<Warehouse[]>([])
+  const [warehouseId, setWarehouseId] = useState<number | null>(null)
 
   useEffect(() => {
     if (isReady && isAuthenticated) {
-      Promise.all([fetchInventory(), fetchStats()])
+      Promise.all([fetchWarehouses()]).then(() => {
+        fetchInventory()
+        fetchStats()
+      })
     }
   }, [isReady, isAuthenticated])
+
+  const fetchWarehouses = async () => {
+    try {
+      const res = await makeAuthenticatedRequest('/api/admin/warehouses')
+      if (res.ok) {
+        const list: Warehouse[] = await res.json()
+        setWarehouses(list)
+        if (!warehouseId && list.length > 0) {
+          const first = list[0]
+          if (first && typeof first.id === 'number') {
+            setWarehouseId(first.id)
+          }
+        }
+      }
+    } catch (e) {
+      console.error('Failed to load warehouses', e)
+    }
+  }
 
   const fetchInventory = async () => {
     try {
       setLoading(true)
-      const response = await makeAuthenticatedRequest(`/api/admin/inventory`)
+      const qs = new URLSearchParams()
+      if (warehouseId) qs.set('warehouseId', String(warehouseId))
+      const response = await makeAuthenticatedRequest(`/api/admin/inventory?${qs.toString()}`)
       if (!response.ok) throw new Error('Failed to fetch inventory')
       
       const data = await response.json()
@@ -84,6 +111,13 @@ export default function InventoryPage() {
       console.error('Failed to fetch inventory stats:', err)
     }
   }
+
+  useEffect(() => {
+    if (isReady && isAuthenticated) {
+      fetchInventory()
+      fetchStats()
+    }
+  }, [warehouseId])
 
   const getStatusColor = (status: string) => {
     switch (status.toLowerCase()) {
@@ -176,7 +210,7 @@ export default function InventoryPage() {
   return (
     <AdminPageLayout
       title="Inventory"
-      subtitle="Manage stock levels and product availability"
+      subtitle={warehouses.length ? `Warehouse: ${warehouses.find(w => w.id === warehouseId)?.name || ''}` : "Manage stock levels and product availability"}
       searchPlaceholder="Search inventory..."
       searchValue={searchTerm}
       onSearchChange={setSearchTerm}
@@ -192,6 +226,17 @@ export default function InventoryPage() {
         <CardHeader className="border-b border-gray-100">
           <div className="flex items-center justify-between">
             <CardTitle className="text-lg font-semibold">Inventory Items</CardTitle>
+            {warehouses.length > 0 && (
+              <select
+                className="border rounded-md px-3 py-1 text-sm"
+                value={warehouseId ?? ''}
+                onChange={(e) => setWarehouseId(Number(e.target.value))}
+              >
+                {warehouses.map(w => (
+                  <option key={w.id} value={w.id}>{w.name}</option>
+                ))}
+              </select>
+            )}
             {searching && <InlineLoading text="Searching..." size="sm" />}
             {exporting && <InlineLoading text="Exporting..." size="sm" />}
           </div>

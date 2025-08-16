@@ -2,8 +2,11 @@ import { Product } from '@prisma/client';
 import Link from 'next/link';
 import Image from 'next/image';
 import Price from 'components/price';
+import { useSettings } from '@/hooks/useSettings';
 
 export function RelatedProducts({ products }: { products: Product[] }) {
+  const { currency } = useSettings();
+  
   return (
     <ul className="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5">
       {products.map((product) => {
@@ -24,7 +27,7 @@ export function RelatedProducts({ products }: { products: Product[] }) {
                 />
               )}
               <h3>{product.name}</h3>
-              <Price amount={product.price.toString()} currencyCode="USD" />
+              <Price amount={product.price.toString()} currencyCode={currency} />
             </Link>
           </li>
         );

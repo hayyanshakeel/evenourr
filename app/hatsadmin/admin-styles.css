@@ -127,186 +127,9 @@
   }
 }
 
-/* MAXIMUM SPECIFICITY FOR GLOBAL ADMIN HEADER */
-header.sticky,
-[data-admin-panel="true"] header,
-.admin-panel header,
-.admin-header-inner {
-  background: #fff !important;
-  border-color: #d1d5db !important;
-  color: #111 !important;
-}
-header.sticky *,
-[data-admin-panel="true"] header *,
-.admin-panel header *,
-.admin-header-inner * {
-  color: #111 !important;
-}
-/* GLOBAL ADMIN HEADER BAR STYLING */
-[data-admin-panel="true"] header,
-  .admin-panel header,
-  .admin-header-inner {
-    background: #fff !important;
-    border-color: #d1d5db !important;
-  }
-[data-admin-panel="true"] header *,
-  .admin-panel header *,
-  .admin-header-inner * {
-    color: #111 !important;
-  }
-/* Force header action buttons to have black text and colorful icons */
-.admin-header-actions button[class*="border"] {
-  color: #111 !important;
-  --tw-text-opacity: 1 !important;
-}
-
-.admin-header-actions button[class*="border"]:hover {
-  color: #111 !important;
-}
-
-.admin-header-actions .admin-header-btn,
-.admin-header-actions .admin-header-btn * {
-  color: #111 !important;
-}
-
-.admin-header-actions .admin-header-btn-text {
-  color: #111 !important;
-}
-
-.admin-header-actions .admin-header-icon {
-  color: #111 !important;
-}
-
-.admin-header-actions .admin-header-icon.text-purple-500 {
-  color: #8b5cf6 !important;
-}
-
-.admin-header-actions .admin-header-icon.text-green-500 {
-  color: #22c55e !important;
-}
-
-.admin-header-actions .admin-header-icon.text-white {
-  color: #fff !important;
-}
-
-/* Override shadcn button outline variant in admin headers */
-[data-admin-panel="true"] .admin-header-actions button[class*="outline"] {
-  color: #111 !important;
-}
-
-[data-admin-panel="true"] .admin-header-actions button[class*="outline"]:hover {
-  color: #111 !important;
-}
-/* Force header components to have white background */
-[data-admin-panel="true"] header,
-.admin-header-inner {
-  background: #fff !important;
-  border-color: #d1d5db !important;
-}
-
-/* All header text should be black */
-[data-admin-panel="true"] header *,
-.admin-panel header *,
-.admin-header-inner * {
-  color: #111 !important;
-}
-
-/* Specific targeting for input fields and buttons in headers */
-[data-admin-panel="true"] header input,
-[data-admin-panel="true"] header button,
-.admin-panel header input,
-.admin-panel header button,
-.admin-header-inner input,
-.admin-header-inner button {
-  background: #fff !important;
-  color: #111 !important;
-
-  border-color: #d1d5db !important;
-}
-
-/* Icons in white elements should be black */
-[data-admin-panel="true"] header input + svg,
-[data-admin-panel="true"] header button svg,
-.admin-panel header input + svg,
-.admin-panel header button svg,
-.admin-header-inner input + svg,
-.admin-header-inner button svg {
-  color: #111 !important;
-  fill: #111 !important;
-  stroke: #111 !important;
-}
-
-/* Specific for search icons inside inputs */
-[data-admin-panel="true"] header .absolute svg,
-.admin-panel header .absolute svg {
-  color: #6b7280 !important;
-}
-
-/* Placeholder text */
-[data-admin-panel="true"] header input::placeholder,
-.admin-panel header input::placeholder {
-  color: #6b7280 !important;
-}
-
-/* Hover states */
-[data-admin-panel="true"] header button:hover,
-.admin-panel header button:hover {
-  background: #f3f4f6 !important;
-}
-
-/* Badge styling in header */
-[data-admin-panel="true"] header .badge,
-.admin-panel header .badge {
-  background: #ef4444 !important;
-  color: #fff !important;
-}
-/* 'Add Product' button is green universally in the header */
-.admin-header-inner .add-product-btn,
-.admin-header-inner [data-add-product] {
-  background: #22c55e !important; /* Tailwind green-500 */
-  color: #fff !important;
-  border: none !important;
-  font-weight: 600;
-}
-/* Notification indicator circle in header is red */
-.admin-header-inner .notification-indicator,
-.admin-header-inner .notification-dot {
-  background: #ef4444 !important; /* Tailwind red-500 */
-  border-radius: 50%;
-  width: 10px;
-  height: 10px;
-  display: inline-block;
-}
-/* Header icons are white for contrast on black background */
-/* Header icons are black for visibility on white/light backgrounds */
-/* Header icons are white ONLY inside the black header background */
-/* Header text color adapts to background */
-.admin-header-inner {
-  background: #000;
-  color: #fff;
-}
-.admin-header-inner.white-bg {
-  background: #fff;
-  color: #111;
-}
-.admin-header-inner svg,
-.admin-header-inner .icon,
-.admin-header-inner [data-icon],
-.admin-header-inner .lucide {
-  color: #fff !important;
-  fill: #fff !important;
-  stroke: #fff !important;
-}
-/* Card icons and icons outside header remain black for visibility on white */
-/* Contextual colors for main content icons based on their function */
-.admin-main-content svg,
-.admin-main-content .icon,
-.admin-main-content [data-icon],
-.admin-main-content .lucide {
-  color: #6b7280 !important; /* Default gray for neutral icons */
-  fill: #6b7280 !important;
-  stroke: #6b7280 !important;
-}
+/* Revert header overrides to original behavior */
+[data-admin-panel="true"] header { background: transparent !important; box-shadow: none !important; }
+[data-admin-panel="true"] header * { color: inherit !important; }
 
 /* Search and filter icons - Purple for discovery */
 .admin-main-content input + svg,
@@ -403,28 +226,15 @@ header.sticky *,
   fill: #374151 !important;
   stroke: #374151 !important;
 }
-/* Header border line styling - aligned with content padding */
-[data-admin-panel="true"] header > div > * {
-  padding-left: 0 !important;
-  padding-right: 0 !important;
-  margin-left: 0 !important;
-  margin-right: 0 !important;
-  box-sizing: border-box;
-}
-/* Header inner content matches main content area alignment */
+/* Header inner content matches main content container */
 .admin-header-inner {
   width: 100%;
   max-width: 1440px;
   margin-left: auto;
   margin-right: auto;
-  background: #000;
+  background: transparent;
   color: #fff;
-  border-radius: 0;
-  box-shadow: none;
-  padding-left: 1rem;
-  padding-right: 1rem;
-  padding-top: 0.5rem;
-  padding-bottom: 0.5rem;
+  padding: 0.5rem 1rem;
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -601,14 +411,9 @@ header.sticky *,
   background-color: rgba(75, 85, 99, 0.7);
 }
 
-/* Universal light greyish background for admin panel */
-[data-admin-panel="true"] {
-  background-color: #f5f5f7 !important;
-}
-
-.dark [data-admin-panel="true"] {
-  background-color: #111827 !important;
-}
+/* Revert background to previous neutral */
+[data-admin-panel="true"] { background-color: #f5f5f7 !important; }
+.dark [data-admin-panel="true"] { background-color: #111827 !important; }
 
 /* Remove white backgrounds from all content areas but preserve badge colors */
 [data-admin-panel="true"] > *,
@@ -650,15 +455,8 @@ header.sticky *,
   max-width: 64px !important;
 }
 
-.admin-main-content {
-  flex: 1;
-  min-width: 0;
-  height: 100vh;
-  overflow: auto;
-  margin-left: 240px;
-  transition: margin-left 0.2s cubic-bezier(.4,0,.2,1);
-  background: transparent !important;
-}
+/* Remove main content gradient introduced */
+.admin-main-content { background-image: none; }
 
 /* When sidebar is collapsed, reduce margin-left */
 .admin-sidebar-container[data-collapsed] ~ .admin-main-content {
@@ -713,20 +511,18 @@ header.sticky *,
 
 
 
-/* Beautiful admin card styling with medium borders */
-
+/* Modern card style */
 .admin-card,
 .card-hover,
 .Card,
-.card,
-.admin-main-content > div,
-.admin-main-content > section {
-  background: #fff !important;
+.card {
+  background: #ffffff !important;
+  border: 1px solid #e5e7eb !important;
+  box-shadow: 0 1px 2px rgba(0,0,0,0.04);
 }
-
 .admin-card:hover {
   border-color: #111827 !important;
-  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+  box-shadow: 0 8px 24px -8px rgba(0,0,0,0.15);
   transform: translateY(-1px);
 }
 
@@ -755,10 +551,7 @@ header.sticky *,
   transform: translateY(-2px);
 }
 
-.dark .card-hover {
-  border: 0.5px solid #374151 !important;
-  background: #1f2937;
-}
+.dark .card-hover { border: 1px solid #374151 !important; background: #111827; }
 
 .dark .card-hover:hover {
   border-color: #4b5563 !important;

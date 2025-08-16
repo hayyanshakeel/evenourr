@@ -38,18 +38,22 @@ export function RecentActivity() {
   const { currency } = useSettings()
 
   useEffect(() => {
+    let isMounted = true
+    
     async function fetchActivities() {
-      if (!isReady) return;
+      if (!isReady || !isMounted) return;
       
       if (!isAuthenticated) {
         console.warn('User not authenticated for recent activity')
-        setLoading(false)
+        if (isMounted) setLoading(false)
         return;
       }
 
       try {
         // Use real dashboard metrics endpoint
         const response = await makeAuthenticatedRequest('/api/admin/dashboard/metrics')
+        
+        if (!isMounted) return
         
         if (response.ok) {
           const raw = await response.json()
@@ -82,14 +86,18 @@ export function RecentActivity() {
       } catch (error) {
         console.error('Failed to fetch recent activities:', error)
         // Fallback to empty state instead of dummy data
-        setActivities([])
+        if (isMounted) setActivities([])
       } finally {
-        setLoading(false)
+        if (isMounted) setLoading(false)
       }
     }
 
     fetchActivities()
-  }, [isReady, isAuthenticated])
+    
+    return () => {
+      isMounted = false
+    }
+  }, [isReady, isAuthenticated]) // Only depend on auth state
 
   if (loading) {
     return (

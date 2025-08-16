@@ -14,7 +14,7 @@ export async function GET() {
     
     // Set defaults if not found
     const defaults = {
-      currency: 'USD',
+      currency: 'INR',
       storeName: 'JSEvenour Hats',
       storeDescription: 'Premium quality hats and accessories for every occasion',
       storeEmail: 'contact@jsevenourhats.com',

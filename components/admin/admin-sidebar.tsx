@@ -18,9 +18,11 @@ import {
   RotateCcw,
   Megaphone,
   DollarSign,
-  Shield,
-  Layers,
   Percent,
+  Layers,
+  Brain,
+  Activity,
+  Shield
 } from "lucide-react"
 
 import Link from "next/link"
@@ -81,7 +83,11 @@ export function AppSidebar() {
     return () => clearInterval(interval)
   }, [isReady, isAuthenticated])
 
-  const navigationItems = [
+  interface NavItemBase { title: string; url: string; icon: any; badge?: string }
+  interface NavItemLink extends NavItemBase { targetBlank?: false }
+  interface NavItemExternal extends NavItemBase { targetBlank: true }
+  type NavItem = NavItemLink | NavItemExternal
+  const navigationItems: Array<{ title: string; items: NavItem[] }> = [
     {
       title: "Core Operations",
       items: [
@@ -120,7 +126,10 @@ export function AppSidebar() {
     {
       title: "Growth & Analytics",
       items: [
-        { title: "Analytics", url: "/hatsadmin/dashboard/analytics", icon: BarChart3 },
+        { title: "Enterprise Analytics", url: "/hatsadmin/enterprise-analytics", icon: BarChart3 },
+        { title: "Behavioral Analytics", url: "/hatsadmin/analytics", icon: Brain },
+        { title: "Live View", url: "/hatsadmin/analytics/live-view", icon: Globe },
+        { title: "Live Tracking", url: "/hatsadmin/tracking", icon: Activity },
         { title: "Reports", url: "/hatsadmin/dashboard/reports", icon: FileText },
       ],
     },
@@ -129,7 +138,7 @@ export function AppSidebar() {
       items: [
         { title: "Shipping", url: "/hatsadmin/dashboard/shipping", icon: Truck },
         { title: "Finance", url: "/hatsadmin/dashboard/finance", icon: DollarSign },
-        { title: "CMS", url: "/hatsadmin/dashboard/cms", icon: Globe },
+        { title: "CMS", url: "/cms?url=/", icon: Globe, targetBlank: true },
       ],
     },
     {
@@ -161,17 +170,32 @@ export function AppSidebar() {
               {group.title}
             </div>
             <ul className="space-y-3">
-              {group.items.map((item) => {
+              {group.items.map((item: NavItem) => {
                 const isActive = pathname === item.url
                 return (
                   <li key={item.title}>
-                    <Link href={item.url} className={`flex items-center gap-3 px-3 py-3 w-full rounded-lg transition-all duration-200 ${isActive ? "bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-300" : "text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800 hover:text-gray-900 dark:hover:text-gray-100"}`}>
-                      <item.icon className={`h-5 w-5 flex-shrink-0 transition-colors stroke-2 ${isActive ? "text-blue-600 dark:text-blue-400" : "text-gray-500 dark:text-gray-400"}`} />
-                      <span className="font-medium text-[13px] truncate">{item.title}</span>
-                      {item.badge && (
-                        <Badge variant="secondary" className={`ml-auto text-[10px] font-medium px-2 py-0.5 rounded-full ${isActive ? "bg-blue-100 dark:bg-blue-800 text-blue-700 dark:text-blue-300" : "bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300"}`}>{item.badge}</Badge>
-                      )}
-                    </Link>
+                    {item.targetBlank ? (
+                      <a
+                        href={item.url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className={`flex items-center gap-3 px-3 py-3 w-full rounded-lg transition-all duration-200 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800 hover:text-gray-900 dark:hover:text-gray-100`}
+                      >
+                        <item.icon className={`h-5 w-5 flex-shrink-0 transition-colors stroke-2 text-gray-500 dark:text-gray-400`} />
+                        <span className="font-medium text-[13px] truncate">{item.title}</span>
+                        {item.badge && (
+                          <Badge variant="secondary" className={`ml-auto text-[10px] font-medium px-2 py-0.5 rounded-full bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300`}>{item.badge}</Badge>
+                        )}
+                      </a>
+                    ) : (
+                      <Link href={item.url} className={`flex items-center gap-3 px-3 py-3 w-full rounded-lg transition-all duration-200 ${isActive ? "bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-300" : "text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800 hover:text-gray-900 dark:hover:text-gray-100"}`}>
+                        <item.icon className={`h-5 w-5 flex-shrink-0 transition-colors stroke-2 ${isActive ? "text-blue-600 dark:text-blue-400" : "text-gray-500 dark:text-gray-400"}`} />
+                        <span className="font-medium text-[13px] truncate">{item.title}</span>
+                        {item.badge && (
+                          <Badge variant="secondary" className={`ml-auto text-[10px] font-medium px-2 py-0.5 rounded-full ${isActive ? "bg-blue-100 dark:bg-blue-800 text-blue-700 dark:text-blue-300" : "bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300"}`}>{item.badge}</Badge>
+                        )}
+                      </Link>
+                    )}
                   </li>
                 )
               })}

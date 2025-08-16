@@ -12,6 +12,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from "@/components/ui/use-toast";
 import { formatCurrency } from "@/lib/currencies";
+import { useSettings } from "@/hooks/useSettings";
 import { IntelligentCouponService } from "@/lib/intelligent-coupon-service";
 import {
   TicketPercent,
@@ -104,6 +105,7 @@ interface CouponAnalytics {
 }
 
 export default function CouponsPage() {
+  const { currency } = useSettings();
   const { toast } = useToast();
   const [loading, setLoading] = useState(true);
   const [coupons, setCoupons] = useState<Coupon[]>([]);
@@ -273,7 +275,7 @@ export default function CouponsPage() {
                     <TrendingUp className="h-4 w-4 text-muted-foreground" />
                   </CardHeader>
                   <CardContent>
-                    <div className="text-2xl font-bold">{formatCurrency(analytics?.revenueGenerated || 0, 'USD')}</div>
+                    <div className="text-2xl font-bold">{formatCurrency(analytics?.revenueGenerated || 0, currency)}</div>
                     <p className="text-xs text-muted-foreground">+8.2% from last month</p>
                   </CardContent>
                 </Card>
@@ -353,7 +355,7 @@ export default function CouponsPage() {
                             <div>
                               <h4 className="font-medium text-green-900 dark:text-green-100">Performance Insight</h4>
                               <p className="text-sm text-green-700 dark:text-green-300">
-                                Current average order value: {formatCurrency(analytics.performanceMetrics.averageOrderValue, 'USD')}
+                                Current average order value: {formatCurrency(analytics.performanceMetrics.averageOrderValue, currency)}
                               </p>
                             </div>
                           </div>
@@ -411,7 +413,7 @@ export default function CouponsPage() {
                           </div>
                         </div>
                         <div className="text-right">
-                          <div className="font-semibold">{formatCurrency(coupon.revenueGenerated, 'USD')}</div>
+                          <div className="font-semibold">{formatCurrency(coupon.revenueGenerated, currency)}</div>
                           <div className="text-sm text-gray-500">{coupon.usageCount} uses • {coupon.conversionRate}% conv.</div>
                         </div>
                       </div>
@@ -573,7 +575,7 @@ export default function CouponsPage() {
                             <td className="p-4">
                               <div className="font-medium">{coupon.name}</div>
                               <div className="text-sm text-gray-500">
-                                Min. order: {formatCurrency(coupon.minimumOrderValue, 'USD')}
+                                Min. order: {formatCurrency(coupon.minimumOrderValue, currency)}
                               </div>
                             </td>
                             <td className="p-4">
@@ -588,7 +590,7 @@ export default function CouponsPage() {
                             <td className="p-4">
                               <div className="font-medium">
                                 {coupon.type === 'percentage' ? `${coupon.discountValue}%` : 
-                                 coupon.type === 'flat' ? formatCurrency(coupon.discountValue, 'USD') :
+                                 coupon.type === 'flat' ? formatCurrency(coupon.discountValue, currency) :
                                  coupon.type}
                               </div>
                             </td>
@@ -632,7 +634,7 @@ export default function CouponsPage() {
                             </td>
                             <td className="p-4">
                               <div className="font-medium">
-                                {formatCurrency(coupon.revenueGenerated, 'USD')}
+                                {formatCurrency(coupon.revenueGenerated, currency)}
                               </div>
                               <div className="text-sm text-gray-500">
                                 {coupon.conversionRate}% conv.
@@ -790,7 +792,7 @@ export default function CouponsPage() {
                     </div>
 
                     <div className="text-center p-4 border rounded-lg">
-                      <div className="text-2xl font-bold text-blue-600">{formatCurrency(analytics?.performanceMetrics?.averageOrderValue || 0, 'USD')}</div>
+                      <div className="text-2xl font-bold text-blue-600">{formatCurrency(analytics?.performanceMetrics?.averageOrderValue || 0, currency)}</div>
                       <div className="text-sm text-gray-500">Avg Order Value</div>
                       <div className="text-xs text-blue-600 mt-1">From actual orders</div>
                     </div>
@@ -808,19 +810,19 @@ export default function CouponsPage() {
                     <div className="space-y-3">
                       <div className="flex justify-between items-center">
                         <span>High Value Customers</span>
-                        <span className="font-semibold">{formatCurrency(analytics?.segmentPerformance?.high_value_customer || 0, 'USD')}</span>
+                        <span className="font-semibold">{formatCurrency(analytics?.segmentPerformance?.high_value_customer || 0, currency)}</span>
                       </div>
                       <div className="flex justify-between items-center">
                         <span>Returning Users</span>
-                        <span className="font-semibold">{formatCurrency(analytics?.segmentPerformance?.returning_user || 0, 'USD')}</span>
+                        <span className="font-semibold">{formatCurrency(analytics?.segmentPerformance?.returning_user || 0, currency)}</span>
                       </div>
                       <div className="flex justify-between items-center">
                         <span>New Users</span>
-                        <span className="font-semibold">{formatCurrency(analytics?.segmentPerformance?.new_user || 0, 'USD')}</span>
+                        <span className="font-semibold">{formatCurrency(analytics?.segmentPerformance?.new_user || 0, currency)}</span>
                       </div>
                       <div className="flex justify-between items-center">
                         <span>Cart Abandoners</span>
-                        <span className="font-semibold">{formatCurrency(analytics?.segmentPerformance?.cart_abandoner || 0, 'USD')}</span>
+                        <span className="font-semibold">{formatCurrency(analytics?.segmentPerformance?.cart_abandoner || 0, currency)}</span>
                       </div>
                     </div>
                   </div>

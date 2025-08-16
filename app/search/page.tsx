@@ -1,8 +1,10 @@
 import prisma from '@/lib/db';
+import { unstable_noStore as noStore } from 'next/cache';
 import { Product } from '@prisma/client';
 import Grid from 'components/grid';
 import ProductGridItems from 'components/layout/product-grid-items';
 import { defaultSort, sorting } from 'lib/constants';
+import { getStoreCurrency } from '@/lib/currency-utils';
 
 export const metadata = {
   title: 'Search',
@@ -14,9 +16,11 @@ export default async function SearchPage({
 }: {
   searchParams?: Promise<{ [key: string]: string | string[] | undefined }>;
 }) {
+  noStore();
   const resolvedSearchParams = await searchParams;
   const { sort } = (resolvedSearchParams || {}) as { [key: string]: string };
   const { sortKey, reverse } = sorting.find((item) => item.slug === sort) || defaultSort;
+  const currency = await getStoreCurrency();
 
   const products = await prisma.product.findMany({
     include: {
@@ -32,7 +36,7 @@ export default async function SearchPage({
     priceRange: {
       maxVariantPrice: {
         amount: (product.price / 100).toString(),
-        currencyCode: 'USD'
+        currencyCode: currency
       }
     },
     featuredImage: {

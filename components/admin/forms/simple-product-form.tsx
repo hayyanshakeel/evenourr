@@ -228,19 +228,19 @@ function SimpleProductForm({ initialData }: SimpleProductFormProps) {
   };
 
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-      <form onSubmit={handleSubmit} className="space-y-6">
-        <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
+    <div className="space-y-6 lg:space-y-8">
+      <form onSubmit={handleSubmit} className="space-y-6 lg:space-y-8">
+        <div className="grid grid-cols-1 xl:grid-cols-3 gap-6 lg:gap-8">
           
           {/* Main Content Area */}
-          <div className="xl:col-span-2 space-y-6">
+          <div className="xl:col-span-2 space-y-6 lg:space-y-8">
             
-            {/* Product Title and Description */}
-            <div className="bg-white rounded-xl shadow-sm border border-gray-200">
-              <div className="px-6 py-4 border-b border-gray-200">
+            {/* Product Information */}
+            <div className="admin-card bg-white rounded-xl shadow-sm border border-gray-200 hover:shadow-md transition-shadow duration-200">
+              <div className="px-6 py-4 border-b border-gray-200 bg-gray-50/50">
                 <h3 className="text-lg font-semibold text-gray-900">Product information</h3>
               </div>
-              <div className="p-6 space-y-6">
+              <div className="p-6 lg:p-8 space-y-6">
                 <div>
                   <label htmlFor="name" className="block text-sm font-semibold text-gray-900 mb-3">
                     Title
@@ -251,7 +251,7 @@ function SimpleProductForm({ initialData }: SimpleProductFormProps) {
                     name="name"
                     value={formData.name}
                     onChange={handleChange}
-                    className="block w-full px-4 py-3 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-gray-500 focus:border-gray-500 text-sm transition-colors"
+                    className="block w-full px-4 py-3 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 text-sm transition-all duration-200 hover:border-gray-400"
                     placeholder="Short sleeve t-shirt"
                     required
                   />
@@ -267,7 +267,7 @@ function SimpleProductForm({ initialData }: SimpleProductFormProps) {
                     value={formData.description}
                     onChange={handleChange}
                     rows={5}
-                    className="block w-full px-4 py-3 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-gray-500 focus:border-gray-500 text-sm resize-none transition-colors"
+                    className="block w-full px-4 py-3 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 text-sm resize-none transition-all duration-200 hover:border-gray-400"
                     placeholder="Describe your product in a few words..."
                   />
                 </div>
@@ -275,24 +275,25 @@ function SimpleProductForm({ initialData }: SimpleProductFormProps) {
             </div>
 
             {/* Media */}
-            <div className="bg-white rounded-xl shadow-sm border border-gray-200">
-              <div className="px-6 py-4 border-b border-gray-200">
+            <div className="admin-card bg-white rounded-xl shadow-sm border border-gray-200 hover:shadow-md transition-shadow duration-200">
+              <div className="px-6 py-4 border-b border-gray-200 bg-gray-50/50">
                 <h3 className="text-lg font-semibold text-gray-900">Media</h3>
+                <p className="text-sm text-gray-600 mt-1">Add product photos and videos</p>
               </div>
-              <div className="p-6">
+              <div className="p-6 lg:p-8">
                 {imagePreviews.length > 0 ? (
                   <div className="space-y-4">
                     <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
                       {imagePreviews.map((preview, index) => (
                         <div key={index} className="relative group">
-                          <div className="relative w-full h-32 rounded-lg border-2 border-gray-200 overflow-hidden">
+                          <div className="relative w-full h-32 rounded-lg border-2 border-gray-200 overflow-hidden group-hover:border-gray-300 transition-colors">
                             <img
                               src={preview}
                               alt={`Product image ${index + 1}`}
                               className="w-full h-full object-cover"
                             />
                             {index === 0 && (
-                              <div className="absolute top-2 left-2 px-2 py-1 bg-black text-white text-xs font-semibold rounded">
+                              <div className="absolute top-2 left-2 px-2 py-1 bg-indigo-600 text-white text-xs font-semibold rounded">
                                 Main
                               </div>
                             )}
@@ -331,13 +332,13 @@ function SimpleProductForm({ initialData }: SimpleProductFormProps) {
                 ) : (
                   <div className="w-full">
                     <label htmlFor="image" className="cursor-pointer">
-                      <div className="flex flex-col items-center justify-center w-full h-80 sm:h-96 border-2 border-gray-300 border-dashed rounded-xl bg-gray-50 hover:bg-gray-100 transition-colors">
+                      <div className="flex flex-col items-center justify-center w-full h-64 border-2 border-gray-300 border-dashed rounded-xl bg-gray-50 hover:bg-gray-100 transition-colors">
                         <div className="flex flex-col items-center justify-center pt-5 pb-6">
                           <PhotoIcon className="w-12 h-12 mb-4 text-gray-400" />
                           <p className="mb-2 text-sm text-gray-500">
                             <span className="font-semibold">Click to upload</span> or drag and drop
                           </p>
-                          <p className="text-xs text-gray-500">Add multiple images. SVG, PNG, JPG or GIF (MAX. 800x400px each)</p>
+                          <p className="text-xs text-gray-500">Add multiple images. SVG, PNG, JPG or GIF</p>
                         </div>
                       </div>
                     </label>
@@ -355,11 +356,12 @@ function SimpleProductForm({ initialData }: SimpleProductFormProps) {
             </div>
 
             {/* Pricing */}
-            <div className="bg-white rounded-xl shadow-sm border border-gray-200">
-              <div className="px-6 py-4 border-b border-gray-200">
+            <div className="admin-card bg-white rounded-xl shadow-sm border border-gray-200 hover:shadow-md transition-shadow duration-200">
+              <div className="px-6 py-4 border-b border-gray-200 bg-gray-50/50">
                 <h3 className="text-lg font-semibold text-gray-900">Pricing</h3>
+                <p className="text-sm text-gray-600 mt-1">Set product pricing and inventory</p>
               </div>
-              <div className="p-6">
+              <div className="p-6 lg:p-8">
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
                   <div>
                     <label htmlFor="price" className="block text-sm font-semibold text-gray-900 mb-3">
@@ -379,7 +381,7 @@ function SimpleProductForm({ initialData }: SimpleProductFormProps) {
                         onChange={handleChange}
                         step="0.01"
                         min="0"
-                        className="block w-full pl-8 pr-4 py-3 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-gray-500 focus:border-gray-500 text-sm transition-colors"
+                        className="block w-full pl-8 pr-4 py-3 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 text-sm transition-all duration-200 hover:border-gray-400"
                         placeholder="0.00"
                         required
                       />
@@ -397,7 +399,7 @@ function SimpleProductForm({ initialData }: SimpleProductFormProps) {
                       value={formData.inventory}
                       onChange={handleChange}
                       min="0"
-                      className="block w-full px-4 py-3 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-gray-500 focus:border-gray-500 text-sm transition-colors"
+                      className="block w-full px-4 py-3 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 text-sm transition-all duration-200 hover:border-gray-400"
                       placeholder="0"
                     />
                   </div>
@@ -417,11 +419,11 @@ function SimpleProductForm({ initialData }: SimpleProductFormProps) {
           </div>
 
           {/* Sidebar */}
-          <div className="space-y-6">
+          <div className="space-y-6 lg:space-y-8">
             
             {/* Status */}
-            <div className="bg-white rounded-xl shadow-sm border border-gray-200">
-              <div className="px-6 py-4 border-b border-gray-200">
+            <div className="admin-card bg-white rounded-xl shadow-sm border border-gray-200 hover:shadow-md transition-shadow duration-200">
+              <div className="px-6 py-4 border-b border-gray-200 bg-gray-50/50">
                 <h3 className="text-lg font-semibold text-gray-900">Product status</h3>
               </div>
               <div className="p-6">
@@ -430,7 +432,7 @@ function SimpleProductForm({ initialData }: SimpleProductFormProps) {
                   name="status"
                   value={formData.status}
                   onChange={handleChange}
-                  className="block w-full px-4 py-3 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-gray-500 focus:border-gray-500 text-sm transition-colors"
+                  className="block w-full px-4 py-3 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 text-sm transition-all duration-200 hover:border-gray-400"
                 >
                   <option value="draft">Draft</option>
                   <option value="active">Active</option>
@@ -440,8 +442,8 @@ function SimpleProductForm({ initialData }: SimpleProductFormProps) {
             </div>
 
             {/* Product Organization */}
-            <div className="bg-white rounded-xl shadow-sm border border-gray-200">
-              <div className="px-6 py-4 border-b border-gray-200">
+            <div className="admin-card bg-white rounded-xl shadow-sm border border-gray-200 hover:shadow-md transition-shadow duration-200">
+              <div className="px-6 py-4 border-b border-gray-200 bg-gray-50/50">
                 <h3 className="text-lg font-semibold text-gray-900">Product organization</h3>
               </div>
               <div className="p-6 space-y-6">
@@ -450,7 +452,7 @@ function SimpleProductForm({ initialData }: SimpleProductFormProps) {
                     Product category
                   </label>
                   <select 
-                    className="block w-full px-4 py-3 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-gray-500 focus:border-gray-500 text-sm transition-colors"
+                    className="block w-full px-4 py-3 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 text-sm transition-all duration-200 hover:border-gray-400"
                     value={categoryId}
                     onChange={e => setCategoryId(e.target.value)}
                     name="categoryId"
@@ -470,15 +472,15 @@ function SimpleProductForm({ initialData }: SimpleProductFormProps) {
                   <label className="block text-sm font-semibold text-gray-900 mb-3">
                     Collections
                   </label>
-                  <div className="space-y-2 max-h-40 overflow-y-auto border border-gray-300 rounded-lg p-3">
+                  <div className="space-y-2 max-h-40 overflow-y-auto border border-gray-300 rounded-lg p-3 bg-gray-50/30">
                     {collections.length > 0 ? (
                       collections.map(collection => (
-                        <label key={collection.id} className="flex items-center space-x-3 cursor-pointer">
+                        <label key={collection.id} className="flex items-center space-x-3 cursor-pointer hover:bg-gray-100 p-2 rounded">
                           <input
                             type="checkbox"
                             checked={selectedCollections.includes(collection.id)}
                             onChange={() => handleCollectionToggle(collection.id)}
-                            className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500 focus:ring-2"
+                            className="w-4 h-4 text-indigo-600 border-gray-300 rounded focus:ring-indigo-500 focus:ring-2"
                           />
                           <span className="text-sm text-gray-700">{collection.title}</span>
                         </label>
@@ -496,7 +498,7 @@ function SimpleProductForm({ initialData }: SimpleProductFormProps) {
                   </label>
                   <input
                     type="text"
-                    className="block w-full px-4 py-3 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-gray-500 focus:border-gray-500 text-sm transition-colors"
+                    className="block w-full px-4 py-3 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 text-sm transition-all duration-200 hover:border-gray-400"
                     placeholder="Add tags separated by commas"
                   />
                 </div>
@@ -508,7 +510,7 @@ function SimpleProductForm({ initialData }: SimpleProductFormProps) {
 
         {/* Error Message */}
         {error && (
-          <div className="bg-red-50 border border-red-200 rounded-xl p-4">
+          <div className="bg-red-50 border border-red-200 rounded-xl p-4 shadow-sm">
             <div className="flex">
               <div className="flex-shrink-0">
                 <XMarkIcon className="h-5 w-5 text-red-400" />
@@ -521,25 +523,29 @@ function SimpleProductForm({ initialData }: SimpleProductFormProps) {
         )}
 
         {/* Action Buttons */}
-        <div className="flex flex-col sm:flex-row items-center justify-end space-y-3 sm:space-y-0 sm:space-x-4 pt-6 border-t border-gray-200">
-          <button
-            type="button"
-            onClick={() => router.back()}
-            disabled={isSubmitting}
-            className="w-full sm:w-auto px-6 py-3 text-sm font-semibold text-slate-700 bg-white border border-slate-300 rounded-lg hover:bg-slate-50 hover:border-slate-400 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-slate-500 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-          >
-            Cancel
-          </button>
-          <button
-            type="submit"
-            disabled={isSubmitting}
-            className="w-full sm:w-auto px-6 py-3 text-sm font-semibold text-white bg-slate-900 border border-slate-700 rounded-lg hover:bg-slate-800 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-slate-500 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-          >
-            {isSubmitting 
-              ? 'Saving...' 
-              : (initialData ? 'Save product' : 'Save product')
-            }
-          </button>
+        <div className="admin-card bg-white rounded-xl shadow-sm border border-gray-200">
+          <div className="p-6">
+            <div className="flex flex-col sm:flex-row items-center justify-end space-y-3 sm:space-y-0 sm:space-x-4">
+              <button
+                type="button"
+                onClick={() => router.back()}
+                disabled={isSubmitting}
+                className="w-full sm:w-auto px-6 py-3 text-sm font-semibold text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 hover:border-gray-400 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200"
+              >
+                Cancel
+              </button>
+              <button
+                type="submit"
+                disabled={isSubmitting}
+                className="w-full sm:w-auto px-6 py-3 text-sm font-semibold text-white bg-indigo-600 border border-indigo-600 rounded-lg hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 shadow-sm"
+              >
+                {isSubmitting 
+                  ? 'Saving...' 
+                  : (initialData ? 'Save product' : 'Save product')
+                }
+              </button>
+            </div>
+          </div>
         </div>
       </form>
     </div>

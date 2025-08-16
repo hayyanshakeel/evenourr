@@ -239,11 +239,11 @@ export default function OrderDetailsPage() {
                   </div>
                   <div className="flex justify-between">
                     <span>Shipping</span>
-                    <span>$0.00</span>
+                    <span>{formatCurrency(0, currency)}</span>
                   </div>
                   <div className="flex justify-between">
                     <span>Tax</span>
-                    <span>{typeof (order as any).taxRate === 'number' ? `${((order as any).taxRate as number).toFixed(2)}%` : '$0.00'}</span>
+                    <span>{typeof (order as any).taxRate === 'number' ? `${((order as any).taxRate as number).toFixed(2)}%` : formatCurrency(0, currency)}</span>
                   </div>
                   <hr className="my-2" />
                   <div className="flex justify-between font-bold">

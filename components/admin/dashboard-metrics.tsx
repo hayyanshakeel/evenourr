@@ -30,25 +30,24 @@ export function DashboardMetrics() {
   const { currency } = useSettings()
 
   useEffect(() => {
-    async function fetchMetrics() {
-      if (!isReady) return;
-      
-      if (!isAuthenticated) {
-        console.warn('User not authenticated')
-        setLoading(false)
-        return;
+    let isMounted = true
+
+    const fetchMetrics = async () => {
+      if (!isReady || !isAuthenticated || !isMounted) {
+        return
       }
 
       try {
         const response = await makeAuthenticatedRequest('/api/admin/dashboard/metrics')
+        
+        if (!isMounted) return
         
         if (response.ok) {
           const raw = await response.json()
           const data = raw?.data ?? raw
           setMetrics(data)
         } else {
-          console.error('Failed to fetch metrics:', response.status, response.statusText)
-          // Set default metrics on error
+          console.error('Failed to fetch metrics:', response.status)
           setMetrics({
             totalRevenue: 0,
             totalOrders: 0,
@@ -66,27 +65,40 @@ export function DashboardMetrics() {
         }
       } catch (error) {
         console.error('Error fetching metrics:', error)
-        // Set default metrics on error instead of throwing
-        setMetrics({
-          totalRevenue: 0,
-          totalOrders: 0,
-          totalProducts: 0,
-          totalCustomers: 0,
-          revenueChange: 0,
-          ordersChange: 0,
-          productsChange: 0,
-          customersChange: 0,
-          lowStockCount: 0,
-          pendingOrdersCount: 0,
-          recentOrders: [],
-          topProducts: [],
-        })
+        if (isMounted) {
+          setMetrics({
+            totalRevenue: 0,
+            totalOrders: 0,
+            totalProducts: 0,
+            totalCustomers: 0,
+            revenueChange: 0,
+            ordersChange: 0,
+            productsChange: 0,
+            customersChange: 0,
+            lowStockCount: 0,
+            pendingOrdersCount: 0,
+            recentOrders: [],
+            topProducts: [],
+          })
+        }
       }
+      
+      if (isMounted) {
+        setLoading(false)
+      }
+    }
+
+    // Only start fetching when auth is ready and authenticated
+    if (isReady && isAuthenticated) {
+      fetchMetrics()
+    } else if (isReady && !isAuthenticated) {
       setLoading(false)
     }
 
-    fetchMetrics()
-  }, [isReady, isAuthenticated, makeAuthenticatedRequest])
+    return () => {
+      isMounted = false
+    }
+  }, [isReady, isAuthenticated]) // Only depend on auth state, not functions
 
   if (loading || !metrics) {
     return (

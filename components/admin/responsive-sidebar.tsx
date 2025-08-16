@@ -24,7 +24,7 @@ import {
   Percent,
   Menu,
   X,
-  LogOut
+  LogOut,
 } from "lucide-react"
 
 import Link from "next/link"
@@ -101,7 +101,11 @@ export function ResponsiveSidebar({
     }
   }, [mounted, isReady, isAuthenticated])
 
-  const navigationItems = [
+  interface NavItemBase { title: string; url: string; icon: any; badge?: string }
+  interface NavItemLink extends NavItemBase { targetBlank?: false }
+  interface NavItemExternal extends NavItemBase { targetBlank: true }
+  type NavItem = NavItemLink | NavItemExternal
+  const navigationItems: Array<{ title: string; items: NavItem[] }> = [
     {
       title: "Core Operations",
       items: [
@@ -140,7 +144,8 @@ export function ResponsiveSidebar({
     {
       title: "Growth & Analytics",
       items: [
-        { title: "Analytics", url: "/hatsadmin/dashboard/analytics", icon: BarChart3 },
+        { title: "Analytics", url: "/hatsadmin/analytics", icon: BarChart3 },
+        { title: "Live View", url: "/hatsadmin/analytics/live-view", icon: Globe },
         { title: "Reports", url: "/hatsadmin/dashboard/reports", icon: FileText },
       ],
     },
@@ -149,7 +154,7 @@ export function ResponsiveSidebar({
       items: [
         { title: "Shipping", url: "/hatsadmin/dashboard/shipping", icon: Truck },
         { title: "Finance", url: "/hatsadmin/dashboard/finance", icon: DollarSign },
-        { title: "CMS", url: "/hatsadmin/dashboard/cms", icon: Globe },
+        { title: "CMS", url: "/cms?url=/", icon: Globe, targetBlank: true },
       ],
     },
     {
@@ -177,7 +182,7 @@ export function ResponsiveSidebar({
 
       {/* Sidebar */}
       <nav className={cn(
-        "fixed inset-y-0 left-0 z-50 flex flex-col bg-gray-50 dark:bg-gray-800 border-r border-gray-300 dark:border-gray-700 transition-all duration-300 ease-in-out",
+        "fixed inset-y-0 left-0 z-50 flex flex-col bg-white/80 backdrop-blur-xl border-r border-gray-200 shadow-xl transition-all duration-300 ease-in-out",
         // Mobile styles
         "lg:relative lg:translate-x-0",
         isOpen ? "translate-x-0" : "-translate-x-full",
@@ -187,7 +192,7 @@ export function ResponsiveSidebar({
         "w-64"
       )}>
         {/* Header */}
-        <div className="flex items-center justify-between border-b border-gray-300 dark:border-gray-700 px-4 py-4 bg-gray-100 dark:bg-gray-800">
+        <div className="flex items-center justify-between border-b border-gray-200 px-4 py-4 bg-white/60">
           <div className="flex items-center gap-3">
             <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-blue-50 border border-blue-200 dark:border-blue-800 flex-shrink-0">
               <Zap className="h-5 w-5 text-blue-600" />
@@ -210,51 +215,66 @@ export function ResponsiveSidebar({
         </div>
 
         {/* Content */}
-        <div className="flex-1 overflow-y-auto px-3 py-5 bg-gray-50 dark:bg-gray-800">
+        <div className="flex-1 overflow-y-auto px-3 py-5 bg-transparent">
           {navigationItems.map((group) => (
             <div key={group.title} className="mb-8">
               <div className="text-[11px] font-semibold text-gray-600 dark:text-gray-400 px-2 py-2 mb-4 uppercase tracking-wider">
                 {group.title}
               </div>
               <ul className="space-y-2">
-                {group.items.map((item) => {
+                {group.items.map((item: NavItem) => {
                   const isActive = pathname === item.url
                   return (
                     <li key={item.title}>
-                      <Link 
-                        href={item.url} 
-                        className={cn(
-                          "flex items-center gap-3 px-3 py-3 w-full rounded-lg transition-all duration-200 group",
-                          isActive 
-                            ? "bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-300" 
-                            : "text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 hover:text-gray-800 dark:hover:text-gray-100"
-                        )}
-                        onClick={() => {
-                          // Close mobile menu when navigating
-                          if (window.innerWidth < 1024) {
-                            setIsOpen(false)
-                          }
-                        }}
-                      >
-                        <item.icon className={cn(
-                          "h-5 w-5 flex-shrink-0 transition-colors stroke-2",
-                          isActive 
-                            ? "text-blue-600 dark:text-blue-400" 
-                            : "text-gray-500 dark:text-gray-400 group-hover:text-gray-600 dark:group-hover:text-gray-300"
-                        )} />
-                        
-                        <span className="font-medium text-[13px] truncate">{item.title}</span>
-                        {item.badge && (
-                          <Badge variant="secondary" className={cn(
-                            "ml-auto text-[10px] font-medium px-2 py-0.5 rounded-full",
-                            isActive 
-                              ? "bg-blue-100 dark:bg-blue-800 text-blue-700 dark:text-blue-300" 
-                              : "bg-gray-200 dark:bg-gray-600 text-gray-600 dark:text-gray-300"
-                          )}>
-                            {item.badge}
-                          </Badge>
-                        )}
-                      </Link>
+                      {item.targetBlank ? (
+                        <a
+                          href={item.url}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className={cn(
+                            "flex items-center gap-3 px-4 py-3 w-full rounded-xl transition-all duration-200 group",
+                            "text-slate-600 hover:bg-slate-50 hover:text-slate-900 hover:shadow-md hover:scale-[1.02]"
+                          )}
+                        >
+                          <item.icon className={cn("h-5 w-5 flex-shrink-0 transition-colors stroke-2", "text-gray-500 group-hover:text-gray-600")} />
+                          <span className="font-medium text-[13px] truncate">{item.title}</span>
+                          {item.badge && (
+                            <Badge variant="secondary" className={cn(
+                              "ml-auto text-[10px] font-medium px-2 py-0.5 rounded-full bg-white border border-white",
+                              "text-gray-600"
+                            )}>
+                              {item.badge}
+                            </Badge>
+                          )}
+                        </a>
+                      ) : (
+                        <Link 
+                          href={item.url} 
+                          className={cn(
+                            "flex items-center gap-3 px-4 py-3 w-full rounded-xl transition-all duration-200 group",
+                            isActive
+                              ? "bg-gradient-to-r from-emerald-50 to-emerald-100 text-emerald-700 shadow-md shadow-emerald-100 border border-emerald-200/50"
+                              : "text-slate-600 hover:bg-slate-50 hover:text-slate-900 hover:shadow-md hover:scale-[1.02]"
+                          )}
+                          onClick={() => {
+                            if (window.innerWidth < 1024) setIsOpen(false)
+                          }}
+                        >
+                          <item.icon className={cn("h-5 w-5 flex-shrink-0 transition-colors stroke-2",
+                            isActive ? "text-emerald-600" : "text-gray-500 group-hover:text-gray-600")} />
+                          <span className="font-medium text-[13px] truncate">{item.title}</span>
+                          {item.badge && (
+                            <Badge variant="secondary" className={cn(
+                              "ml-auto text-[10px] font-medium px-2 py-0.5 rounded-full bg-white border border-white",
+                              isActive 
+                                ? "text-blue-700 border-blue-200" 
+                                : "text-gray-600"
+                            )}>
+                              {item.badge}
+                            </Badge>
+                          )}
+                        </Link>
+                      )}
                     </li>
                   )
                 })}

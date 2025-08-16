@@ -8,7 +8,7 @@ export function cn(...inputs: ClassValue[]) {
 // Base URL configuration
 export const baseUrl = process.env.NEXT_PUBLIC_VERCEL_URL
   ? `https://${process.env.NEXT_PUBLIC_VERCEL_URL}`
-  : 'http://localhost:3000';
+  : process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000';
 
 // Environment validation
 export function validateEnvironmentVariables() {

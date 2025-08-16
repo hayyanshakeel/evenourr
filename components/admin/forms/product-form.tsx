@@ -3,6 +3,8 @@
 import { useState, FormEvent, ChangeEvent, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAdminAuth } from "@/hooks/useAdminAuth";
+import { useSettings } from "@/hooks/useSettings";
+import { CURRENCIES } from "@/lib/currencies";
 import { Product } from '@prisma/client';
 import { PhotoIcon, XMarkIcon } from '@heroicons/react/24/outline';
 
@@ -14,6 +16,7 @@ interface ProductFormProps {
 export function ProductForm({ initialData }: ProductFormProps) {
   const router = useRouter();
   const { makeAuthenticatedRequest, isReady, isAuthenticated } = useAdminAuth();
+  const { currency } = useSettings();
   const loadedRef = useRef(false);
   
   // State for form fields, initialized with existing data if available.
@@ -242,7 +245,7 @@ export function ProductForm({ initialData }: ProductFormProps) {
                     </label>
                     <div className="relative">
                       <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                        <span className="text-gray-500 text-sm">$</span>
+                        <span className="text-gray-500 text-sm">{CURRENCIES[currency]?.symbol || '$'}</span>
                       </div>
                       <input
                         type="number"

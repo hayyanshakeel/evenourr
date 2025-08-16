@@ -52,8 +52,10 @@ interface Settings {
   gpt5PreviewEnabled?: boolean;
 }
 
-// Global settings store
-let globalSettings: Settings = { currency: 'USD' };
+// Global settings state
+let globalSettings: Settings = {
+  currency: 'USD',
+};
 let listeners: Set<() => void> = new Set();
 
 // Function to notify all listeners
@@ -67,15 +69,53 @@ export const updateGlobalSettings = (newSettings: Partial<Settings>) => {
   notifyListeners();
 };
 
+// Utility: read preferred currency from cookie (if any)
+const getPreferredCurrencyFromCookie = (): string | null => {
+  try {
+    const match = document.cookie.match(/(?:^|; )preferred-currency=([^;]+)/);
+    const captured = match && match[1] ? match[1] : null;
+    return captured ? decodeURIComponent(captured) : null;
+  } catch {
+    return null;
+  }
+};
+
+// Function to save user currency preference
+export const saveUserCurrencyPreference = async (currency: string): Promise<boolean> => {
+  try {
+    // Save to server/cookie
+    const response = await fetch('/api/currency/preference', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ currency }),
+    });
+    
+    return response.ok;
+  } catch (error) {
+    console.error('Failed to save currency preference:', error);
+    return false;
+  }
+};
+
 // Function to fetch settings from API
 const fetchSettings = async (): Promise<Settings> => {
   try {
-    const response = await fetch('/api/settings');
+    // Add timestamp to bust cache
+    const response = await fetch(`/api/settings?t=${Date.now()}`);
     if (response.ok) {
       const data = await response.json();
+      // Determine effective currency:
+      // - If multi-currency is enabled AND user has a preferred cookie, use cookie
+      // - Otherwise, use store currency from settings
+      const storeCurrency = (data.currency as string) || 'USD';
+      const multi = data.multiCurrencySupport === 'true';
+      const cookieCurrency = multi ? getPreferredCurrencyFromCookie() : null;
+      const effectiveCurrency = cookieCurrency || storeCurrency;
       const settings: Settings = {
         // Store Information
-        currency: data.currency || 'USD',
+        currency: effectiveCurrency,
         storeName: data.storeName,
         storeDescription: data.storeDescription,
         storeEmail: data.storeEmail,
@@ -128,7 +168,42 @@ const fetchSettings = async (): Promise<Settings> => {
   } catch (error) {
     console.error('Failed to fetch settings:', error);
   }
-  return { currency: 'USD' };
+  
+  // Return minimal default settings
+  return { 
+    currency: 'USD',
+    storeName: '',
+    storeDescription: '',
+    storeEmail: '',
+    storePhone: '',
+    addressLine1: '',
+    addressLine2: '',
+    city: '',
+    state: '',
+    zip: '',
+    country: '',
+    acceptCreditCards: false,
+    acceptPaypal: false,
+    acceptApplePay: false,
+    acceptGooglePay: false,
+    multiCurrencySupport: false,
+    notifyNewOrders: true,
+    notifyLowStock: true,
+    notifyCustomerMessages: true,
+    notifyMarketingUpdates: false,
+    twoFactorAuth: false,
+    loginNotifications: true,
+    sessionTimeout: 30,
+    theme: 'system',
+    sidebarAutoCollapse: true,
+    compactMode: false,
+    domesticShippingRate: 0,
+    internationalShippingRate: 0,
+    freeShippingThreshold: 0,
+    calculateShippingTax: false,
+    shippingInsurance: false,
+    gpt5PreviewEnabled: false,
+  };
 };
 
 // Custom hook to use settings
@@ -148,10 +223,8 @@ export const useSettings = () => {
   }, []);
 
   useEffect(() => {
-    // Initial fetch if global settings is just default
-    if (globalSettings.currency === 'USD' && !globalSettings.storeName) {
-      refreshSettings();
-    }
+    // Always fetch settings on mount to ensure we have the latest data
+    refreshSettings();
 
     // Subscribe to global settings changes
     const updateLocalSettings = () => {
@@ -177,6 +250,11 @@ export const useSettings = () => {
 // Function to save settings (to be used in settings page)
 export const saveSettings = async (newSettings: Partial<Settings>): Promise<boolean> => {
   try {
+    // If currency is being changed, update user preference as well
+    if (newSettings.currency) {
+      await saveUserCurrencyPreference(newSettings.currency);
+    }
+
     const processedSettings: Record<string, string> = {};
     
     // Convert all settings to strings for database storage

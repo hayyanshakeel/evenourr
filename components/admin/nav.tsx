@@ -14,7 +14,8 @@ import {
   HiXMark as HiOutlineXMark,
   HiChevronRight as HiOutlineChevronRight,
   HiCube as HiOutlineCube,
-  HiArrowRightOnRectangle as HiOutlineArrowRightOnRectangle
+  HiArrowRightOnRectangle as HiOutlineArrowRightOnRectangle,
+  HiChartBarSquare as HiOutlineChartBarSquare
 } from 'react-icons/hi2';
 import { useState } from 'react';
 
@@ -24,6 +25,7 @@ function classNames(...classes: string[]) {
 
 const navigationItems = [
   { href: '/hatsadmin/dashboard', label: 'Dashboard', icon: HiOutlineHome },
+  { href: '/hatsadmin/analytics', label: 'Analytics', icon: HiOutlineChartBarSquare },
   { href: '/hatsadmin/dashboard/orders', label: 'Orders', icon: HiOutlineArchiveBox },
   {
     href: '/hatsadmin/dashboard/products',

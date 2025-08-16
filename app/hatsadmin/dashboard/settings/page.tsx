@@ -15,6 +15,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Separator } from "@/components/ui/separator";
 import { useToast } from "@/components/ui/use-toast";
 import { useLocation } from "@/hooks/useLocation";
+import { saveSettings } from "@/hooks/useSettings";
 import { getAllShippingZones, canDeleteZone, getZoneRestrictionMessage } from "@/lib/geolocation";
 import { getCurrencyList, formatCurrency } from "@/lib/currencies";
 import {
@@ -100,8 +101,60 @@ export default function SettingsPage() {
   useEffect(() => {
     const loadSettings = async () => {
       try {
-        // TODO: Replace with your real settings API if needed
-        setFormData((prev) => ({ ...prev }));
+        const response = await fetch('/api/settings');
+        if (response.ok) {
+          const data = await response.json();
+          setFormData(prev => ({
+            ...prev,
+            // Store Information
+            currency: data.currency || 'USD',
+            storeName: data.storeName || '',
+            storeDescription: data.storeDescription || '',
+            storeEmail: data.storeEmail || '',
+            storePhone: data.storePhone || '',
+            
+            // Business Address
+            addressLine1: data.addressLine1 || '',
+            addressLine2: data.addressLine2 || '',
+            city: data.city || '',
+            state: data.state || '',
+            zip: data.zip || '',
+            country: data.country || '',
+            
+            // Payment Settings
+            acceptCreditCards: data.acceptCreditCards === 'true',
+            acceptPaypal: data.acceptPaypal === 'true',
+            acceptApplePay: data.acceptApplePay === 'true',
+            acceptGooglePay: data.acceptGooglePay === 'true',
+            multiCurrencySupport: data.multiCurrencySupport === 'true',
+            
+            // Notifications
+            notifyNewOrders: data.notifyNewOrders === 'true',
+            notifyLowStock: data.notifyLowStock === 'true',
+            notifyCustomerMessages: data.notifyCustomerMessages === 'true',
+            notifyMarketingUpdates: data.notifyMarketingUpdates === 'true',
+            
+            // Security
+            twoFactorAuth: data.twoFactorAuth === 'true',
+            loginNotifications: data.loginNotifications === 'true',
+            sessionTimeout: data.sessionTimeout ? parseInt(data.sessionTimeout) : 30,
+            
+            // Appearance
+            theme: data.theme || 'system',
+            sidebarAutoCollapse: data.sidebarAutoCollapse === 'true',
+            compactMode: data.compactMode === 'true',
+            
+            // Shipping
+            domesticShippingRate: data.domesticShippingRate ? parseFloat(data.domesticShippingRate) : 5.99,
+            internationalShippingRate: data.internationalShippingRate ? parseFloat(data.internationalShippingRate) : 15.99,
+            freeShippingThreshold: data.freeShippingThreshold ? parseFloat(data.freeShippingThreshold) : 75.00,
+            calculateShippingTax: data.calculateShippingTax === 'true',
+            shippingInsurance: data.shippingInsurance === 'true',
+            
+            // AI
+            gpt5PreviewEnabled: data.gpt5PreviewEnabled === 'true',
+          }));
+        }
       } catch (error) {
         console.error('Failed to load settings:', error)
       } finally {
@@ -349,11 +402,15 @@ export default function SettingsPage() {
   const handleSaveSection = async (sectionData: Partial<typeof formData>) => {
     setSaving(true)
     try {
-      await new Promise(resolve => setTimeout(resolve, 1000))
-      toast({
-        title: "Settings saved",
-        description: "Section settings have been successfully updated.",
-      })
+      const success = await saveSettings(sectionData);
+      if (success) {
+        toast({
+          title: "Settings saved",
+          description: "Section settings have been successfully updated.",
+        })
+      } else {
+        throw new Error('Failed to save settings');
+      }
     } catch (error) {
       toast({
         title: "Error",
@@ -501,9 +558,15 @@ export default function SettingsPage() {
                       </div>
                     </div>
 
-                    <Button onClick={() => handleSaveSection({ storeName: formData.storeName, storeEmail: formData.storeEmail })}>
+                    <Button onClick={() => handleSaveSection({ 
+                      storeName: formData.storeName, 
+                      storeEmail: formData.storeEmail, 
+                      storeDescription: formData.storeDescription,
+                      storePhone: formData.storePhone,
+                      currency: formData.currency 
+                    })} disabled={saving}>
                       <Save className="h-4 w-4 mr-2" />
-                      Save Store Details
+                      {saving ? 'Saving...' : 'Save Store Details'}
                     </Button>
                   </CardContent>
                 </Card>
@@ -678,7 +741,7 @@ export default function SettingsPage() {
                     <div className="flex items-center justify-between p-4 border rounded-lg">
                       <div className="space-y-1">
                         <h3 className="font-semibold">Basic Plan</h3>
-                        <p className="text-sm text-gray-500">₹20/month until 8 October 2025</p>
+                        <p className="text-sm text-gray-500">{formatCurrency(20, formData.currency)}/month until 8 October 2025</p>
                         <p className="text-xs text-blue-600">✓ Shipping discounts included</p>
                       </div>
                       <div className="text-right">
@@ -690,7 +753,7 @@ export default function SettingsPage() {
 
                     <div className="p-4 bg-blue-50 border border-blue-200 rounded-lg">
                       <p className="text-sm text-blue-800">
-                        💡 Pay yearly and save ₹5,940/year
+                        💡 Pay yearly and save {formatCurrency(5940, formData.currency)}/year
                       </p>
                     </div>
 
@@ -699,11 +762,11 @@ export default function SettingsPage() {
                       <div className="space-y-2">
                         <div className="flex justify-between text-sm">
                           <span>September 2025</span>
-                          <span>₹20.00</span>
+                          <span>{formatCurrency(20, formData.currency)}</span>
                         </div>
                         <div className="flex justify-between text-sm">
                           <span>August 2025</span>
-                          <span>₹20.00</span>
+                          <span>{formatCurrency(20, formData.currency)}</span>
                         </div>
                       </div>
                     </div>

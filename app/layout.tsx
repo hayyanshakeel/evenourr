@@ -17,7 +17,7 @@ export const metadata: Metadata = {
   icons: {
     icon: '/favicon.ico',
   },
-  metadataBase: new URL('http://localhost:3000'),
+  metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000'),
 };
 
 export default function RootLayout({ children }: { children: ReactNode }) {
@@ -28,11 +28,11 @@ export default function RootLayout({ children }: { children: ReactNode }) {
       suppressHydrationWarning={true}
     >
       <body 
-        className="bg-neutral-50 text-black selection:bg-teal-300 dark:bg-neutral-900 dark:text-white dark:selection:bg-pink-500 dark:selection:text-white"
+        className="bg-transparent text-black dark:text-white selection:bg-teal-300 dark:selection:bg-pink-500 dark:selection:text-white"
         suppressHydrationWarning={true}
       >
         <LayoutProvider>{children}</LayoutProvider>
       </body>
     </html>
   );
-} 
+}

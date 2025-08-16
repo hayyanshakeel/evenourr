@@ -10,6 +10,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { HiArrowLeft, HiPlus, HiTrash } from "react-icons/hi2"
 import { useAdminAuth } from "@/hooks/useAdminAuth"
+import { useSettings } from "@/hooks/useSettings"
+import { formatCurrency } from "@/lib/currencies"
 
 interface OrderItem {
   id: string
@@ -30,6 +32,7 @@ interface SearchProduct {
 export default function AddOrderPage() {
   const router = useRouter()
   const { makeAuthenticatedRequest, isReady, isAuthenticated } = useAdminAuth()
+  const { currency } = useSettings()
   const [formData, setFormData] = useState({
     customerName: "",
     customerEmail: "",
@@ -188,7 +191,7 @@ export default function AddOrderPage() {
         <Button 
           variant="outline" 
           onClick={() => router.back()}
-          className="gap-2"
+          className="gap-2 bg-white/80 backdrop-blur-sm border-slate-200/50 hover:bg-white hover:shadow-lg transition-all duration-200 rounded-xl"
         >
           <HiArrowLeft className="h-4 w-4" />
           Back
@@ -203,7 +206,7 @@ export default function AddOrderPage() {
             <div className="lg:col-span-2 space-y-6">
               
               {/* Customer Information */}
-              <Card>
+              <Card className="bg-white/80 backdrop-blur-sm border-slate-200/50 shadow-xl rounded-2xl">
                 <CardHeader>
                   <CardTitle>Customer Information</CardTitle>
                 </CardHeader>
@@ -249,7 +252,7 @@ export default function AddOrderPage() {
               </Card>
 
               {/* Shipping Information */}
-              <Card>
+              <Card className="bg-white/80 backdrop-blur-sm border-slate-200/50 shadow-xl rounded-2xl">
                 <CardHeader>
                   <CardTitle>Shipping Information</CardTitle>
                 </CardHeader>
@@ -295,19 +298,19 @@ export default function AddOrderPage() {
               </Card>
 
               {/* Order Items */}
-              <Card>
+              <Card className="bg-white/80 backdrop-blur-sm border-slate-200/50 shadow-xl rounded-2xl">
                 <CardHeader className="flex flex-row items-center justify-between">
                   <CardTitle>Order Items</CardTitle>
-                  <Button type="button" onClick={addOrderItem} variant="outline" size="sm">
+                  <Button type="button" onClick={addOrderItem} variant="outline" size="sm" className="bg-white/80 backdrop-blur-sm border-slate-200/50 hover:bg-white hover:shadow-lg rounded-xl">
                     <HiPlus className="h-4 w-4 mr-2" />
                     Add Item
                   </Button>
                 </CardHeader>
                 <CardContent>
                   {orderItems.length === 0 ? (
-                    <div className="text-center py-12 text-gray-500">
+                    <div className="text-center py-12 text-slate-500">
                       <p>No items added yet</p>
-                      <Button type="button" onClick={addOrderItem} variant="outline" className="mt-4">
+                      <Button type="button" onClick={addOrderItem} variant="outline" className="mt-4 bg-white/80 backdrop-blur-sm border-slate-200/50 hover:bg-white hover:shadow-lg rounded-xl">
                         <HiPlus className="h-4 w-4 mr-2" />
                         Add First Item
                       </Button>
@@ -315,7 +318,7 @@ export default function AddOrderPage() {
                   ) : (
                     <div className="space-y-4">
                       {orderItems.map((item, index) => (
-                        <div key={item.id} className="flex items-center gap-4 p-4 border rounded-lg">
+                        <div key={item.id} className="flex items-center gap-4 p-4 border rounded-xl bg-white/70 backdrop-blur-sm border-slate-200/50 hover:shadow-md transition-shadow">
                           <div className="text-sm font-medium text-gray-500 w-8">
                             #{index + 1}
                           </div>
@@ -350,17 +353,17 @@ export default function AddOrderPage() {
                                       }}
                                     />
                                     {searchResults[item.id] && searchResults[item.id]!.length > 0 && (
-                                      <div className="absolute z-10 mt-1 w-full bg-white border rounded shadow">
+                                      <div className="absolute z-10 mt-1 w-full bg-white/95 border rounded-xl shadow-xl border-slate-200/50">
                                         {searchResults[item.id]!.map(p => (
                                           <button
                                             key={p.id}
                                             type="button"
-                                            className="w-full text-left px-3 py-2 hover:bg-gray-50"
+                                            className="w-full text-left px-3 py-2 hover:bg-slate-50 rounded-lg"
                                             onClick={() => selectSearchProduct(item.id, p)}
                                           >
                                             <div className="flex justify-between">
                                               <span>{p.name}</span>
-                                              <span className="text-sm text-gray-500">₹{Number(p.price || 0).toFixed(2)}</span>
+                                              <span className="text-sm text-slate-500">{formatCurrency(Number(p.price || 0), currency)}</span>
                                             </div>
                                           </button>
                                         ))}
@@ -386,14 +389,14 @@ export default function AddOrderPage() {
                             />
                           </div>
                           <div className="text-sm font-medium w-20 text-right">
-                            ${(item.price * item.quantity).toFixed(2)}
+                            {formatCurrency(item.price * item.quantity, currency)}
                           </div>
                           <Button
                             type="button"
                             variant="ghost"
                             size="sm"
                             onClick={() => removeOrderItem(item.id)}
-                            className="text-red-600 hover:text-red-700"
+                            className="text-red-600 hover:text-red-700 rounded-xl"
                           >
                             <HiTrash className="h-4 w-4" />
                           </Button>
@@ -409,30 +412,30 @@ export default function AddOrderPage() {
             <div className="space-y-6">
               
               {/* Order Summary */}
-              <Card>
+              <Card className="bg-white/80 backdrop-blur-sm border-slate-200/50 shadow-xl rounded-2xl">
                 <CardHeader>
                   <CardTitle>Order Summary</CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-4">
                   <div className="flex justify-between text-sm">
                     <span>Subtotal:</span>
-                    <span>${subtotal.toFixed(2)}</span>
+                    <span>{formatCurrency(subtotal, currency)}</span>
                   </div>
                   <div className="flex justify-between text-sm">
                     <span>Tax ({formData.taxRate}%):</span>
-                    <span>${tax.toFixed(2)}</span>
+                    <span>{formatCurrency(tax, currency)}</span>
                   </div>
                   <div className="border-t pt-4">
                     <div className="flex justify-between text-lg font-semibold">
                       <span>Total:</span>
-                      <span>${total.toFixed(2)}</span>
+                      <span>{formatCurrency(total, currency)}</span>
                     </div>
                   </div>
                 </CardContent>
               </Card>
 
               {/* Payment & Status */}
-              <Card>
+              <Card className="bg-white/80 backdrop-blur-sm border-slate-200/50 shadow-xl rounded-2xl">
                 <CardHeader>
                   <CardTitle>Payment & Status</CardTitle>
                 </CardHeader>
@@ -484,7 +487,7 @@ export default function AddOrderPage() {
               </Card>
 
               {/* Order Notes */}
-              <Card>
+              <Card className="bg-white/80 backdrop-blur-sm border-slate-200/50 shadow-xl rounded-2xl">
                 <CardHeader>
                   <CardTitle>Order Notes</CardTitle>
                 </CardHeader>
@@ -502,13 +505,13 @@ export default function AddOrderPage() {
 
               {/* Action Buttons */}
               <div className="space-y-3">
-                <Button type="submit" className="w-full bg-blue-600 hover:bg-blue-700">
+                <Button type="submit" className="w-full bg-gradient-to-r from-emerald-500 to-emerald-600 hover:from-emerald-600 hover:to-emerald-700 shadow-lg shadow-emerald-500/25 rounded-xl">
                   Create Order
                 </Button>
                 <Button 
                   type="button" 
                   variant="outline" 
-                  className="w-full"
+                  className="w-full bg-white/80 backdrop-blur-sm border-slate-200/50 hover:bg-white hover:shadow-lg rounded-xl"
                   onClick={() => router.back()}
                 >
                   Cancel

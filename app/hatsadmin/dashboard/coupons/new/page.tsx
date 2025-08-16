@@ -5,9 +5,12 @@
 import { useState, FormEvent } from 'react';
 import { useRouter } from 'next/navigation';
 import Header from '@/components/admin/header';
+import { useSettings } from '@/hooks/useSettings';
+import { formatCurrency } from '@/lib/currencies';
 
 const NewCouponPage = () => {
   const router = useRouter();
+  const { currency } = useSettings();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -102,7 +105,7 @@ const NewCouponPage = () => {
                 className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
               >
                 <option value="percentage">Percentage (%)</option>
-                <option value="fixed">Fixed Amount ($)</option>
+                <option value="fixed">Fixed Amount ({currency})</option>
               </select>
             </div>
             <div>
@@ -115,7 +118,7 @@ const NewCouponPage = () => {
                 value={formData.discountValue}
                 onChange={handleChange}
                 className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
-                placeholder={formData.discountType === 'percentage' ? "e.g., 25 for 25%" : "e.g., 1000 for $10.00"}
+                placeholder={formData.discountType === 'percentage' ? "e.g., 25 for 25%" : `e.g., 1000 for ${formatCurrency(10, currency)}`}
               />
             </div>
           </div>

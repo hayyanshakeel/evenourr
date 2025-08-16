@@ -1,11 +1,13 @@
 // File: app/search/[collection]/page.tsx
 
 import prisma from '@/lib/db';
+import { unstable_noStore as noStore } from 'next/cache';
 import { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 
 import Grid from 'components/grid';
 import ProductGridItems from 'components/layout/product-grid-items';
+import { getStoreCurrency } from '@/lib/currency-utils';
 
 // This function generates the page title based on the collection
 export async function generateMetadata({ params }: { params: Promise<{ collection: string }> }): Promise<Metadata> {
@@ -22,9 +24,11 @@ export async function generateMetadata({ params }: { params: Promise<{ collectio
 
 // This is the main page component that fetches and displays products
 export default async function CategoryPage({ params }: { params: Promise<{ collection: string }> }) {
+  noStore();
   const { collection } = await params;
   const collectionData = await prisma.collection.findFirst({ where: { handle: collection } });
   if (!collectionData) return notFound();
+  const currency = await getStoreCurrency();
 
   // 1. Fetch the raw product data from the database
   const rawProducts = await prisma.product.findMany({ 
@@ -51,7 +55,7 @@ export default async function CategoryPage({ params }: { params: Promise<{ colle
       maxVariantPrice: {
         // Convert price from cents to dollars for display
         amount: (product.price / 100).toString(),
-        currencyCode: 'USD',
+        currencyCode: currency,
       },
     },
     featuredImage: {

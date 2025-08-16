@@ -98,6 +98,22 @@ export interface DashboardMetrics {
   }[];
 }
 
+// Utility stock helpers (minimal engine entry points)
+export const StockEngine = {
+  async adjust(productId: number, warehouseId: number, delta: number, reason: string = 'manual') {
+    const updated = await prisma.$transaction(async (tx) => {
+      let stock = await (tx as any).stockItem.findFirst({ where: { productId, warehouseId } })
+      if (!stock) {
+        stock = await (tx as any).stockItem.create({ data: { productId, warehouseId, qtyOnHand: 0, qtyReserved: 0, unitCost: 0 } })
+      }
+      const saved = await (tx as any).stockItem.update({ where: { id: stock.id }, data: { qtyOnHand: stock.qtyOnHand + Math.trunc(delta) } })
+      await (tx as any).movement.create({ data: { type: 'adjust', status: 'posted', reference: reason, lines: { create: [{ productId, quantity: Math.trunc(delta), unitCost: stock.unitCost, reason }] } } })
+      return saved
+    })
+    return updated
+  },
+}
+
 // Products service
 export const ProductsService = {
   getAll: async (params?: {
@@ -620,43 +636,77 @@ export const InventoryService = {
     status?: string;
     limit?: number;
     offset?: number;
+    warehouseId?: number;
+    productId?: number;
   }) => {
     try {
-      const where: any = {};
-      
+      // Text search on product
+      const productWhere: any = {};
+      if (params?.productId) {
+        productWhere.id = params.productId;
+      }
       if (params?.search) {
-        where.OR = [
-          { name: { contains: params.search } },
-          { slug: { contains: params.search } },
+        productWhere.OR = [
+          { name: { contains: params.search, mode: 'insensitive' } },
+          { slug: { contains: params.search, mode: 'insensitive' } },
+          { description: { contains: params?.search, mode: 'insensitive' } },
         ];
       }
 
+      // First, find relevant product IDs paginated by product to keep UI stable
       const products = await prisma.product.findMany({
-        where,
-        include: {
-          category: {
-            select: { name: true },
-          },
-        },
+        where: productWhere,
+        include: { category: { select: { name: true } } },
         orderBy: { updatedAt: 'desc' },
         take: params?.limit || 20,
         skip: params?.offset || 0,
       });
+      const productIds = products.map(p => p.id);
 
-      return products.map(product => ({
-        id: product.id,
-        name: product.name,
-        sku: product.slug, // Using slug as SKU for now
-        quantity: product.inventory,
-        reserved: 0, // Default reserved quantity
-        category: product.category?.name || 'Uncategorized',
-        price: product.price,
-        description: product.description || '',
-        status: product.inventory > 10 ? 'In Stock' : product.inventory > 0 ? 'Low Stock' : 'Out of Stock',
-        reorderLevel: 10, // Default reorder level
-        imageUrl: product.imageUrl,
-        lastRestocked: product.updatedAt,
-      })) as AdminInventoryItem[];
+      // Aggregate stock from StockItem for those products (optionally by warehouse)
+      let stockRows: Array<{ productId: number; _sum: { qtyOnHand: number | null; qtyReserved: number | null }; _max: { updatedAt: Date | null } }> = []
+      if (productIds.length > 0) {
+        stockRows = await prisma.stockItem.groupBy({
+          by: ['productId'],
+          where: {
+            productId: { in: productIds },
+            ...(params?.warehouseId ? { warehouseId: params.warehouseId } : {}),
+          },
+          _sum: { qtyOnHand: true, qtyReserved: true },
+          _max: { updatedAt: true },
+        }) as any
+      }
+      const stockByProduct = new Map<number, { onHand: number; reserved: number; updatedAt?: Date | null }>()
+      for (const row of stockRows) {
+        stockByProduct.set(row.productId, {
+          onHand: row._sum.qtyOnHand || 0,
+          reserved: row._sum.qtyReserved || 0,
+          updatedAt: row._max.updatedAt || null,
+        })
+      }
+
+      // Fallback: if no StockItem yet, use legacy product.inventory
+      const items: AdminInventoryItem[] = products.map(product => {
+        const stock = stockByProduct.get(product.id)
+        const quantity = stock ? stock.onHand : product.inventory
+        const status = quantity > 10 ? 'In Stock' : quantity > 0 ? 'Low Stock' : 'Out of Stock'
+        return {
+          id: product.id,
+          name: product.name,
+          sku: product.slug,
+          quantity,
+          reserved: stock?.reserved || 0,
+          category: product.category?.name || 'Uncategorized',
+          price: product.price,
+          description: product.description || '',
+          status,
+          reorderLevel: 10,
+          imageUrl: product.imageUrl,
+          lastRestocked: stock?.updatedAt || product.updatedAt,
+        }
+      })
+
+      return items
     } catch (error) {
       console.error('Error in InventoryService.getAll:', error);
       throw new Error(`Failed to fetch inventory: ${error instanceof Error ? error.message : 'Unknown error'}`);

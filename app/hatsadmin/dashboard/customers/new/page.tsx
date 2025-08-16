@@ -106,25 +106,95 @@ export default function NewCustomerPage() {
     setLoading(true);
 
     try {
+      // Validate required fields
+      if (!customerForm.firstName.trim()) {
+        alert('First name is required');
+        return;
+      }
+      if (!customerForm.lastName.trim()) {
+        alert('Last name is required');
+        return;
+      }
+      if (!customerForm.email.trim()) {
+        alert('Email is required');
+        return;
+      }
+
+      // Validate email format
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      if (!emailRegex.test(customerForm.email)) {
+        alert('Please enter a valid email address');
+        return;
+      }
+
       const customerData = {
         name: `${customerForm.firstName} ${customerForm.lastName}`.trim(),
-        email: customerForm.email,
-        phone: customerForm.phone || null,
+        email: customerForm.email.trim().toLowerCase(),
+        phone: customerForm.phone?.trim() || null,
       };
+      
+      console.log('Creating customer with data:', customerData);
       
       const response = await makeAuthenticatedRequest('/api/admin/customers', {
         method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
         body: JSON.stringify(customerData),
       });
 
+      console.log('API response status:', response.status);
+
       if (response.ok) {
+        const result = await response.json();
+        console.log('Customer created successfully:', result);
+        
+        // Handle both old and new response formats
+        const customerData = result.data || result;
+        
+        // Show success message
+        alert(`Customer "${customerData.name}" created successfully!`);
+        
+        // Navigate back to customers list
         router.push('/hatsadmin/dashboard/customers');
       } else {
-        throw new Error('Failed to create customer');
+        const errorData = await response.json().catch(() => ({}));
+        console.error('API error response:', errorData);
+        
+        // Handle enterprise error format
+        const errorMessage = errorData.error || errorData.message || `Failed to create customer (${response.status})`;
+        
+        // Handle specific HTTP status codes
+        if (response.status === 409) {
+          throw new Error(`DUPLICATE_EMAIL: ${errorMessage}`);
+        } else if (response.status === 400) {
+          throw new Error(`VALIDATION_ERROR: ${errorMessage}`);
+        } else if (response.status === 401) {
+          throw new Error(`UNAUTHORIZED: Please log in again`);
+        } else if (response.status === 403) {
+          throw new Error(`FORBIDDEN: You don't have permission to create customers`);
+        } else {
+          throw new Error(errorMessage);
+        }
       }
     } catch (error) {
       console.error('Error creating customer:', error);
-      throw error;
+      
+      let errorMessage = 'Failed to create customer';
+      if (error instanceof Error) {
+        errorMessage = error.message;
+      }
+      
+      // Show user-friendly error messages
+      if (errorMessage.includes('already exists')) {
+        alert('A customer with this email already exists. Please use a different email address.');
+      } else if (errorMessage.includes('Validation failed')) {
+        alert(`Please check your input: ${errorMessage}`);
+      } else if (errorMessage.includes('network') || errorMessage.includes('fetch')) {
+        alert('Network error. Please check your connection and try again.');
+      } else {
+        alert(`Error: ${errorMessage}`);
+      }
     } finally {
       setLoading(false);
     }

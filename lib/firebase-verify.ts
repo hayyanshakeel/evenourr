@@ -56,20 +56,38 @@ export async function verifyFirebaseUser(request: NextRequest): Promise<VerifyRe
     const adminUids = process.env.ADMIN_UIDS?.split(',') || [];
     const isAdmin = adminEmails.includes(userEmail) || adminUids.includes(decodedToken.uid);
 
-    let user = await prisma.user.findUnique({ where: { email: userEmail } });
-    if (!user) {
-      log('provisioning user record for', userEmail, 'admin?', isAdmin);
-      user = await prisma.user.create({
-        data: {
-          email: userEmail,
-          firstName: decodedToken.name?.split(' ')[0] || '',
-          lastName: decodedToken.name?.split(' ').slice(1).join(' ') || '',
-          role: isAdmin ? 'admin' : 'user',
-          password: 'firebase_auth',
-          isActive: true,
-          emailVerified: decodedToken.email_verified || false,
-        }
-      });
+    let user;
+    try {
+      user = await prisma.user.findUnique({ where: { email: userEmail } });
+      if (!user) {
+        log('provisioning user record for', userEmail, 'admin?', isAdmin);
+        user = await prisma.user.create({
+          data: {
+            email: userEmail,
+            firstName: decodedToken.name?.split(' ')[0] || '',
+            lastName: decodedToken.name?.split(' ').slice(1).join(' ') || '',
+            role: isAdmin ? 'admin' : 'user',
+            password: 'firebase_auth',
+            isActive: true,
+            emailVerified: decodedToken.email_verified || false,
+          }
+        });
+      }
+    } catch (dbError) {
+      console.error('Database connection failed, creating fallback user:', dbError);
+      // Create a fallback user object when database is unavailable
+      user = {
+        id: decodedToken.uid,
+        email: userEmail,
+        firstName: decodedToken.name?.split(' ')[0] || '',
+        lastName: decodedToken.name?.split(' ').slice(1).join(' ') || '',
+        role: isAdmin ? 'admin' : 'user',
+        password: 'firebase_auth',
+        isActive: true,
+        emailVerified: decodedToken.email_verified || false,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      };
     }
     return { user };
   } catch (error) {

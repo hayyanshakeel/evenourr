@@ -10,9 +10,12 @@ import { Textarea } from "@/components/ui/textarea"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { HiArrowLeft, HiExclamationTriangle } from "react-icons/hi2"
+import { useSettings } from "@/hooks/useSettings"
+import { formatCurrency } from "@/lib/currencies"
 
 export default function AddInventoryPage() {
   const router = useRouter()
+  const { currency } = useSettings()
   const [formData, setFormData] = useState({
     productName: "",
     sku: "",
@@ -270,8 +273,7 @@ export default function AddInventoryPage() {
             </div>
 
             {/* Sidebar */}
-            <div className="space-y-6">
-              
+            <div className="lg:col-span-1 space-y-6">
               {/* Transaction Summary */}
               <Card>
                 <CardHeader>
@@ -287,7 +289,7 @@ export default function AddInventoryPage() {
                     </div>
                     <div className="flex justify-between">
                       <span>Cost per unit:</span>
-                      <span>${parseFloat(formData.costPrice || "0").toFixed(2)}</span>
+                      <span>{formatCurrency(parseFloat(formData.costPrice || "0"), currency)}</span>
                     </div>
                     <div className="flex justify-between">
                       <span>Location:</span>
@@ -297,7 +299,7 @@ export default function AddInventoryPage() {
                       <div className="flex justify-between font-medium">
                         <span>Total Value:</span>
                         <span className={totalValue < 0 ? "text-red-600" : "text-green-600"}>
-                          ${totalValue.toFixed(2)}
+                          {formatCurrency(totalValue, currency)}
                         </span>
                       </div>
                     </div>

@@ -6,6 +6,7 @@ import { RelatedProducts } from '@/components/product/related-products';
 import { Suspense } from 'react';
 import { notFound } from 'next/navigation';
 import type { Product as ProductType } from '@/lib/definitions';
+import { useSettings } from '@/hooks/useSettings';
 
 interface ProductVariant {
   id: number;
@@ -37,6 +38,8 @@ interface ProductDetailsProps {
 }
 
 export default function ProductDetails({ product }: ProductDetailsProps) {
+  const { currency } = useSettings();
+  
   if (!product) {
     notFound();
   }
@@ -52,11 +55,11 @@ export default function ProductDetails({ product }: ProductDetailsProps) {
     priceRange: {
       maxVariantPrice: {
         amount: (product.price / 100).toString(),
-        currencyCode: 'USD'
+        currencyCode: currency
       },
       minVariantPrice: {
         amount: (product.price / 100).toString(),
-        currencyCode: 'USD'
+        currencyCode: currency
       }
     },
     images: product.images && product.images.length > 0 
@@ -101,7 +104,7 @@ export default function ProductDetails({ product }: ProductDetailsProps) {
       selectedOptions: [{ name: 'Title', value: variant.name }],
       price: {
         amount: (variant.price / 100).toString(),
-        currencyCode: 'USD'
+        currencyCode: currency
       }
     })),
     options: [

@@ -1,6 +1,6 @@
 "use client";
 
-import { useBehaviorTracking, useCartTracking } from '@/hooks/useBehaviorTracking';
+import { useBehaviorTracking } from '@/hooks/useBehaviorTracking';
 import { useAuth } from '@/components/auth/AuthContext';
 import { useEffect } from 'react';
 
@@ -122,7 +122,7 @@ interface CartButtonProps {
 
 export function CartButton({ product, quantity = 1, children, className }: CartButtonProps) {
   const { user } = useUser();
-  const { trackCartAdd } = useCartTracking(user?.id);
+  const { trackCartAdd } = useBehaviorTracking({ userId: user?.id });
 
   const handleAddToCart = () => {
     // Your existing add to cart logic here
