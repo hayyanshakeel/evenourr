@@ -8,6 +8,13 @@ import Link from "next/link";
 import Image from "next/image";
 import { SearchIcon, ShoppingCartIcon, MenuIcon, UserIcon, Heart as HeartIcon } from "lucide-react";
 import * as LucideIcons from "lucide-react";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
 function Hero({ title, subtitle, cta, backgroundImage, ctaLink }: { 
   title?: string; 
@@ -122,6 +129,8 @@ function AppHeader({
   headerStyle?: { gradientEnabled?: boolean; gradientFrom?: string; gradientTo?: string; transparency?: number; heights?: { desktop?: number; tablet?: number; mobile?: number } };
   showAlignmentGuides?: boolean;
 }) {
+  const [isSearchOpen, setIsSearchOpen] = React.useState(false);
+  
   const stickyClass = enableAppBar && pinned ? 'sticky top-0 z-50' : '';
   const iconStyleFromMeta = (it:any): React.CSSProperties => ({
     color: it.iconColor || '#ffffff',
@@ -153,28 +162,178 @@ function AppHeader({
     if (it.type === 'logo') {
       // If no custom icon is set, use a default store icon
       const StoreIcon = (LucideIcons as any)['Store'] || (LucideIcons as any)['Building2'] || (LucideIcons as any)['Home'];
-      const logoHeight = getLogoHeight();
-      return StoreIcon ? <StoreIcon className="h-6 w-6" style={{...iconStyle, height: `${logoHeight}px`, width: 'auto'}} /> : <span className="font-bold text-lg" style={iconStyle}>{it.title || it.label || 'LOGO'}</span>;
+      // Just use iconStyle which already contains width and height from iconSize
+      return StoreIcon ? <StoreIcon style={iconStyle} /> : <span className="font-bold text-lg" style={iconStyle}>{it.title || it.label || 'LOGO'}</span>;
     }
     if (it.type === 'menu') {
       const MenuIcon = (LucideIcons as any)['Menu'];
-      return MenuIcon ? <MenuIcon className="h-5 w-5" style={iconStyle} /> : <span style={iconStyle}>☰</span>;
+      const MenuIconElement = MenuIcon ? <MenuIcon className="h-5 w-5" style={iconStyle} /> : <span style={iconStyle}>☰</span>;
+      
+      return (
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <button className="flex items-center justify-center hover:opacity-80 transition-opacity">
+              {MenuIconElement}
+            </button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="start" className="w-48">
+            <DropdownMenuItem>
+              <LucideIcons.Home className="mr-2 h-4 w-4" />
+              Home
+            </DropdownMenuItem>
+            <DropdownMenuItem>
+              <LucideIcons.ShoppingBag className="mr-2 h-4 w-4" />
+              Shop
+            </DropdownMenuItem>
+            <DropdownMenuItem>
+              <LucideIcons.Tag className="mr-2 h-4 w-4" />
+              Categories
+            </DropdownMenuItem>
+            <DropdownMenuItem>
+              <LucideIcons.Percent className="mr-2 h-4 w-4" />
+              Sale
+            </DropdownMenuItem>
+            <DropdownMenuSeparator />
+            <DropdownMenuItem>
+              <LucideIcons.Phone className="mr-2 h-4 w-4" />
+              Contact
+            </DropdownMenuItem>
+            <DropdownMenuItem>
+              <LucideIcons.Info className="mr-2 h-4 w-4" />
+              About
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
+      );
     }
     if (it.type === 'search') {
       const SearchIconComp = (LucideIcons as any)['Search'];
-      return SearchIconComp ? <SearchIconComp className="h-5 w-5" style={iconStyle} /> : <SearchIcon className="h-5 w-5" style={iconStyle} />;
+      const SearchIconElement = SearchIconComp ? <SearchIconComp className="h-5 w-5" style={iconStyle} /> : <SearchIcon className="h-5 w-5" style={iconStyle} />;
+      
+      return (
+        <DropdownMenu open={isSearchOpen} onOpenChange={setIsSearchOpen}>
+          <DropdownMenuTrigger asChild>
+            <button className="flex items-center justify-center hover:opacity-80 transition-opacity">
+              {SearchIconElement}
+            </button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end" className="w-80">
+            <div className="p-4">
+              <div className="relative">
+                <SearchIcon className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+                <Input 
+                  placeholder="Search products..." 
+                  className="pl-10"
+                  autoFocus
+                />
+              </div>
+              <div className="mt-4 text-sm text-gray-500">
+                <div>Popular searches:</div>
+                <div className="mt-2 flex flex-wrap gap-2">
+                  <span className="bg-gray-100 px-2 py-1 rounded text-xs cursor-pointer hover:bg-gray-200">T-shirts</span>
+                  <span className="bg-gray-100 px-2 py-1 rounded text-xs cursor-pointer hover:bg-gray-200">Jeans</span>
+                  <span className="bg-gray-100 px-2 py-1 rounded text-xs cursor-pointer hover:bg-gray-200">Shoes</span>
+                </div>
+              </div>
+            </div>
+          </DropdownMenuContent>
+        </DropdownMenu>
+      );
     }
     if (it.type === 'profile') {
       const UserIconComp = (LucideIcons as any)['User'];
-      return UserIconComp ? <UserIconComp className="h-5 w-5" style={iconStyle} /> : <UserIcon className="h-5 w-5" style={iconStyle} />;
+      const ProfileIcon = UserIconComp ? <UserIconComp className="h-5 w-5" style={iconStyle} /> : <UserIcon className="h-5 w-5" style={iconStyle} />;
+      
+      return (
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <button className="flex items-center justify-center hover:opacity-80 transition-opacity">
+              {ProfileIcon}
+            </button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end" className="w-48">
+            <DropdownMenuItem>
+              <UserIcon className="mr-2 h-4 w-4" />
+              My Profile
+            </DropdownMenuItem>
+            <DropdownMenuItem>
+              <LucideIcons.Package className="mr-2 h-4 w-4" />
+              My Orders
+            </DropdownMenuItem>
+            <DropdownMenuItem>
+              <LucideIcons.Heart className="mr-2 h-4 w-4" />
+              Wishlist
+            </DropdownMenuItem>
+            <DropdownMenuItem>
+              <LucideIcons.Settings className="mr-2 h-4 w-4" />
+              Settings
+            </DropdownMenuItem>
+            <DropdownMenuSeparator />
+            <DropdownMenuItem>
+              <LucideIcons.LogOut className="mr-2 h-4 w-4" />
+              Sign Out
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
+      );
     }
     if (it.type === 'wishlist') {
       const HeartIcon = (LucideIcons as any)['Heart'];
-      return HeartIcon ? <HeartIcon className="h-5 w-5" style={iconStyle} /> : <span style={iconStyle}>♡</span>;
+      const HeartIconElement = HeartIcon ? <HeartIcon className="h-5 w-5" style={iconStyle} /> : <span style={iconStyle}>♡</span>;
+      
+      return (
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <button className="flex items-center justify-center hover:opacity-80 transition-opacity relative">
+              {HeartIconElement}
+              <span className="absolute -top-2 -right-2 bg-red-500 text-white text-xs rounded-full h-4 w-4 flex items-center justify-center">
+                0
+              </span>
+            </button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end" className="w-64">
+            <div className="p-4">
+              <div className="text-sm font-medium mb-2">Your Wishlist</div>
+              <div className="text-sm text-gray-500 text-center">No items in your wishlist</div>
+              <div className="mt-4">
+                <Button className="w-full" size="sm">
+                  Continue Shopping
+                </Button>
+              </div>
+            </div>
+          </DropdownMenuContent>
+        </DropdownMenu>
+      );
     }
     if (it.type === 'cart') {
       const CartIcon = (LucideIcons as any)['ShoppingCart'];
-      return CartIcon ? <CartIcon className="h-5 w-5" style={iconStyle} /> : <ShoppingCartIcon className="h-5 w-5" style={iconStyle} />;
+      const CartIconElement = CartIcon ? <CartIcon className="h-5 w-5" style={iconStyle} /> : <ShoppingCartIcon className="h-5 w-5" style={iconStyle} />;
+      
+      return (
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <button className="flex items-center justify-center hover:opacity-80 transition-opacity relative">
+              {CartIconElement}
+              <span className="absolute -top-2 -right-2 bg-red-500 text-white text-xs rounded-full h-4 w-4 flex items-center justify-center">
+                0
+              </span>
+            </button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end" className="w-64">
+            <div className="p-4">
+              <div className="text-sm text-gray-500 text-center">Your cart is empty</div>
+              <div className="mt-4 space-y-2">
+                <Button className="w-full" size="sm">
+                  View Cart
+                </Button>
+                <Button variant="outline" className="w-full" size="sm">
+                  Continue Shopping
+                </Button>
+              </div>
+            </div>
+          </DropdownMenuContent>
+        </DropdownMenu>
+      );
     }
     if (it.type === 'text') return <span className="text-xs uppercase tracking-wide">{it.title || 'Text'}</span>;
     return it.title || it.label || it.type;
@@ -253,11 +412,11 @@ function AppHeader({
                 paddingRight: (hasCustomSpacing && pad.right) ? `${pad.right}px` : undefined,
                 paddingTop: (hasCustomSpacing && pad.top) ? `${pad.top}px` : undefined,
                 paddingBottom: (hasCustomSpacing && pad.bottom) ? `${pad.bottom}px` : undefined,
-                width: (it.type !== 'logo' && typeof it.itemSize === 'number') ? `${it.itemSize}px` : undefined,
-                height: (it.type !== 'logo' && typeof it.itemSize === 'number') ? `${it.itemSize}px` : undefined,
-                display: (it.type !== 'logo' && typeof it.itemSize === 'number') ? 'inline-flex' : undefined,
-                alignItems: (it.type !== 'logo' && typeof it.itemSize === 'number') ? 'center' : undefined,
-                justifyContent: (it.type !== 'logo' && typeof it.itemSize === 'number') ? 'center' : undefined,
+                width: typeof it.itemSize === 'number' ? `${it.itemSize}px` : undefined,
+                height: typeof it.itemSize === 'number' ? `${it.itemSize}px` : undefined,
+                display: typeof it.itemSize === 'number' ? 'inline-flex' : undefined,
+                alignItems: typeof it.itemSize === 'number' ? 'center' : undefined,
+                justifyContent: typeof it.itemSize === 'number' ? 'center' : undefined,
                 boxSizing: 'border-box',
                 // Icon margin logic: use margin auto for centering or custom margins
                 marginLeft: hasCustomSpacing ? (shouldCenter ? 'auto' : (leftMargin > 0 ? `${leftMargin}px` : undefined)) : undefined,
@@ -274,10 +433,9 @@ function AppHeader({
                       src={it.logoUrl} 
                       alt={it.title || 'Logo'} 
                       style={{ 
-                        height: `${it.heights?.mobile || it.width || 28}px`, 
+                        height: `${typeof it.iconSize === 'number' ? it.iconSize : (it.heights?.mobile || it.width || 28)}px`, 
                         width: 'auto',
                         maxWidth: '120px', // Prevent logos from getting too wide on mobile
-
                       }} 
                     />
                   ) : it.type === 'logo' ? (
@@ -320,11 +478,11 @@ function AppHeader({
                     paddingRight: pad.right ? `${pad.right}px` : undefined,
                     paddingTop: pad.top ? `${pad.top}px` : undefined,
                     paddingBottom: pad.bottom ? `${pad.bottom}px` : undefined,
-                    width: (it.type !== 'logo' && typeof it.itemSize === 'number') ? `${it.itemSize}px` : undefined,
-                    height: (it.type !== 'logo' && typeof it.itemSize === 'number') ? `${it.itemSize}px` : undefined,
-                    display: (it.type !== 'logo' && typeof it.itemSize === 'number') ? 'inline-flex' : undefined,
-                    alignItems: (it.type !== 'logo' && typeof it.itemSize === 'number') ? 'center' : undefined,
-                    justifyContent: (it.type !== 'logo' && typeof it.itemSize === 'number') ? 'center' : undefined,
+                    width: typeof it.itemSize === 'number' ? `${it.itemSize}px` : undefined,
+                    height: typeof it.itemSize === 'number' ? `${it.itemSize}px` : undefined,
+                    display: typeof it.itemSize === 'number' ? 'inline-flex' : undefined,
+                    alignItems: typeof it.itemSize === 'number' ? 'center' : undefined,
+                    justifyContent: typeof it.itemSize === 'number' ? 'center' : undefined,
                     boxSizing: 'border-box',
                     transform: (offsetX || offsetY) ? `translate(${offsetX}px, ${offsetY}px)` : undefined,
                   };
@@ -337,10 +495,9 @@ function AppHeader({
                           src={it.logoUrl} 
                           alt={it.title || 'Logo'} 
                           style={{ 
-                            height: `${it.heights?.mobile || it.width || 28}px`, 
+                            height: `${typeof it.iconSize === 'number' ? it.iconSize : (it.heights?.mobile || it.width || 28)}px`, 
                             width: 'auto',
                             maxWidth: '120px',
-
                           }} 
                         />
                       ) : it.type === 'logo' ? (
@@ -393,11 +550,11 @@ function AppHeader({
                 paddingRight: (hasCustomSpacing && pad.right) ? `${pad.right}px` : undefined,
                 paddingTop: (hasCustomSpacing && pad.top) ? `${pad.top}px` : undefined,
                 paddingBottom: (hasCustomSpacing && pad.bottom) ? `${pad.bottom}px` : undefined,
-                width: (it.type !== 'logo' && typeof it.itemSize === 'number') ? `${it.itemSize}px` : undefined,
-                height: (it.type !== 'logo' && typeof it.itemSize === 'number') ? `${it.itemSize}px` : undefined,
-                display: (it.type !== 'logo' && typeof it.itemSize === 'number') ? 'inline-flex' : undefined,
-                alignItems: (it.type !== 'logo' && typeof it.itemSize === 'number') ? 'center' : undefined,
-                justifyContent: (it.type !== 'logo' && typeof it.itemSize === 'number') ? 'center' : undefined,
+                width: typeof it.itemSize === 'number' ? `${it.itemSize}px` : undefined,
+                height: typeof it.itemSize === 'number' ? `${it.itemSize}px` : undefined,
+                display: typeof it.itemSize === 'number' ? 'inline-flex' : undefined,
+                alignItems: typeof it.itemSize === 'number' ? 'center' : undefined,
+                justifyContent: typeof it.itemSize === 'number' ? 'center' : undefined,
                 boxSizing: 'border-box',
                 // Icon margin logic: use margin auto for centering or custom margins
                 marginLeft: hasCustomSpacing ? (shouldCenter ? 'auto' : (leftMargin > 0 ? `${leftMargin}px` : undefined)) : undefined,
@@ -414,10 +571,9 @@ function AppHeader({
                       src={it.logoUrl} 
                       alt={it.title || 'Logo'} 
                       style={{ 
-                        height: `${it.heights?.mobile || it.width || 28}px`, 
+                        height: `${typeof it.iconSize === 'number' ? it.iconSize : (it.heights?.mobile || it.width || 28)}px`, 
                         width: 'auto',
                         maxWidth: '120px',
-
                       }} 
                     />
                   ) : it.type === 'logo' ? (
@@ -505,11 +661,11 @@ function AppHeader({
               paddingRight: (hasCustomSpacing && pad.right) ? `${pad.right}px` : undefined,
               paddingTop: (hasCustomSpacing && pad.top) ? `${pad.top}px` : undefined,
               paddingBottom: (hasCustomSpacing && pad.bottom) ? `${pad.bottom}px` : undefined,
-              width: (it.type !== 'logo' && typeof it.itemSize === 'number') ? `${it.itemSize}px` : undefined,
-              height: (it.type !== 'logo' && typeof it.itemSize === 'number') ? `${it.itemSize}px` : undefined,
-              display: (it.type !== 'logo' && typeof it.itemSize === 'number') ? 'inline-flex' : undefined,
-              alignItems: (it.type !== 'logo' && typeof it.itemSize === 'number') ? 'center' : undefined,
-              justifyContent: (it.type !== 'logo' && typeof it.itemSize === 'number') ? 'center' : undefined,
+              width: typeof it.itemSize === 'number' ? `${it.itemSize}px` : undefined,
+              height: typeof it.itemSize === 'number' ? `${it.itemSize}px` : undefined,
+              display: typeof it.itemSize === 'number' ? 'inline-flex' : undefined,
+              alignItems: typeof it.itemSize === 'number' ? 'center' : undefined,
+              justifyContent: typeof it.itemSize === 'number' ? 'center' : undefined,
               boxSizing: 'border-box',
               // Logo margin logic: use margin auto for centering or custom margins
               marginLeft: hasCustomSpacing ? (shouldCenter ? 'auto' : (leftMargin > 0 ? `${leftMargin}px` : undefined)) : undefined,
@@ -526,10 +682,9 @@ function AppHeader({
                     src={it.logoUrl} 
                     alt={it.title || 'Logo'} 
                     style={{ 
-                      height: `${it.heights?.desktop || it.width || 50}px`, 
+                      height: `${typeof it.iconSize === 'number' ? it.iconSize : (it.heights?.desktop || it.width || 50)}px`, 
                       width: 'auto',
                       maxWidth: '200px', // Prevent logos from getting too wide on desktop
-
                     }} 
                   />
                 ) : it.type === 'logo' ? (
@@ -585,11 +740,11 @@ function AppHeader({
                     paddingRight: (hasCustomSpacing && pad.right) ? `${pad.right}px` : undefined,
                     paddingTop: (hasCustomSpacing && pad.top) ? `${pad.top}px` : undefined,
                     paddingBottom: (hasCustomSpacing && pad.bottom) ? `${pad.bottom}px` : undefined,
-                    width: (it.type !== 'logo' && typeof it.itemSize === 'number') ? `${it.itemSize}px` : undefined,
-                    height: (it.type !== 'logo' && typeof it.itemSize === 'number') ? `${it.itemSize}px` : undefined,
-                    display: (it.type !== 'logo' && typeof it.itemSize === 'number') ? 'inline-flex' : undefined,
-                    alignItems: (it.type !== 'logo' && typeof it.itemSize === 'number') ? 'center' : undefined,
-                    justifyContent: (it.type !== 'logo' && typeof it.itemSize === 'number') ? 'center' : undefined,
+                    width: typeof it.itemSize === 'number' ? `${it.itemSize}px` : undefined,
+                    height: typeof it.itemSize === 'number' ? `${it.itemSize}px` : undefined,
+                    display: typeof it.itemSize === 'number' ? 'inline-flex' : undefined,
+                    alignItems: typeof it.itemSize === 'number' ? 'center' : undefined,
+                    justifyContent: typeof it.itemSize === 'number' ? 'center' : undefined,
                     boxSizing: 'border-box',
                     // Logo margin logic: use margin auto for centering or custom margins
                     marginLeft: hasCustomSpacing ? (shouldCenter ? 'auto' : (leftMargin > 0 ? `${leftMargin}px` : undefined)) : undefined,
@@ -606,10 +761,9 @@ function AppHeader({
                         src={it.logoUrl} 
                         alt={it.title || 'Logo'} 
                         style={{ 
-                          height: `${it.heights?.desktop || it.width || 50}px`, 
+                          height: `${typeof it.iconSize === 'number' ? it.iconSize : (it.heights?.desktop || it.width || 50)}px`, 
                           width: 'auto',
                           maxWidth: '200px',
-
                         }} 
                       />
                     ) : it.type === 'logo' ? (
@@ -687,10 +841,9 @@ function AppHeader({
                         src={it.logoUrl} 
                         alt={it.title || 'Logo'} 
                         style={{ 
-                          height: `${it.heights?.desktop || it.width || 50}px`, 
+                          height: `${typeof it.iconSize === 'number' ? it.iconSize : (it.heights?.desktop || it.width || 50)}px`, 
                           width: 'auto',
                           maxWidth: '200px',
-
                         }} 
                       />
                     ) : it.type === 'logo' ? (

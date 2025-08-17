@@ -1,7 +1,8 @@
 "use client";
 
 import React, { useEffect, useRef, useState } from "react";
-import { RotateCcw, Palette, ChevronRight, Menu, User, ShoppingCart, Heart, Type, GripVertical } from "lucide-react";
+import { Slider } from "@/components/ui/slider";
+import { RotateCcw, Palette, ChevronRight, Menu, User, ShoppingCart, Heart, Type, GripVertical, ChevronLeft, ChevronUp, ChevronDown } from "lucide-react";
 import IconLibraryModal from "@/components/cms/modals/IconLibraryModal";
 import {
   DndContext,
@@ -209,61 +210,70 @@ function ItemSettingsPanel({
       </div>
       
       <div className="p-4 space-y-4">
-        {/* Enable/Disable Toggle */}
-        <div className="flex items-center justify-between py-2">
-          <span className="text-sm text-gray-200">Enabled</span>
-          <input
-            type="checkbox"
-            checked={item.enabled}
-            onChange={(e) => updateHeaderItem(itemType, { enabled: e.target.checked })}
-            className="w-4 h-4"
-          />
-        </div>
+        {/* Enable/Disable Toggle - Hide for logo */}
+        {itemType !== 'logo' && (
+          <div className="flex items-center justify-between py-2">
+            <span className="text-sm text-gray-200">Enabled</span>
+            <input
+              type="checkbox"
+              checked={item.enabled}
+              onChange={(e) => updateHeaderItem(itemType, { enabled: e.target.checked })}
+              className="w-4 h-4"
+            />
+          </div>
+        )}
 
-        {item.enabled && (
+        {(item.enabled || itemType === 'logo') && (
           <div className="space-y-4">
-            {/* Opacity Control */}
-            <ControlRow
-              label="Opacity"
-              valueText={`${item.transparency}%`}
-              value={item.transparency}
-              min={0}
-              max={100}
-              onChange={(v: number) => updateHeaderItem(itemType, { transparency: v })}
-            />
-
-            {/* Icon Color Control */}
-            <div className="grid grid-cols-12 items-center gap-2">
-              <span className="col-span-4 text-sm text-gray-200">Icon Color</span>
-              <div className="col-span-3">
-                <span className="px-2 py-1 rounded bg-[#0b0c0f] border border-[#2a2a30] text-xs text-gray-100 font-mono">
-                  {(item.color || '#ffffff').toUpperCase()}
-                </span>
-              </div>
-              <div className="col-span-4">
-                <input
-                  type="color"
-                  value={item.color || '#ffffff'}
-                  onChange={(e) => updateHeaderItem(itemType, { color: e.target.value })}
-                  className="h-8 w-full rounded border border-[#2a2a30] bg-transparent cursor-pointer transition-all duration-150 ease-out"
+            {/* Show Opacity and Icon Color controls only for non-logo items */}
+            {itemType !== 'logo' && (
+              <>
+                {/* Opacity Control */}
+                <ControlRow
+                  label="Opacity"
+                  valueText={`${item.transparency}%`}
+                  value={item.transparency}
+                  min={0}
+                  max={100}
+                  onChange={(v: number) => updateHeaderItem(itemType, { transparency: v })}
                 />
-              </div>
-              <div className="col-span-1 flex justify-end">
-                <div className="h-6 w-6 grid place-items-center rounded border border-[#2a2a30] text-gray-300">
-                  <Palette className="h-3 w-3" />
-                </div>
-              </div>
-            </div>
 
-            {/* Item Size Control */}
-            <ControlRow
-              label="Item Size"
-              valueText={`${item.itemSize || 44.0}`}
-              value={item.itemSize || 44.0}
-              min={20}
-              max={80}
-              onChange={(v: number) => updateHeaderItem(itemType, { itemSize: v })}
-            />
+                {/* Icon Color Control */}
+                <div className="grid grid-cols-12 items-center gap-2">
+                  <span className="col-span-4 text-sm text-gray-200">Icon Color</span>
+                  <div className="col-span-3">
+                    <span className="px-2 py-1 rounded bg-[#0b0c0f] border border-[#2a2a30] text-xs text-gray-100 font-mono">
+                      {(item.color || '#ffffff').toUpperCase()}
+                    </span>
+                  </div>
+                  <div className="col-span-4">
+                    <input
+                      type="color"
+                      value={item.color || '#ffffff'}
+                      onChange={(e) => updateHeaderItem(itemType, { color: e.target.value })}
+                      className="h-8 w-full rounded border border-[#2a2a30] bg-transparent cursor-pointer transition-all duration-150 ease-out"
+                    />
+                  </div>
+                  <div className="col-span-1 flex justify-end">
+                    <div className="h-6 w-6 grid place-items-center rounded border border-[#2a2a30] text-gray-300">
+                      <Palette className="h-3 w-3" />
+                    </div>
+                  </div>
+                </div>
+              </>
+            )}
+
+            {/* Item Size Control - Hide for logo */}
+            {itemType !== 'logo' && (
+              <ControlRow
+                label="Item Size"
+                valueText={`${item.itemSize || 44.0}`}
+                value={item.itemSize || 44.0}
+                min={20}
+                max={80}
+                onChange={(v: number) => updateHeaderItem(itemType, { itemSize: v })}
+              />
+            )}
 
             {/* Icon Size Control */}
             <ControlRow
@@ -278,24 +288,35 @@ function ItemSettingsPanel({
             {/* Background Color Control */}
             <div className="grid grid-cols-12 items-center gap-2">
               <span className="col-span-4 text-sm text-gray-200">Background Color</span>
-              <div className="col-span-3">
+              <div className="col-span-2">
                 <span className="px-2 py-1 rounded bg-[#0b0c0f] border border-[#2a2a30] text-xs text-gray-100 font-mono">
-                  {(item.backgroundColor || '#000000').toUpperCase()}
+                  {item.backgroundColor === 'transparent' ? '—' : (item.backgroundColor || '#000000').toUpperCase()}
                 </span>
               </div>
-              <div className="col-span-4">
+              <div className="col-span-3">
                 <input
                   type="color"
-                  value={item.backgroundColor || '#000000'}
+                  value={item.backgroundColor === 'transparent' ? '#000000' : (item.backgroundColor || '#000000')}
                   onChange={(e) => updateHeaderItem(itemType, { backgroundColor: e.target.value })}
                   className="h-8 w-full rounded border border-[#2a2a30] bg-transparent cursor-pointer transition-all duration-150 ease-out"
                 />
               </div>
-              <div className="col-span-1 flex justify-end">
+              <div className="col-span-2 flex gap-1">
+                <button
+                  onClick={() => updateHeaderItem(itemType, { backgroundColor: 'transparent' })}
+                  className="h-6 w-6 grid place-items-center rounded border border-[#2a2a30] text-gray-300 hover:bg-[#2a2a30] transition-colors"
+                  title="Set transparent background"
+                >
+                  <div className="w-3 h-3 border border-gray-400 bg-transparent rounded" style={{
+                    backgroundImage: 'linear-gradient(45deg, transparent 46%, #ff0000 46%, #ff0000 54%, transparent 54%)',
+                    backgroundSize: '6px 6px'
+                  }}></div>
+                </button>
                 <div className="h-6 w-6 grid place-items-center rounded border border-[#2a2a30] text-gray-300">
                   <Palette className="h-3 w-3" />
                 </div>
               </div>
+              <div className="col-span-1"></div>
             </div>
 
             {/* Border Radius Control */}
@@ -423,65 +444,21 @@ function ItemSettingsPanel({
                             {height}px
                           </span>
                         </div>
-                        <div className="col-span-6 relative py-2">
-                          <div 
-                            className="relative w-full h-8 flex items-center cursor-pointer select-none"
-                            onMouseDown={(e) => {
-                              e.preventDefault();
-                              e.stopPropagation();
-
-                              const rect = e.currentTarget.getBoundingClientRect();
-                              const percentage = Math.max(0, Math.min(1, (e.clientX - rect.left) / rect.width));
-                              const newValue = minHeight + percentage * (maxHeight - minHeight);
-                              const roundedValue = Math.round(newValue * 2) / 2; // 0.5 step
-                              
+                        <div className="col-span-6">
+                          <Slider 
+                            value={[height]} 
+                            min={minHeight} 
+                            max={maxHeight}
+                            step={0.5}
+                            onValueChange={(vals) => {
+                              const newHeight = Number(vals?.[0] ?? height);
                               const currentHeights = item.heights || { mobile: 35, tablet: 51, desktop: 55 };
                               updateHeaderItem(itemType, { 
-                                heights: { ...currentHeights, [device]: roundedValue } 
+                                heights: { ...currentHeights, [device]: newHeight } 
                               });
-
-                              const handleMouseMove = (moveE: MouseEvent) => {
-                                moveE.preventDefault();
-                                const rect = e.currentTarget.getBoundingClientRect();
-                                const percentage = Math.max(0, Math.min(1, (moveE.clientX - rect.left) / rect.width));
-                                const newValue = minHeight + percentage * (maxHeight - minHeight);
-                                const roundedValue = Math.round(newValue * 2) / 2;
-                                
-                                const currentHeights = item.heights || { mobile: 35, tablet: 51, desktop: 55 };
-                                updateHeaderItem(itemType, { 
-                                  heights: { ...currentHeights, [device]: roundedValue } 
-                                });
-                              };
-
-                              const handleMouseUp = (upE: MouseEvent) => {
-                                upE.preventDefault();
-                                document.removeEventListener('mousemove', handleMouseMove);
-                                document.removeEventListener('mouseup', handleMouseUp);
-                                document.removeEventListener('selectstart', preventSelect);
-                              };
-
-                              const preventSelect = (e: Event) => e.preventDefault();
-
-                              document.addEventListener('mousemove', handleMouseMove);
-                              document.addEventListener('mouseup', handleMouseUp);
-                              document.addEventListener('selectstart', preventSelect);
                             }}
-                            style={{ userSelect: 'none' }}
-                          >
-                            {/* Track */}
-                            <div className="w-full h-2 bg-gray-300 rounded-full relative">
-                              {/* Active track */}
-                              <div 
-                                className="h-full bg-blue-500 rounded-full transition-all duration-100 ease-out"
-                                style={{ width: `${((height - minHeight) / (maxHeight - minHeight)) * 100}%` }}
-                              />
-                              {/* Thumb */}
-                              <div 
-                                className="absolute top-1/2 w-5 h-5 bg-blue-500 rounded-full border-2 border-white shadow-lg transform -translate-y-1/2 -translate-x-1/2 cursor-grab transition-all duration-100 ease-out hover:scale-110 select-none"
-                                style={{ left: `${((height - minHeight) / (maxHeight - minHeight)) * 100}%` }}
-                              />
-                            </div>
-                          </div>
+                            className="slider-smooth"
+                          />
                         </div>
                         <div className="col-span-1 flex justify-end">
                           <button
@@ -949,8 +926,8 @@ export default function HeaderOverviewPanel({
     </span>
   );
 
-  // Reusable row layout: Label | Chip | Custom Draggable Slider | IconBtn
-  const ControlRow = React.memo(({
+  // Reusable row layout: Label | Chip | Slider | IconBtn with optimized performance
+  const ControlRow = ({
     label,
     valueText,
     value,
@@ -967,88 +944,46 @@ export default function HeaderOverviewPanel({
     onChange: (v: number) => void;
     action?: { icon: React.ReactNode; onClick: () => void; title?: string };
   }) => {
-    const [isDragging, setIsDragging] = React.useState(false);
-    const sliderRef = React.useRef<HTMLDivElement>(null);
+    // Debounce slider changes to reduce lag
+    const [localValue, setLocalValue] = React.useState(value);
+    const timeoutRef = React.useRef<NodeJS.Timeout | null>(null);
 
-    const calculateValueFromEvent = (clientX: number) => {
-      if (!sliderRef.current) return value;
-      const rect = sliderRef.current.getBoundingClientRect();
-      const percentage = Math.max(0, Math.min(1, (clientX - rect.left) / rect.width));
-      const newValue = min + percentage * (max - min);
-      return Math.round(newValue * 10) / 10;
-    };
+    React.useEffect(() => {
+      setLocalValue(value);
+    }, [value]);
 
-    const handleMouseDown = (e: React.MouseEvent) => {
-      e.preventDefault();
-      e.stopPropagation();
+    const handleSliderChange = (vals: number[]) => {
+      const newValue = Number(vals?.[0] ?? value);
+      setLocalValue(newValue);
       
-      const newValue = calculateValueFromEvent(e.clientX);
-      onChange(newValue);
-      setIsDragging(true);
-
-      const handleMouseMove = (moveE: MouseEvent) => {
-        moveE.preventDefault();
-        const newValue = calculateValueFromEvent(moveE.clientX);
+      // Clear existing timeout
+      if (timeoutRef.current) {
+        clearTimeout(timeoutRef.current);
+      }
+      
+      // Debounce the onChange call to reduce updates
+      timeoutRef.current = setTimeout(() => {
         onChange(newValue);
-      };
-
-      const handleMouseUp = (upE: MouseEvent) => {
-        upE.preventDefault();
-        setIsDragging(false);
-        document.removeEventListener('mousemove', handleMouseMove);
-        document.removeEventListener('mouseup', handleMouseUp);
-        document.removeEventListener('selectstart', preventSelect);
-      };
-
-      const preventSelect = (e: Event) => e.preventDefault();
-
-      document.addEventListener('mousemove', handleMouseMove);
-      document.addEventListener('mouseup', handleMouseUp);
-      document.addEventListener('selectstart', preventSelect);
+      }, 50); // 50ms debounce
     };
-
-    const percentage = ((value - min) / (max - min)) * 100;
 
     return (
       <div className="grid grid-cols-12 items-center gap-2">
         <span className="col-span-3 text-sm text-gray-200">{label}</span>
         <div className="col-span-2">
-          <span className="px-2 py-1 rounded bg-[#0b0c0f] border border-[#2a2a30] text-xs text-gray-100 font-mono min-w-[60px] text-center block">
-            {typeof valueText === 'string' ? valueText : Math.round(value * 10) / 10}
+          <span className="px-2 py-1 rounded bg-[#0b0c0f] border border-[#2a2a30] text-xs text-gray-100 font-mono">
+            {typeof valueText === 'string' ? valueText : localValue}
           </span>
         </div>
-        <div className="col-span-6 relative py-2">
-          <div 
-            ref={sliderRef}
-            className="relative w-full h-8 flex items-center cursor-pointer select-none"
-            onMouseDown={handleMouseDown}
-            style={{ userSelect: 'none' }}
-          >
-            {/* Track */}
-            <div className="w-full h-2 bg-gray-300 rounded-full relative">
-              {/* Active track */}
-              <div 
-                className="h-full bg-blue-500 rounded-full transition-all duration-100 ease-out"
-                style={{ width: `${percentage}%` }}
-              />
-              {/* Thumb */}
-              <div 
-                className={`absolute top-1/2 w-5 h-5 bg-blue-500 rounded-full border-2 border-white shadow-lg transform -translate-y-1/2 -translate-x-1/2 cursor-grab transition-all duration-100 ease-out ${
-                  isDragging ? 'scale-125 shadow-xl cursor-grabbing' : 'hover:scale-110'
-                }`}
-                style={{ left: `${percentage}%` }}
-              />
-            </div>
-            {/* Value tooltip on drag */}
-            {isDragging && (
-              <div 
-                className="absolute -top-10 transform -translate-x-1/2 bg-gray-900 text-white px-2 py-1 rounded text-xs whitespace-nowrap z-50 pointer-events-none"
-                style={{ left: `${percentage}%` }}
-              >
-                {Math.round(value * 10) / 10}
-              </div>
-            )}
-          </div>
+        <div className="col-span-6">
+          <Slider 
+            value={[localValue]} 
+            min={min} 
+            max={max} 
+            step={0.1}
+            onValueChange={handleSliderChange}
+            className="slider-smooth"
+          />
         </div>
         <div className="col-span-1 flex justify-end">
           {action ? (
@@ -1063,10 +998,10 @@ export default function HeaderOverviewPanel({
         </div>
       </div>
     );
-  });
+  };
 
   return (
-    <div className="space-y-4 cms-panel-smooth" style={{ maxHeight: 'calc(100vh - 200px)' }}>
+    <div className="space-y-4 scroll-smooth overflow-y-auto" style={{ scrollBehavior: 'smooth' }}>
       {/* Header Heights */}
       <div className="rounded-lg border border-[#2a2a30] bg-black transition-all duration-200 ease-out">
         <div className="flex items-center justify-between px-4 py-3 border-b border-[#2a2a30]">

@@ -1,6 +1,6 @@
 "use client";
-
-import { useState } from "react";
+import { Slider } from "@/components/ui/slider";
+import * as LucideIcons from 'lucide-react';
 import { WidgetConfig } from "./types";
 
 type Action = NonNullable<NonNullable<WidgetConfig['headerView']>['actionType']>;
@@ -92,29 +92,33 @@ export default function HeaderViewWidget({ config, onChange }: { config: WidgetC
 }
 
 function Section({ title, children, collapsible = false, defaultOpen = true }: { title: string; children: React.ReactNode; collapsible?: boolean; defaultOpen?: boolean }) {
-  const [open, setOpen] = useState(defaultOpen);
   return (
     <div className="rounded-lg" style={{ background: '#0f1115', border: '1px solid #2a2a30' }}>
       <div className="flex items-center justify-between px-4 py-3 text-white" style={{ borderBottom: '1px solid #2a2a30' }}>
         <span className="text-xs tracking-wide">{title}</span>
-        {collapsible && (
-          <button onClick={() => setOpen(o => !o)} className="text-gray-400">{open ? '▾' : '▸'}</button>
-        )}
       </div>
-      {(open || !collapsible) && (
-        <div className="p-4 text-gray-200 space-y-3">{children}</div>
-      )}
+      <div className="p-4 text-gray-200 space-y-3">{children}</div>
     </div>
   );
 }
 
-function SliderRow({ label, value, onChange, min = 0, max = 400, step = 1 }: { label: string; value: number; onChange: (v: number) => void; min?: number; max?: number; step?: number }) {
+function SliderRow({ label, value, onChange, min = 0, max = 400, step = 0.1 }: { label: string; value: number; onChange: (v: number) => void; min?: number; max?: number; step?: number }) {
+  let timeout: ReturnType<typeof setTimeout> | undefined = undefined;
+  const handleSliderChange = (vals: number[]) => {
+    if (timeout) clearTimeout(timeout);
+    timeout = setTimeout(() => {
+      const newValue = vals[0];
+      if (newValue !== undefined) {
+        onChange(newValue);
+      }
+    }, 50);
+  };
   return (
     <div className="flex items-center justify-between">
       <span>{label}</span>
       <div className="flex items-center gap-3 w-2/3">
-        <input className="w-full" type="range" min={min} max={max} step={step} value={value} onChange={(e) => onChange(Number(e.target.value))} />
-        <span className="px-2 py-1 rounded bg-black text-white text-xs" style={{ border: '1px solid #2a2a30' }}>{value.toFixed(1)}</span>
+        <Slider className="w-full" value={[value]} onValueChange={handleSliderChange} min={min} max={max} step={step} />
+        <input className="w-12 p-1 border rounded text-xs" type="number" value={value} onChange={(e) => onChange(Number(e.target.value))} min={min} max={max} step={step} />
       </div>
     </div>
   );
