@@ -416,12 +416,20 @@ function ItemSettingsPanel({
                         const form = new FormData();
                         form.append('file', file);
                         const res = await fetch('/api/upload/image', { method: 'POST', body: form });
+                        
+                        if (!res.ok) {
+                          throw new Error(`Upload failed with status ${res.status}`);
+                        }
+                        
                         const data = await res.json();
                         if (data?.url) {
                           updateHeaderItem('logo', { imageUrl: data.url });
+                        } else {
+                          throw new Error('No URL returned from upload');
                         }
                       } catch (err) {
                         console.error('Upload failed', err);
+                        alert('Image upload failed. Please check your server configuration.');
                       }
                     }}
                     className="block w-full text-sm text-gray-300 file:mr-2 file:py-2 file:px-4 file:rounded file:border-0 file:text-sm file:bg-[#2563eb] file:text-white hover:file:bg-[#1d4ed8] cursor-pointer"

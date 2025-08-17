@@ -125,7 +125,7 @@ const TrashIcon = () => (
   </svg>
 );
 
-type RightView = 'builder' | 'category' | 'search' | 'cart' | 'listBlog' | 'page' | 'header' | 'footer';
+type RightView = 'builder' | 'search' | 'cart' | 'listBlog' | 'page' | 'header' | 'footer';
 
 interface RightPanelProps {
   asideRef: React.RefObject<HTMLDivElement>;
@@ -136,21 +136,61 @@ interface RightPanelProps {
 }
 
 export default function RightPanel({ asideRef, rightView, setRightView, viewport = 'mobile', onLayoutChange }: RightPanelProps) {
-  const [pages, setPages] = useState<Array<{ id: string; name: string; thumbnail?: string }>>([
-    { id: 'home', name: 'Home', thumbnail: 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="120" height="80"><rect width="120" height="80" fill="%23eee"/></svg>' },
-    { id: 'list-blog', name: 'List Blog' },
-    { id: 'wishlist', name: 'Wishlist' },
-    { id: 'profile', name: 'Profile' }
-  ]);
-  const [activePageId, setActivePageId] = useState<string>('home');
+  const [pages, setPages] = useState<Array<{ id: string; name: string; thumbnail?: string; type?: string; isAdd?: boolean }>>(() => {
+    // Try to load pages from localStorage, fallback to default
+    try {
+      const saved = localStorage.getItem('cmsPages');
+      if (saved) {
+        return JSON.parse(saved);
+      }
+    } catch {}
+    
+    return [
+      { 
+        id: 'home', 
+        name: 'Home', 
+        type: 'home',
+        thumbnail: 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="120" height="80"><rect width="120" height="80" fill="%23f3f4f6"/><circle cx="20" cy="20" r="8" fill="%236366f1"/><rect x="35" y="15" width="70" height="3" rx="1" fill="%23d1d5db"/><rect x="35" y="22" width="50" height="3" rx="1" fill="%23d1d5db"/><rect x="15" y="35" width="90" height="35" rx="4" fill="%23e5e7eb"/></svg>' 
+      },
+      {
+        id: 'add',
+        name: 'Add',
+        isAdd: true
+      }
+    ];
+  });
+  const [activePageId, setActivePageId] = useState<string>(() => {
+    // Try to load active page ID from localStorage, fallback to 'home'
+    try {
+      const saved = localStorage.getItem('cmsActivePageId');
+      return saved || 'home';
+    } catch {
+      return 'home';
+    }
+  });
   const [startIndex, setStartIndex] = useState<number>(0);
   const [showAddWidget, setShowAddWidget] = useState<boolean>(false);
-  const [homeLayoutItems, setHomeLayoutItems] = useState<Array<{ title: string; type: string; subtitle?: string; badge?: string }>>([]);
+  const [showPageCapture, setShowPageCapture] = useState<boolean>(false);
+  // Store layouts for pages
+  const [pageLayouts, setPageLayouts] = useState<Record<string, Array<{ title: string; type: string; subtitle?: string; badge?: string }>>>({
+    'home': []
+  });
   const [selectedWidgetIdx, setSelectedWidgetIdx] = useState<number | null>(null);
   // Make header config nullable so we can delay rendering until hydrated
   const [headerNavConfig, setHeaderNavConfig] = useState<any | null>(null);
   // Track when localStorage has been read
   const [layoutLoaded, setLayoutLoaded] = useState(false);
+
+  // Get current page layout
+  const currentPageLayout = pageLayouts[activePageId] || [];
+  
+  // Set current page layout
+  const setCurrentPageLayout = (items: Array<{ title: string; type: string; subtitle?: string; badge?: string }>) => {
+    setPageLayouts(prev => ({
+      ...prev,
+      [activePageId]: items
+    }));
+  };
 
   // Define the header onChange callback at the top level to avoid conditional hooks
   const sanitizeForLayout = (input: any): any => {
@@ -180,31 +220,34 @@ export default function RightPanel({ asideRef, rightView, setRightView, viewport
   const handleHeaderChange = React.useCallback((v: any) => {
     console.log('HeaderOverviewPanel onChange:', v);
     setHeaderNavConfig(v);
-    // Update the header item in homeLayoutItems with the new config
-    setHomeLayoutItems((prev) => prev.map((it: any) => 
-      it.type === 'header' ? { 
-        ...it, 
-        // Persist a sanitized config (no React nodes) to the layout used by the renderer
-        headerNav: sanitizeForLayout({
-          ...it.headerNav,
-          ...v
-        })
-      } : it
-    ));
+    // Update the header item in currentPageLayout with the new config
+    setPageLayouts(prev => ({
+      ...prev,
+      [activePageId]: (prev[activePageId] || []).map((it: any) => 
+        it.type === 'header' ? { 
+          ...it, 
+          // Persist a sanitized config (no React nodes) to the layout used by the renderer
+          headerNav: sanitizeForLayout({
+            ...it.headerNav,
+            ...v
+          })
+        } : it
+      )
+    }));
     // Bridge to Renderer via localStorage event to force refresh
     try {
       localStorage.setItem('cmsHeaderState', JSON.stringify(sanitizeForLayout(v)));
       window.dispatchEvent(new Event('cmsHeaderStateChanged'));
     } catch {}
-  }, []);
+  }, [activePageId]);
 
   // Ensure Header section opens and persists when switching to 'header' view
   useEffect(() => {
     if (rightView !== 'header' || !layoutLoaded) return;
-    const existingIdx = homeLayoutItems.findIndex((it) => it.type === 'header');
+    const existingIdx = currentPageLayout.findIndex((it) => it.type === 'header');
     if (existingIdx >= 0) {
       setSelectedWidgetIdx(existingIdx);
-      const existingHeader = (homeLayoutItems as any)[existingIdx];
+      const existingHeader = (currentPageLayout as any)[existingIdx];
       if (existingHeader?.headerNav) {
         setHeaderNavConfig(existingHeader.headerNav);
       } else {
@@ -213,8 +256,7 @@ export default function RightPanel({ asideRef, rightView, setRightView, viewport
       return;
     }
     // No header found after layout has loaded — create a default one
-    setHomeLayoutItems((prev) => {
-      const defaultHeader = {
+    const defaultHeader = {
         title: 'Header',
         type: 'header',
         headerNav: {
@@ -238,69 +280,166 @@ export default function RightPanel({ asideRef, rightView, setRightView, viewport
           pinned: true,
         },
       } as any;
-      const next = [...prev, defaultHeader];
-      setSelectedWidgetIdx(next.length - 1);
-      setHeaderNavConfig(defaultHeader.headerNav);
-      return next;
-    });
-  }, [rightView, layoutLoaded]);
+      
+    setPageLayouts(prev => ({
+      ...prev,
+      [activePageId]: [...currentPageLayout, defaultHeader]
+    }));
+    setSelectedWidgetIdx(currentPageLayout.length);
+    setHeaderNavConfig(defaultHeader.headerNav);
+  }, [rightView, layoutLoaded, activePageId, currentPageLayout]);
 
   // Notify parent about layout changes (but not on initial render)
   useEffect(() => {
-    if (homeLayoutItems.length > 0) {
-      onLayoutChange?.(homeLayoutItems);
+    if (currentPageLayout.length > 0) {
+      onLayoutChange?.(currentPageLayout);
     }
-  }, [homeLayoutItems, onLayoutChange]);
+  }, [currentPageLayout, onLayoutChange]);
 
-  // Persist Home Layout to localStorage (hydrate on mount)
+  // Persist Page Layouts to localStorage (hydrate on mount)
   useEffect(() => {
     try {
-      const saved = localStorage.getItem('cmsHomeLayout');
+      const saved = localStorage.getItem('cmsPageLayouts');
       if (saved) {
         const parsed = JSON.parse(saved);
-        setHomeLayoutItems(parsed);
+        setPageLayouts(parsed);
       }
     } catch {}
+    
+    // Also load header configuration and sync it after layouts are loaded
+    try {
+      const headerState = localStorage.getItem('cmsHeaderState');
+      if (headerState) {
+        const parsed = JSON.parse(headerState);
+        setHeaderNavConfig(parsed);
+      }
+    } catch {}
+    
     // Mark that we've attempted to load from storage (even if nothing was there)
     setLayoutLoaded(true);
   }, []);
 
   useEffect(() => {
     try {
-      localStorage.setItem('cmsHomeLayout', JSON.stringify(homeLayoutItems));
+      localStorage.setItem('cmsPageLayouts', JSON.stringify(pageLayouts));
     } catch {}
-    onLayoutChange?.(homeLayoutItems);
-  }, [homeLayoutItems]);
+    onLayoutChange?.(currentPageLayout);
+  }, [pageLayouts, currentPageLayout, onLayoutChange]);
 
-  // When layout changes (after load) and we are on header view, sync headerNavConfig from layout
+  // Persist pages to localStorage
+  useEffect(() => {
+    try {
+      localStorage.setItem('cmsPages', JSON.stringify(pages));
+    } catch {}
+  }, [pages]);
+
+  // Persist active page ID to localStorage
+  useEffect(() => {
+    try {
+      localStorage.setItem('cmsActivePageId', activePageId);
+    } catch {}
+  }, [activePageId]);
+
+  // One-time sync: Load header config into page layout after initial load
+  useEffect(() => {
+    if (!layoutLoaded || !headerNavConfig) return;
+    
+    // Only sync once after loading from localStorage
+    const currentLayout = pageLayouts[activePageId] || [];
+    const headerIdx = currentLayout.findIndex(it => it.type === 'header');
+    
+    if (headerIdx < 0) {
+      // Add header with loaded config if it doesn't exist
+      const newLayout = [...currentLayout, { 
+        title: 'Header', 
+        type: 'header', 
+        headerNav: headerNavConfig 
+      }];
+      setPageLayouts(prev => ({
+        ...prev,
+        [activePageId]: newLayout
+      }));
+    }
+    
+    // Clear the loaded header config after syncing to prevent re-runs
+    // We'll rely on pageLayouts as the source of truth from now on
+  }, [layoutLoaded, headerNavConfig, activePageId]);
+
+  // Sync pageLayouts to headerNavConfig for UI (read-only sync)
   useEffect(() => {
     if (!layoutLoaded || rightView !== 'header') return;
-    const idx = homeLayoutItems.findIndex((it) => it.type === 'header');
+    const idx = currentPageLayout.findIndex((it) => it.type === 'header');
     if (idx >= 0) {
-      const cfg = (homeLayoutItems as any)[idx]?.headerNav ?? null;
+      const cfg = (currentPageLayout as any)[idx]?.headerNav ?? null;
       setSelectedWidgetIdx(idx);
+      // Only update if actually different to prevent unnecessary re-renders
       if (cfg && JSON.stringify(cfg) !== JSON.stringify(headerNavConfig)) {
         setHeaderNavConfig(cfg);
       }
     }
-  }, [homeLayoutItems, rightView, layoutLoaded]);
+  }, [currentPageLayout, rightView, layoutLoaded]); // Removed headerNavConfig to prevent circular dependency
 
   const addPage = () => {
-    const idx = pages.length + 1;
-    setPages(prev => [...prev, { id: `page-${idx}`, name: `Page ${idx}` }]);
+    setShowPageCapture(true);
   };
 
-  const VISIBLE = 5;
-  const pagesWithAdd: Array<{ id: string; name: string; thumbnail?: string; isAdd?: boolean }> = [
-    ...pages,
-    { id: 'add', name: 'Add', isAdd: true }
-  ];
+  const createStaticPage = (pageType: string) => {
+    const pageTypeNames: Record<string, string> = {
+      'home': 'Home Page',
+      'listBlog': 'List Blog',
+      'wishlist': 'Wishlist',
+      'profile': 'Profile', 
+      'cart': 'Shopping Cart',
+      'search': 'Search Results',
+      'about': 'About Us',
+      'contact': 'Contact',
+      'category': 'Category Page',
+      'product': 'Product Page'
+    };
 
-  const maxStart = Math.max(0, pagesWithAdd.length - VISIBLE);
-  const visibleItems = pagesWithAdd.slice(startIndex, startIndex + VISIBLE);
+    const generateThumbnail = (type: string) => {
+      const thumbnails: Record<string, string> = {
+        'home': 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="120" height="80"><rect width="120" height="80" fill="%23f3f4f6"/><circle cx="20" cy="20" r="8" fill="%236366f1"/><rect x="35" y="15" width="70" height="3" rx="1" fill="%23d1d5db"/></svg>',
+        'listBlog': 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="120" height="80"><rect width="120" height="80" fill="%23f9fafb"/><rect x="10" y="10" width="100" height="12" rx="2" fill="%23f59e0b"/></svg>',
+        'wishlist': 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="120" height="80"><rect width="120" height="80" fill="%23fef2f2"/><path d="M60 25c-8-12-24-12-24 0-6 15 12 25 24 30 12-5 30-15 24-30 0-12-16-12-24 0z" fill="%23ef4444"/></svg>',
+        'profile': 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="120" height="80"><rect width="120" height="80" fill="%23f0f9ff"/><circle cx="60" cy="30" r="12" fill="%233b82f6"/></svg>',
+        'cart': 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="120" height="80"><rect width="120" height="80" fill="%23f0fdf4"/><rect x="30" y="25" width="60" height="40" rx="4" fill="none" stroke="%2316a34a" stroke-width="2"/></svg>',
+        'search': 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="120" height="80"><rect width="120" height="80" fill="%23fefce8"/><circle cx="50" cy="35" r="15" fill="none" stroke="%23eab308" stroke-width="3"/><line x1="62" y1="47" x2="75" y2="60" stroke="%23eab308" stroke-width="3"/></svg>',
+        'about': 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="120" height="80"><rect width="120" height="80" fill="%23faf5ff"/><circle cx="60" cy="40" r="20" fill="%23a855f7"/><text x="60" y="48" text-anchor="middle" fill="white" font-size="16" font-family="Arial">i</text></svg>',
+        'contact': 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="120" height="80"><rect width="120" height="80" fill="%23ecfdf5"/><rect x="25" y="25" width="70" height="30" rx="4" fill="none" stroke="%2310b981" stroke-width="2"/><path d="M25 25l35 20 35-20" fill="none" stroke="%2310b981" stroke-width="2"/></svg>',
+        'category': 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="120" height="80"><rect width="120" height="80" fill="%23fff7ed"/><rect x="15" y="15" width="25" height="25" rx="3" fill="%23f97316"/><rect x="47" y="15" width="25" height="25" rx="3" fill="%23f97316"/><rect x="79" y="15" width="25" height="25" rx="3" fill="%23f97316"/><rect x="15" y="47" width="25" height="25" rx="3" fill="%23f97316"/></svg>',
+        'product': 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="120" height="80"><rect width="120" height="80" fill="%23fef7f0"/><rect x="30" y="15" width="60" height="40" rx="4" fill="%23fb923c"/><rect x="35" y="60" width="50" height="3" rx="1" fill="%23d1d5db"/><rect x="40" y="67" width="40" height="3" rx="1" fill="%23d1d5db"/></svg>'
+      };
+      return thumbnails[type] || thumbnails['home'];
+    };
 
-  const moveLeft = () => setStartIndex((i) => Math.max(0, i - 1));
-  const moveRight = () => setStartIndex((i) => Math.min(maxStart, i + 1));
+    // Remove the Add page temporarily
+    const pagesWithoutAdd = pages.filter(p => !p.isAdd);
+    const idx = pagesWithoutAdd.length + 1;
+    const newPage = {
+      id: `page-${idx}`,
+      name: pageTypeNames[pageType] || `Page ${idx}`,
+      type: pageType,
+      thumbnail: generateThumbnail(pageType)
+    };
+
+    // Insert the new page before the Add page
+    const updatedPages = [...pagesWithoutAdd, newPage, { id: 'add', name: 'Add', isAdd: true }];
+    setPages(updatedPages);
+    
+    // Copy home layout to new page (as a starting point)
+    const homeLayout = pageLayouts['home'] || [];
+    setPageLayouts(prev => ({
+      ...prev,
+      [newPage.id]: [...homeLayout] // Create a copy of home layout
+    }));
+    
+    setActivePageId(newPage.id);
+    setShowPageCapture(false);
+  };
+
+  const VISIBLE = 2; // Show home page and add page
+  const visibleItems = pages;
 
   return (
     <aside
@@ -331,7 +470,7 @@ export default function RightPanel({ asideRef, rightView, setRightView, viewport
         <div className="flex items-center gap-2 text-sm text-gray-300">
           <span className="text-gray-400">App Info</span>
           <span className="text-gray-600">›</span>
-          <span className="text-white font-medium">Home</span>
+          <span className="text-white font-medium">{pages.find(p => p.id === activePageId)?.name || 'Home'}</span>
         </div>
         <button className="flex items-center gap-1 text-red-400 text-sm hover:text-red-300">
           <TrashIcon />
@@ -341,40 +480,36 @@ export default function RightPanel({ asideRef, rightView, setRightView, viewport
 
       {/* Pages row */}
       <div className="px-6 pt-6">
-        <div className="flex items-center gap-4 pb-4">
-          <button onClick={moveLeft} disabled={startIndex === 0} className="text-gray-400 hover:text-white disabled:opacity-30 text-xl p-1" aria-label="Left">‹</button>
-          <div className="grid grid-cols-5 gap-4">
-            {visibleItems.map((p) => (
-              <div key={p.id} className="flex flex-col items-center">
-                <div
-                  className="rounded-md transition-colors"
-                  style={{
-                    width: 72,
-                    height: 104,
-                    border: p.isAdd ? '1px dashed #3a3a42' : (activePageId === p.id ? '2px solid #2563eb' : '1px solid #2a2a30'),
-                    background: '#111317',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center'
-                  }}
-                  onClick={() => {
-                    if (p.isAdd) addPage(); else setActivePageId(p.id);
-                  }}
-                >
-                  {p.isAdd ? (
-                    <span className="text-gray-300 text-xl">+</span>
-                  ) : p.thumbnail ? (
-                    // eslint-disable-next-line @next/next/no-img-element
-                    <img src={p.thumbnail} alt={p.name} style={{ width: 64, height: 90, objectFit: 'cover', borderRadius: 6 }} />
-                  ) : (
-                    <div className="w-10 h-10 rounded-full border-2 border-dashed" style={{ borderColor: '#3a3a42' }} />
-                  )}
-                </div>
-              <div className="text-[10px] text-white mt-1">{p.name}</div>
+        <div className="flex items-center justify-center pb-4 gap-4">
+          {visibleItems.map((p) => (
+            <div key={p.id} className="flex flex-col items-center">
+              <div
+                className="rounded-md transition-colors cursor-pointer"
+                style={{
+                  width: 72,
+                  height: 104,
+                  border: p.isAdd ? '1px dashed #3a3a42' : (activePageId === p.id ? '2px solid #2563eb' : '1px solid #2a2a30'),
+                  background: '#111317',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center'
+                }}
+                onClick={() => {
+                  if (p.isAdd) addPage(); else setActivePageId(p.id);
+                }}
+              >
+                {p.isAdd ? (
+                  <span className="text-gray-300 text-xl">+</span>
+                ) : p.thumbnail ? (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img src={p.thumbnail} alt={p.name} style={{ width: 64, height: 90, objectFit: 'cover', borderRadius: 6 }} />
+                ) : (
+                  <div className="w-10 h-10 rounded-full border-2 border-dashed" style={{ borderColor: '#3a3a42' }} />
+                )}
               </div>
-            ))}
-          </div>
-          <button onClick={moveRight} disabled={startIndex >= maxStart} className="text-gray-400 hover:text-white disabled:opacity-30 text-xl p-1" aria-label="Right">›</button>
+              <div className="text-[10px] text-white mt-1">{p.name}</div>
+            </div>
+          ))}
         </div>
       </div>
 
@@ -399,15 +534,17 @@ export default function RightPanel({ asideRef, rightView, setRightView, viewport
             <button
               className="text-xs text-white px-3 py-2 rounded bg-[#2563eb] hover:bg-[#1d4ed8] transition-colors"
               onClick={() => {
-                const existingIdx = homeLayoutItems.findIndex(it => it.type === 'footer');
+                const currentLayout = pageLayouts[activePageId] || [];
+                const existingIdx = currentLayout.findIndex(it => it.type === 'footer');
                 if (existingIdx >= 0) {
                   setSelectedWidgetIdx(existingIdx);
                 } else {
-                  setHomeLayoutItems(prev => {
-                    const next = [...prev, { title: 'Footer', type: 'footer' }];
-                    setSelectedWidgetIdx(next.length - 1);
-                    return next;
-                  });
+                  const next = [...currentLayout, { title: 'Footer', type: 'footer' }];
+                  setPageLayouts(prev => ({
+                    ...prev,
+                    [activePageId]: next
+                  }));
+                  setSelectedWidgetIdx(next.length - 1);
                 }
               }}
             >
@@ -415,22 +552,34 @@ export default function RightPanel({ asideRef, rightView, setRightView, viewport
             </button>
           </div>
         )}
+
         {rightView === 'builder' && (
           <HomeLayoutPanel
-          items={homeLayoutItems}
+          items={currentPageLayout}
           onAdd={() => setShowAddWidget(true)}
           onSelectRow={(idx) => setSelectedWidgetIdx(idx)}
           onReorder={(from, to) => {
-            setHomeLayoutItems((prev) => {
-              const next = prev.slice();
+            setPageLayouts(prev => {
+              const currentLayout = prev[activePageId] || [];
+              const next = currentLayout.slice();
               const removed = next.splice(from, 1);
               const moved = removed[0] as { title: string; type: string; subtitle?: string; badge?: string };
               next.splice(to, 0, moved);
-              return next;
+              return {
+                ...prev,
+                [activePageId]: next
+              };
             });
           }}
           onRemove={(idx) => {
-            setHomeLayoutItems((prev) => prev.filter((_, i) => i !== idx));
+            setPageLayouts(prev => {
+              const currentLayout = prev[activePageId] || [];
+              const filtered = currentLayout.filter((_, i) => i !== idx);
+              return {
+                ...prev,
+                [activePageId]: filtered
+              };
+            });
             if (selectedWidgetIdx !== null) {
               if (idx === selectedWidgetIdx) setSelectedWidgetIdx(null);
               else if (idx < selectedWidgetIdx) setSelectedWidgetIdx(selectedWidgetIdx - 1);
@@ -443,14 +592,65 @@ export default function RightPanel({ asideRef, rightView, setRightView, viewport
         <AddWidgetDrawer
           onClose={() => setShowAddWidget(false)}
           onSelect={(item) => {
-            setHomeLayoutItems((prev) => [...prev, item]);
+            setPageLayouts(prev => ({
+              ...prev,
+              [activePageId]: [...(prev[activePageId] || []), item]
+            }));
             setShowAddWidget(false);
           }}
         />
       )}
 
+      {/* Page Capture Modal */}
+      {showPageCapture && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+          <div className="bg-black border border-[#2a2a30] rounded-lg p-6 max-w-md w-full mx-4">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-white text-lg font-medium">Create New Page</h3>
+              <button 
+                onClick={() => setShowPageCapture(false)} 
+                className="text-gray-400 hover:text-white"
+              >
+                ✕
+              </button>
+            </div>
+            <p className="text-gray-400 text-sm mb-6">Choose a page type to capture and create a static page based on the current layout.</p>
+            
+            <div className="grid grid-cols-2 gap-3">
+              {[
+                { key: 'home', label: 'Home Page', icon: '🏠' },
+                { key: 'listBlog', label: 'List Blog', icon: '📝' },
+                { key: 'wishlist', label: 'Wishlist', icon: '❤️' },
+                { key: 'profile', label: 'Profile', icon: '👤' },
+                { key: 'cart', label: 'Shopping Cart', icon: '🛒' },
+                { key: 'search', label: 'Search Results', icon: '🔍' },
+                { key: 'about', label: 'About Us', icon: 'ℹ️' },
+                { key: 'contact', label: 'Contact', icon: '📧' },
+                { key: 'category', label: 'Category Page', icon: '📂' },
+                { key: 'product', label: 'Product Page', icon: '📦' }
+              ].map(({ key, label, icon }) => (
+                <button
+                  key={key}
+                  onClick={() => createStaticPage(key)}
+                  className="flex flex-col items-center gap-2 p-4 rounded-lg border border-[#2a2a30] bg-[#0f0f12] hover:bg-[#151518] hover:border-[#3a3a42] transition-colors text-white"
+                >
+                  <span className="text-2xl">{icon}</span>
+                  <span className="text-xs text-center">{label}</span>
+                </button>
+              ))}
+            </div>
 
-
+            <div className="mt-6 flex gap-3">
+              <button 
+                onClick={() => setShowPageCapture(false)}
+                className="flex-1 px-4 py-2 rounded bg-[#2a2a30] hover:bg-[#3a3a42] text-white transition-colors"
+              >
+                Cancel
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
     </aside>
   );
@@ -494,7 +694,6 @@ function DesignLayoutPanel({ rightView, setRightView }: { rightView: RightView; 
               { name: 'Home', icon: <HomeIcon />, view: 'builder' as RightView },
               { name: 'Header', icon: <HeaderIcon />, view: 'header' as RightView },
               { name: 'Footer', icon: <FooterIcon />, view: 'footer' as RightView },
-              { name: 'Category', icon: <LayersIcon />, view: 'category' as RightView },
               { name: 'Search', icon: <SearchIcon />, view: 'search' as RightView },
               { name: 'Cart', icon: <ShoppingCartIcon />, view: 'cart' as RightView },
               { name: 'List Blog', icon: <ListIcon />, view: 'listBlog' as RightView },

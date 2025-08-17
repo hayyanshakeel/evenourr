@@ -16,7 +16,6 @@ export default function AddWidgetDrawer({ onClose, onSelect }: AddWidgetDrawerPr
     { title: 'Blogs', type: 'blogs', icon: <ListIcon /> },
     { title: 'Dynamic Blog', type: 'dynamicBlog', badge: 'New!', icon: <ListIcon /> },
     { title: 'Button', type: 'button', icon: <SquareIcon /> },
-    { title: 'Category', type: 'category', icon: <GridIcon /> },
     { title: 'Divider', type: 'divider', icon: <DividerIcon /> },
     { title: 'Header Search', type: 'headerSearch', icon: <SearchIcon /> },
     { title: 'Header View', type: 'headerView', badge: 'New!', icon: <HeaderViewIcon /> },

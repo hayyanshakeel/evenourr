@@ -6,7 +6,7 @@ import TopToolbar from "@/components/cms/TopToolbar";
 import MainCanvas from "@/components/cms/MainCanvas";
 import RightPanel from "@/components/cms/RightPanel";
 
-type RightView = 'builder' | 'category' | 'search' | 'cart' | 'listBlog' | 'page' | 'header';
+type RightView = 'builder' | 'search' | 'cart' | 'listBlog' | 'page' | 'header' | 'footer';
 
 export default function CMSPage() {
   const [rightView, setRightView] = useState<RightView>('header');

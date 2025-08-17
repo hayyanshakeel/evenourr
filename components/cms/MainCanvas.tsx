@@ -17,6 +17,13 @@ export default function MainCanvas({ setShowSeeAll, viewport = 'mobile', editorL
 
   useEffect(() => {
     let cancelled = false;
+    
+    // Skip API call if we're in development without database
+    if (process.env.NODE_ENV === 'development') {
+      setLayoutData(null);
+      return;
+    }
+    
     fetch('/api/cms/layouts/home')
       .then((r) => (r.ok ? r.json() : null))
       .then((json) => {

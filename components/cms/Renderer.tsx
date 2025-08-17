@@ -925,48 +925,7 @@ function HorizontalProducts({ collection, limit, title }: {
   );
 }
 
-function Category({ categories, layout, showImages }: {
-  categories?: Array<{ name: string; image?: string; link?: string }>;
-  layout?: 'grid' | 'list' | 'carousel';
-  showImages?: boolean;
-}) {
-  const defaultCategories = [
-    { name: "Electronics", image: "", link: "/category/electronics" },
-    { name: "Clothing", image: "", link: "/category/clothing" },
-    { name: "Home & Garden", image: "", link: "/category/home" },
-    { name: "Sports", image: "", link: "/category/sports" },
-  ];
-  
-  const items = categories || defaultCategories;
-  
-  if (layout === 'list') {
-    return (
-      <section className="space-y-2">
-        {items.map((cat, i) => (
-          <Link key={i} href={cat.link || "#"} className="block p-4 bg-gray-50 dark:bg-gray-800 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700">
-            <div className="flex items-center space-x-3">
-              {showImages && <div className="w-12 h-12 bg-gray-200 dark:bg-gray-600 rounded-lg" />}
-              <span className="font-medium">{cat.name}</span>
-            </div>
-          </Link>
-        ))}
-      </section>
-    );
-  }
-  
-  return (
-    <section className="grid grid-cols-2 md:grid-cols-4 gap-4">
-      {items.map((cat, i) => (
-        <Link key={i} href={cat.link || "#"} className="text-center group">
-          {showImages && (
-            <div className="aspect-square rounded-full bg-gray-100 dark:bg-gray-800 mb-3 group-hover:scale-105 transition-transform" />
-          )}
-          <span className="font-medium group-hover:text-blue-600">{cat.name}</span>
-        </Link>
-      ))}
-    </section>
-  );
-}
+// Category component removed - no longer needed
 
 function Banner({ imageUrl, link, title, subtitle, height }: { 
   imageUrl?: string; 
@@ -1291,8 +1250,6 @@ export function CmsRenderer({ layout, viewport }: { layout: CmsLayoutData; viewp
                 <button className="px-4 py-2 rounded bg-blue-600 text-white">{props?.text || 'Button'}</button>
               </div>
             );
-          case "category":
-            return <Category key={block.id} {...props} />;
           case "banner":
             return <Banner key={block.id} {...props} />;
           case "divider":
