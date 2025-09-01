@@ -1,0 +1,25 @@
+{
+	"folders": [
+		{
+			"path": "."
+		},
+		{
+			"path": "../evr"
+		}
+	],
+	"settings": {
+		"tailwindCSS.includeLanguages": {
+			"typescript": "typescript",
+			"typescriptreact": "typescriptreact",
+			"javascript": "javascript",
+			"javascriptreact": "javascriptreact"
+		},
+		"tailwindCSS.experimental.configFile": null,
+		"tailwindCSS.files.exclude": [
+			"**/.git/**",
+			"**/node_modules/**",
+			"**/.hg/**",
+			"**/.svn/**"
+		]
+	}
+}

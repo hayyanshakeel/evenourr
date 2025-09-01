@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Test Admin API Gateway</title>
+</head>
+<body>
+    <h1>Admin API Gateway Test</h1>
+    <button onclick="testHealth()">Test Health Endpoint</button>
+    <button onclick="testLogin()">Test Login</button>
+    <pre id="results"></pre>
+
+    <script>
+        const baseUrl = 'https://admin-api-gateway.evenour-in.workers.dev';
+        const resultsEl = document.getElementById('results');
+
+        function log(message) {
+            console.log(message);
+            resultsEl.textContent += JSON.stringify(message, null, 2) + '\n\n';
+        }
+
+        async function testHealth() {
+            log('Testing health endpoint...');
+            try {
+                const response = await fetch(`${baseUrl}/health`, {
+                    method: 'GET',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    mode: 'cors'
+                });
+                
+                log(`Health Response Status: ${response.status}`);
+                log(`Health Response Headers: ${JSON.stringify(Object.fromEntries(response.headers.entries()))}`);
+                
+                const data = await response.json();
+                log(`Health Response Data: ${JSON.stringify(data)}`);
+            } catch (error) {
+                log(`Health Error: ${error.message}`);
+                log(`Health Error Details: ${JSON.stringify(error)}`);
+            }
+        }
+
+        async function testLogin() {
+            log('Testing login endpoint...');
+            try {
+                const response = await fetch(`${baseUrl}/hatsadmin/auth/login`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    mode: 'cors',
+                    credentials: 'omit',
+                    body: JSON.stringify({
+                        username: 'admin_1',
+                        password: 'admin123'
+                    })
+                });
+                
+                log(`Login Response Status: ${response.status}`);
+                log(`Login Response Headers: ${JSON.stringify(Object.fromEntries(response.headers.entries()))}`);
+                
+                const data = await response.json();
+                log(`Login Response Data: ${JSON.stringify(data)}`);
+            } catch (error) {
+                log(`Login Error: ${error.message}`);
+                log(`Login Error Details: ${JSON.stringify(error)}`);
+                log(`Login Error Stack: ${error.stack}`);
+            }
+        }
+    </script>
+</body>
+</html>

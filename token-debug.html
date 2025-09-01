@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Token Debug</title>
+</head>
+<body>
+    <h1>Admin Token Debug</h1>
+    <div id="output"></div>
+    
+    <script>
+        // Check localStorage for tokens
+        const adminToken = localStorage.getItem('evenour_admin_token') || localStorage.getItem('admin_token');
+        const adminUser = localStorage.getItem('evenour_admin_user');
+        
+        const output = document.getElementById('output');
+        output.innerHTML = `
+            <h3>Current Auth State:</h3>
+            <p><strong>Admin Token:</strong> ${adminToken ? 'Present' : 'Missing'}</p>
+            <p><strong>Admin User:</strong> ${adminUser ? 'Present' : 'Missing'}</p>
+            
+            ${adminToken ? `<p><strong>Token Preview:</strong> ${adminToken.substring(0, 50)}...</p>` : ''}
+            ${adminUser ? `<p><strong>User Data:</strong> ${adminUser}</p>` : ''}
+            
+            <h3>Token Analysis:</h3>
+        `;
+        
+        if (adminToken) {
+            try {
+                // Decode the token (it's base64 encoded)
+                const tokenPayload = JSON.parse(atob(adminToken));
+                const currentTime = Math.floor(Date.now() / 1000);
+                const isExpired = tokenPayload.exp && tokenPayload.exp < currentTime;
+                
+                output.innerHTML += `
+                    <p><strong>Token Valid:</strong> ${!isExpired ? 'Yes' : 'EXPIRED'}</p>
+                    <p><strong>Username:</strong> ${tokenPayload.username || 'N/A'}</p>
+                    <p><strong>Role:</strong> ${tokenPayload.role || 'N/A'}</p>
+                    <p><strong>Expires:</strong> ${new Date(tokenPayload.exp * 1000).toLocaleString()}</p>
+                    <p><strong>Current Time:</strong> ${new Date().toLocaleString()}</p>
+                    <p><strong>Token Payload:</strong> <pre>${JSON.stringify(tokenPayload, null, 2)}</pre></p>
+                `;
+                
+                if (isExpired) {
+                    output.innerHTML += `<p style="color: red;"><strong>Token is EXPIRED! This is likely the cause of the API failures.</strong></p>`;
+                }
+            } catch (error) {
+                output.innerHTML += `<p style="color: red;"><strong>Token Decode Error:</strong> ${error.message}</p>`;
+            }
+        } else {
+            output.innerHTML += `<p style="color: red;"><strong>No token found! User needs to login.</strong></p>`;
+        }
+    </script>
+</body>
+</html>

@@ -12,9 +12,12 @@ interface LoginFormProps {
 export default function LoginForm({ redirectPath = '/', isAdminLogin = false }: LoginFormProps) {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [storeName, setStoreName] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
-  const { signIn, signInWithGoogle } = useAuth();
+  const [isRegistering, setIsRegistering] = useState(false);
+  const { signIn } = useAuth();
   const router = useRouter();
 
   const handleEmailLogin = async (e: React.FormEvent) => {
@@ -23,20 +26,13 @@ export default function LoginForm({ redirectPath = '/', isAdminLogin = false }: 
     setLoading(true);
 
     try {
-      console.log('Attempting Firebase login...');
+      console.log('Attempting EVR authentication...');
       console.log('Email:', email);
       console.log('Is admin login:', isAdminLogin);
       
-      // For admin login, check if email is authorized admin email
-      if (isAdminLogin && email !== 'admin@evenour.co' && email !== 'evenour.in@gmail.com') {
-        setError('Access denied. Admin credentials required.');
-        setLoading(false);
-        return;
-      }
-      
       await signIn(email, password);
       
-      console.log('Login successful, redirecting...');
+      console.log('EVR Authentication successful, redirecting...');
       // Redirect based on login type
       if (isAdminLogin) {
         router.push('/hatsadmin/dashboard');
@@ -44,27 +40,24 @@ export default function LoginForm({ redirectPath = '/', isAdminLogin = false }: 
         router.push(redirectPath);
       }
     } catch (error: any) {
-      console.error('Login error:', error);
+      console.error('EVR Authentication error:', error);
       
-      // Handle specific Firebase network errors
+      // Handle EVR authentication errors
       let errorMessage = 'Login failed';
       
-      if (error.name === 'RateLimitError') {
+      if (error.message?.includes('rate limit')) {
         errorMessage = 'Too many login attempts. Please wait 5-10 minutes before trying again.';
-      } else if (error.code === 'auth/network-request-failed') {
+      } else if (error.message?.includes('network')) {
         errorMessage = 'Network error. Please check your internet connection and try again.';
-      } else if (error.code === 'auth/user-not-found') {
+      } else if (error.message?.includes('user not found')) {
         errorMessage = 'No account found with this email address.';
-      } else if (error.code === 'auth/wrong-password') {
-        errorMessage = 'Incorrect password.';
-      } else if (error.code === 'auth/invalid-credential') {
-        // Firebase v10+ often returns auth/invalid-credential for wrong email/password
+      } else if (error.message?.includes('invalid credentials')) {
         errorMessage = isAdminLogin
           ? 'Invalid admin credentials. Check the email and password.'
           : 'Incorrect email or password.';
-      } else if (error.code === 'auth/invalid-email') {
+      } else if (error.message?.includes('invalid email')) {
         errorMessage = 'Invalid email address.';
-      } else if (error.code === 'auth/too-many-requests') {
+      } else if (error.message?.includes('too many requests')) {
         errorMessage = 'Too many failed attempts. Please wait 5-10 minutes before trying again.';
       } else if (error.message) {
         errorMessage = error.message;
@@ -76,27 +69,54 @@ export default function LoginForm({ redirectPath = '/', isAdminLogin = false }: 
     }
   };
 
-  const handleGoogleLogin = async () => {
+  const handleRegistration = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    if (password !== confirmPassword) {
+      setError('Passwords do not match');
+      return;
+    }
+    
+    if (!storeName.trim()) {
+      setError('Store name is required');
+      return;
+    }
+    
     setError('');
     setLoading(true);
-
+    
     try {
-      await signInWithGoogle();
+      console.log('🏗️ Creating enterprise account...');
       
-      // For admin login, we'll need to check the user's email after auth state changes
-      // This will be handled by the auth state listener
-      if (isAdminLogin) {
-        // We'll let the auth state change handle the redirect
-        // But we need to add a timeout check for admin validation
-        setTimeout(() => {
-          // The auth context should have updated by now
-          router.push('/hatsadmin/dashboard');
-        }, 1000);
-      } else {
+      const response = await fetch('/api/auth/enterprise-register', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          email,
+          password,
+          confirmPassword,
+          storeName,
+          ownerName: email.split('@')[0], // Use email prefix as default name
+        }),
+      });
+      
+      const result = await response.json();
+      
+      if (result.success) {
+        console.log('✅ Enterprise account created successfully');
+        console.log('🗄️ Dedicated Turso database created for:', storeName);
+        // Now sign in with the new credentials
+        await signIn(email, password);
         router.push(redirectPath);
+      } else {
+        setError(result.error || 'Registration failed');
       }
+      
     } catch (error: any) {
-      setError(error.message || 'Google login failed');
+      console.error('❌ Registration error:', error);
+      setError('Failed to create enterprise account');
     } finally {
       setLoading(false);
     }
@@ -107,14 +127,24 @@ export default function LoginForm({ redirectPath = '/', isAdminLogin = false }: 
       <div className={isAdminLogin ? "w-full" : "max-w-md w-full space-y-8"}>
         <div>
           <h2 className="text-center font-extrabold text-gray-900 text-2xl">
-            Admin Sign In
+            {isAdminLogin 
+              ? 'Admin Sign In' 
+              : isRegistering 
+                ? 'Create Enterprise Account' 
+                : 'Sign In'
+            }
           </h2>
           <p className="mt-2 text-center text-sm text-gray-600">
-            Access the admin dashboard
+            {isAdminLogin 
+              ? 'Access the admin dashboard'
+              : isRegistering
+                ? 'Get your own store with dedicated database'
+                : 'Access your enterprise store'
+            }
           </p>
         </div>
         
-        <form className="mt-8 space-y-6" onSubmit={handleEmailLogin}>
+        <form className="mt-8 space-y-6" onSubmit={isRegistering ? handleRegistration : handleEmailLogin}>
           {error && (
             <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded">
               {error}
@@ -122,6 +152,23 @@ export default function LoginForm({ redirectPath = '/', isAdminLogin = false }: 
           )}
           
           <div className="rounded-md shadow-sm -space-y-px">
+            {isRegistering && (
+              <div>
+                <label htmlFor="storeName" className="sr-only">
+                  Store Name
+                </label>
+                <input
+                  id="storeName"
+                  name="storeName"
+                  type="text"
+                  required
+                  className="appearance-none rounded-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-t-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 focus:z-10 sm:text-sm"
+                  placeholder="Store Name (e.g., MyAwesomeStore)"
+                  value={storeName}
+                  onChange={(e) => setStoreName(e.target.value)}
+                />
+              </div>
+            )}
             <div>
               <label htmlFor="email" className="sr-only">
                 Email address
@@ -132,7 +179,9 @@ export default function LoginForm({ redirectPath = '/', isAdminLogin = false }: 
                 type="email"
                 autoComplete="email"
                 required
-                className="appearance-none rounded-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-t-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 focus:z-10 sm:text-sm"
+                className={`appearance-none rounded-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 focus:z-10 sm:text-sm ${
+                  isRegistering ? '' : 'rounded-t-md'
+                }`}
                 placeholder="Email address"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
@@ -146,14 +195,34 @@ export default function LoginForm({ redirectPath = '/', isAdminLogin = false }: 
                 id="password"
                 name="password"
                 type="password"
-                autoComplete="current-password"
+                autoComplete={isRegistering ? "new-password" : "current-password"}
                 required
-                className="appearance-none rounded-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-b-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 focus:z-10 sm:text-sm"
+                className={`appearance-none rounded-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 focus:z-10 sm:text-sm ${
+                  isRegistering ? '' : 'rounded-b-md'
+                }`}
                 placeholder="Password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
               />
             </div>
+            {isRegistering && (
+              <div>
+                <label htmlFor="confirmPassword" className="sr-only">
+                  Confirm Password
+                </label>
+                <input
+                  id="confirmPassword"
+                  name="confirmPassword"
+                  type="password"
+                  autoComplete="new-password"
+                  required
+                  className="appearance-none rounded-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-b-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 focus:z-10 sm:text-sm"
+                  placeholder="Confirm Password"
+                  value={confirmPassword}
+                  onChange={(e) => setConfirmPassword(e.target.value)}
+                />
+              </div>
+            )}
           </div>
 
           <div>
@@ -162,37 +231,52 @@ export default function LoginForm({ redirectPath = '/', isAdminLogin = false }: 
               disabled={loading}
               className="group relative w-full flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:opacity-50"
             >
-              {loading ? 'Signing in...' : 'Sign in'}
+              {loading 
+                ? (isRegistering ? 'Creating Account...' : 'Signing in...') 
+                : (isRegistering ? 'Create Enterprise Account' : 'Sign in')
+              }
             </button>
           </div>
 
-          <div className="mt-6">
-            <div className="relative">
-              <div className="absolute inset-0 flex items-center">
-                <div className="w-full border-t border-gray-300" />
-              </div>
-              <div className="relative flex justify-center text-sm">
-                <span className="px-2 bg-gray-50 text-gray-500">Or continue with</span>
-              </div>
-            </div>
+          {!isAdminLogin && (
+            <>
+              <div className="mt-6">
+                <div className="relative">
+                  <div className="absolute inset-0 flex items-center">
+                    <div className="w-full border-t border-gray-300" />
+                  </div>
+                  <div className="relative flex justify-center text-sm">
+                    <span className="px-2 bg-gray-50 text-gray-500">
+                      {isRegistering ? 'Already have an account?' : 'Need an enterprise account?'}
+                    </span>
+                  </div>
+                </div>
 
-            <div className="mt-6">
-              <button
-                type="button"
-                onClick={handleGoogleLogin}
-                disabled={loading}
-                className="w-full inline-flex justify-center py-2 px-4 border border-gray-300 rounded-md shadow-sm bg-white text-sm font-medium text-gray-500 hover:bg-gray-50 disabled:opacity-50"
-              >
-                <svg className="w-5 h-5" viewBox="0 0 24 24">
-                  <path fill="#4285f4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
-                  <path fill="#34a853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
-                  <path fill="#fbbc05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/>
-                  <path fill="#ea4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/>
-                </svg>
-                <span className="ml-2">Sign in with Google</span>
-              </button>
-            </div>
-          </div>
+                <div className="mt-6">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setIsRegistering(!isRegistering);
+                      setError('');
+                      setEmail('');
+                      setPassword('');
+                      setConfirmPassword('');
+                      setStoreName('');
+                    }}
+                    disabled={loading}
+                    className="w-full inline-flex justify-center py-2 px-4 border border-gray-300 rounded-md shadow-sm bg-white text-sm font-medium text-gray-500 hover:bg-gray-50 disabled:opacity-50"
+                  >
+                    <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+                    </svg>
+                    <span>
+                      {isRegistering ? 'Sign in to existing account' : 'Create new enterprise store'}
+                    </span>
+                  </button>
+                </div>
+              </div>
+            </>
+          )}
         </form>
       </div>
     </div>

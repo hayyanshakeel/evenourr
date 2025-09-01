@@ -4,8 +4,6 @@ import { useState, useEffect } from 'react';
 import { useAdminAuth } from '@/hooks/useAdminAuth';
 import { useSettings } from '@/hooks/useSettings';
 import { formatCurrency as formatCurrencyUtil } from '@/lib/currencies';
-import { auth } from '@/lib/firebase';
-import { onAuthStateChanged, User as FirebaseUser } from 'firebase/auth';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -54,6 +52,7 @@ import {
   BarChart3
 } from 'lucide-react';
 import Link from 'next/link';
+import { secureAdminApi } from '@/lib/secure-admin-api';
 
 interface Return {
   id: string;
@@ -114,7 +113,7 @@ interface Filters {
 }
 
 export default function ReturnsPage() {
-  const { token, isReady, isAuthenticated, makeAuthenticatedRequest } = useAdminAuth();
+  const { token, isReady, isAuthenticated } = useAdminAuth();
   const { currency } = useSettings();
   const [returns, setReturns] = useState<Return[]>([]);
   const [stats, setStats] = useState<ReturnStats | null>(null);
@@ -134,46 +133,38 @@ export default function ReturnsPage() {
   // Fetch returns data
   const fetchReturns = async () => {
     if (!isAuthenticated) return;
-    
     try {
       setLoading(true);
-      const params = new URLSearchParams({
-        page: page.toString(),
-        limit: '20',
-        ...(filters.status !== 'all' && { status: filters.status }),
-        ...(filters.reasonCategory !== 'all' && { reasonCategory: filters.reasonCategory }),
-        ...(filters.priority !== 'all' && { priority: filters.priority }),
-        ...(filters.search && { search: filters.search }),
-        ...(filters.dateFrom && { dateFrom: filters.dateFrom }),
-        ...(filters.dateTo && { dateTo: filters.dateTo }),
-      });
-
-      const response = await makeAuthenticatedRequest(`/api/admin/returns?${params}`);
-      const data = await response.json();
-      setReturns(data.returns || []);
-      setTotalPages(data.totalPages || 1);
+      const params: any = {
+        page,
+        limit: 20,
+      };
+      if (filters.status !== 'all') params.status = filters.status;
+      if (filters.reasonCategory !== 'all') params.reasonCategory = filters.reasonCategory;
+      if (filters.priority !== 'all') params.priority = filters.priority;
+      if (filters.search) params.search = filters.search;
+      if (filters.dateFrom) params.dateFrom = filters.dateFrom;
+      if (filters.dateTo) params.dateTo = filters.dateTo;
+      const res = await secureAdminApi.getReturns(params);
+      if (res.success) {
+        setReturns((res as any).returns || (res as any).data?.returns || []);
+        setTotalPages((res as any).totalPages || (res as any).data?.totalPages || 1);
+      }
     } catch (error) {
-      console.error('Error fetching returns:', error);
-    } finally {
-      setLoading(false);
-    }
+      console.error('Error fetching returns via gateway:', error);
+    } finally { setLoading(false); }
   };
 
   // Fetch stats
   const fetchStats = async () => {
     if (!isAuthenticated) return;
-    
     try {
-      const params = new URLSearchParams({
-        ...(filters.dateFrom && { dateFrom: filters.dateFrom }),
-        ...(filters.dateTo && { dateTo: filters.dateTo }),
-      });
-      const response = await makeAuthenticatedRequest(`/api/admin/returns/stats?${params}`);
-      const data = await response.json();
-      setStats(data);
-    } catch (error) {
-      console.error('Error fetching stats:', error);
-    }
+      const params: any = {};
+      if (filters.dateFrom) params.dateFrom = filters.dateFrom;
+      if (filters.dateTo) params.dateTo = filters.dateTo;
+      const res = await secureAdminApi.getReturnStats(params);
+      if (res.success) setStats((res as any).data || res as any);
+    } catch (error) { console.error('Error fetching stats via gateway:', error); }
   };
 
   useEffect(() => {

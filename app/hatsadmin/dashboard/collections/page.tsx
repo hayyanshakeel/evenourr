@@ -22,6 +22,7 @@ import {
 } from "lucide-react"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
 import { useAdminAuth } from "@/hooks/useAdminAuth"
+import { secureAdminApi } from '@/lib/secure-admin-api';
 
 interface Collection {
   id: number;
@@ -59,20 +60,19 @@ export default function CollectionsPage() {
   }, [searchQuery])
 
   useEffect(() => {
-    if (!isReady) return; // Don't proceed if auth is not ready
-    
-    if (!loading) {
-      setFiltering(true)
+    // Only fetch data when authenticated and ready
+    if (isReady && isAuthenticated) {
+      console.log('[Collections] Fetching data with proper authentication');
+      if (!loading) {
+        setFiltering(true)
+      }
+      fetchData()
     }
-    fetchData()
-  }, [debouncedSearchQuery, isReady, isAuthenticated])
+  }, [isReady, isAuthenticated, debouncedSearchQuery])
 
   async function fetchData() {
-    if (!isReady || !isAuthenticated) {
-      return;
-    }
-    
     try {
+      console.log('[Collections] Starting API calls...');
       if (!loading) setFiltering(true)
       if (loading) setLoading(true)
       
@@ -85,6 +85,11 @@ export default function CollectionsPage() {
         makeAuthenticatedRequest(`/api/admin/collections?${params}`),
         makeAuthenticatedRequest('/api/admin/collections/stats')
       ])
+
+      console.log('[Collections] API responses:', { 
+        collectionsOk: collectionsResponse.ok, 
+        statsOk: statsResponse.ok 
+      });
 
       if (collectionsResponse.ok) {
         const collectionsData = await collectionsResponse.json()
@@ -116,17 +121,20 @@ export default function CollectionsPage() {
     if (!confirm('Are you sure you want to delete this collection?')) return;
     
     try {
-      const response = await makeAuthenticatedRequest(`/api/admin/collections/${id}`, {
-        method: 'DELETE'
-      });
+      console.log(`Attempting to delete collection ID: ${id}`);
+      const response = await secureAdminApi.deleteCollection(id.toString());
       
-      if (response.ok) {
-        await fetchData();
-      } else {
-        console.error('Failed to delete collection');
+      console.log('Delete response:', response);
+      
+      if (!response.success) {
+        throw new Error(response.error || 'Failed to delete collection');
       }
+
+      console.log('Collection deleted successfully, refreshing list...');
+      await fetchData();
     } catch (error) {
       console.error('Error deleting collection:', error);
+      alert(`Error deleting collection: ${error instanceof Error ? error.message : String(error)}`);
     }
   };
 

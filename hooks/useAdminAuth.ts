@@ -1,169 +1,337 @@
-import { useEffect, useRef, useState } from 'react';
-import { auth } from '@/lib/firebase';
-import type { User } from 'firebase/auth';
+/**
+ * Enhanced Admin Authentication Hook
+ * Supports both WebAuthn and password-based authentication
+ */
+
+import { useState, useEffect, useCallback } from 'react';
+import { WebAuthnClient } from '@/lib/webauthn-client';
+import { secureAdminApi } from '@/lib/secure-admin-api';
+
+interface AdminUser {
+  id: string;
+  email: string;
+  emailVerified: boolean;
+}
+
+interface AdminAuthState {
+  isReady: boolean;
+  isAuthenticated: boolean;
+  user: AdminUser | null;
+  token: string | null;
+  webauthnSupported: boolean;
+}
+
+const TOKEN_KEY = 'evenour_admin_token';
+const USER_KEY = 'evenour_admin_user';
 
 export function useAdminAuth() {
-  const [token, setToken] = useState<string | null>(null);
-  const [isReady, setIsReady] = useState(false); // auth state resolved (user or null)
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
-  const [user, setUser] = useState<User | null>(null);
-  const waitersRef = useRef<((t: string | null) => void)[]>([]);
-  const readyWaitersRef = useRef<(() => void)[]>([]);
-  const firstAuthedRef = useRef(false);
+  const [authState, setAuthState] = useState<AdminAuthState>({
+    isReady: false,
+    isAuthenticated: false,
+    user: null,
+    token: null,
+    webauthnSupported: false
+  });
+
+  const webauthnClient = new WebAuthnClient();
 
   useEffect(() => {
-    const unsubscribe = auth.onAuthStateChanged(async (fbUser) => {
-      if (fbUser) {
-        try {
-          const idToken = await fbUser.getIdToken();
-          setToken(idToken);
-          setUser(fbUser);
-          setIsAuthenticated(true);
-          if (!firstAuthedRef.current) {
-            console.log('[auth] first token acquired');
-            firstAuthedRef.current = true;
+    // Initialize auth state from localStorage
+    const initAuth = async () => {
+      try {
+        const storedToken = localStorage.getItem('evenour_admin_token') || localStorage.getItem('admin_token');
+        const storedUser = localStorage.getItem('evenour_admin_user') || localStorage.getItem('admin_user');
+        const webauthnSupported = WebAuthnClient.isSupported();
+        
+        console.log('[useAdminAuth] Initializing auth state:', {
+          hasToken: !!storedToken,
+          hasUser: !!storedUser,
+          webauthnSupported
+        });
+
+        if (storedToken) {
+          // Set the token in the API client immediately
+          secureAdminApi.setToken(storedToken);
+          
+          if (storedUser) {
+            try {
+              const user = JSON.parse(storedUser);
+              
+              // Test if the token is still valid by making a simple API call
+              const testResponse = await fetch('https://evenour-admin-auth.evenour-in.workers.dev/api/admin/orders', {
+                method: 'GET',
+                headers: {
+                  'Authorization': `Bearer ${storedToken}`,
+                  'Content-Type': 'application/json',
+                },
+              });
+
+              if (testResponse.ok) {
+                console.log('[useAdminAuth] Token validation successful, user authenticated');
+                setAuthState({ 
+                  isReady: true, 
+                  isAuthenticated: true, 
+                  user, 
+                  token: storedToken, 
+                  webauthnSupported 
+                });
+              } else {
+                console.log('[useAdminAuth] Token validation failed, clearing stored auth');
+                localStorage.removeItem('evenour_admin_token');
+                localStorage.removeItem('evenour_admin_user');
+                localStorage.removeItem('admin_token');
+                localStorage.removeItem('admin_user');
+                setAuthState(prev => ({ ...prev, isReady: true, webauthnSupported }));
+              }
+            } catch (parseError) {
+              console.error('[useAdminAuth] Error parsing stored user data:', parseError);
+              localStorage.removeItem('evenour_admin_token');
+              localStorage.removeItem('evenour_admin_user');
+              localStorage.removeItem('admin_token');
+              localStorage.removeItem('admin_user');
+              setAuthState(prev => ({ ...prev, isReady: true, webauthnSupported }));
+            }
+          } else {
+            console.log('[useAdminAuth] Token found but no user data');
+            setAuthState(prev => ({ ...prev, isReady: true, webauthnSupported }));
           }
-          waitersRef.current.forEach((r) => r(idToken));
-        } catch (e) {
-          console.error('[auth] getIdToken failed', e);
-          setToken(null);
-          setUser(null);
-          setIsAuthenticated(false);
-          waitersRef.current.forEach((r) => r(null));
+        } else {
+          console.log('[useAdminAuth] No stored token found');
+          setAuthState(prev => ({ ...prev, isReady: true, webauthnSupported }));
         }
-      } else {
-        setToken(null);
-        setUser(null);
-        setIsAuthenticated(false);
-        waitersRef.current.forEach((r) => r(null));
+      } catch (error) {
+        console.error('[useAdminAuth] Error during auth initialization:', error);
+        setAuthState(prev => ({ ...prev, isReady: true, webauthnSupported: WebAuthnClient.isSupported() }));
       }
-      waitersRef.current = [];
-      setIsReady(true);
-      readyWaitersRef.current.forEach((r) => r());
-      readyWaitersRef.current = [];
-    });
-    return () => unsubscribe();
+    };
+    
+    initAuth();
   }, []);
 
-  function waitForAuthResolution(timeoutMs = 5000) {
-    if (isReady) return Promise.resolve();
-    return new Promise<void>((resolve) => {
-      const timer = setTimeout(() => resolve(), timeoutMs);
-      readyWaitersRef.current.push(() => {
-        clearTimeout(timer);
-        resolve();
-      });
-    });
-  }
-
-  function waitForToken(timeoutMs = 5000) {
-    if (token) return Promise.resolve(token);
-    return new Promise<string | null>((resolve) => {
-      const started = Date.now();
-      const timer = setTimeout(() => resolve(null), timeoutMs);
-      waitersRef.current.push((t) => {
-        clearTimeout(timer);
-        resolve(t);
-      });
-      // If token still missing after auth resolved & user absent, resolve sooner
-      readyWaitersRef.current.push(() => {
-        if (!user) {
-          const remaining = timeoutMs - (Date.now() - started);
-          if (remaining > 0) {
-            // allow remaining time in case immediate sign-in follows
-            return;
-          }
-          resolve(null);
-        }
-      });
-    });
-  }
-
-  const getAuthHeaders = (): Record<string, string> => {
-    const headers: Record<string, string> = { 'Content-Type': 'application/json' };
-    if (token) headers.Authorization = `Bearer ${token}`;
-    return headers;
-  };
-
-  async function internalFetch(url: string, options: RequestInit, attempt = 1): Promise<Response> {
-    const response = await fetch(url, options);
-    if (response.status === 401 && attempt === 1 && user) {
-      try {
-        console.log('[auth] 401 -> forced refresh attempt');
-        const refreshed = await user.getIdToken(true);
-        setToken(refreshed);
-        const retryHeaders = { ...(options.headers as Record<string, string>), Authorization: `Bearer ${refreshed}` };
-        return internalFetch(url, { ...options, headers: retryHeaders }, 2);
-      } catch (e) {
-        console.warn('[auth] forced refresh failed', e);
-      }
-    }
-    return response;
-  }
-
-  const makeAuthenticatedRequest = async (url: string, options: RequestInit = {}) => {
-    // Ensure auth state known
-    if (!isReady) await waitForAuthResolution();
-
-    // If authenticated but token missing (rare), wait briefly for token
-    let activeToken = token;
-    if (isAuthenticated && (!activeToken || !user)) {
-      activeToken = await waitForToken(3000);
-    }
-
-    // If not authenticated after resolution
-    if (!isAuthenticated) {
-      throw new Error('Not authenticated');
-    }
-
-    if (!activeToken || !user) {
-      throw new Error('Token acquisition failed');
-    }
-
-    // Attempt a fresh non-forced refresh; ignore failure
+  const verifyStoredToken = async (token: string): Promise<boolean> => {
     try {
-      activeToken = await user.getIdToken();
-      setToken(activeToken);
-    } catch {
-      console.warn('[auth] token refresh (non-forced) failed — using existing');
+      secureAdminApi.setToken(token);
+      const result = await secureAdminApi.validateToken();
+      return result.valid === true;
+    } catch (e) {
+      console.error('Token validation (gateway) failed:', e);
+      return false;
     }
-
-    const headers: Record<string, string> = {
-      'Content-Type': 'application/json',
-      Authorization: `Bearer ${activeToken}`,
-      ...(options.headers as Record<string, string>),
-    };
-
-    const response = await internalFetch(url, { ...options, headers, credentials: 'include' });
-
-    if (response.status === 401) {
-      console.warn('[auth] final 401 after retry - clearing auth state');
-      setToken(null);
-      setUser(null);
-      setIsAuthenticated(false);
-      throw new Error('Authentication failed');
-    }
-
-    if (!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status}`);
-    }
-    return response;
   };
 
-  const makeAuthenticatedJson = async <T = any>(url: string, options: RequestInit = {}) => {
-    const res = await makeAuthenticatedRequest(url, options);
-    return res.json() as Promise<T>;
-  };
+  const signInWithPassword = useCallback(async (email: string, password: string): Promise<{ success: boolean; error?: string }> => {
+    try {
+      console.log('[useAdminAuth] Attempting password login for:', email);
+      
+      const response = await fetch('https://evenour-admin-auth.evenour-in.workers.dev/auth/login', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ username: email, password }),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        return { success: false, error: errorData.error || 'Login failed' };
+      }
+
+      const data = await response.json();
+      
+      if (data.success && data.token) {
+        const user: AdminUser = {
+          id: data.user.id,
+          email: data.user.email,
+          emailVerified: true
+        };
+        
+        // Store authentication data
+        localStorage.setItem('evenour_admin_token', data.token);
+        localStorage.setItem('evenour_admin_user', JSON.stringify(user));
+        localStorage.setItem('admin_token', data.token); // Legacy compatibility
+        localStorage.setItem('admin_user', JSON.stringify(user)); // Legacy compatibility
+        
+        // Set token in API client
+        secureAdminApi.setToken(data.token);
+        
+        // Update auth state
+        setAuthState(prev => ({ 
+          ...prev, 
+          isAuthenticated: true, 
+          user, 
+          token: data.token 
+        }));
+        
+        console.log('[useAdminAuth] Password login successful');
+        return { success: true };
+      } else {
+        return { success: false, error: data.error || 'Login failed' };
+      }
+    } catch (error) {
+      console.error('[useAdminAuth] Password login error:', error);
+      return { success: false, error: 'Network error' };
+    }
+  }, []);
+
+  const signInWithWebAuthn = useCallback(async (email: string): Promise<{ success: boolean; error?: string }> => {
+    if (!authState.webauthnSupported) {
+      return { success: false, error: 'WebAuthn is not supported in this browser' };
+    }
+
+    try {
+      const result = await webauthnClient.authenticate(email);
+      
+      if (!result.success || !result.tokens || !result.user) {
+        return { success: false, error: result.error || 'WebAuthn authentication failed' };
+      }
+
+      // Store auth data
+      localStorage.setItem('admin_token', result.tokens.accessToken);
+      localStorage.setItem('admin_user', JSON.stringify(result.user));
+
+      setAuthState(prev => ({
+        ...prev,
+        isAuthenticated: true,
+        user: result.user,
+        token: result.tokens!.accessToken
+      }));
+
+      return { success: true };
+    } catch (error) {
+      console.error('WebAuthn sign in error:', error);
+      return { success: false, error: 'WebAuthn authentication failed' };
+    }
+  }, [authState.webauthnSupported, webauthnClient]);
+
+  const enrollWebAuthn = useCallback(async (email: string, displayName?: string): Promise<{ success: boolean; error?: string }> => {
+    if (!authState.webauthnSupported) {
+      return { success: false, error: 'WebAuthn is not supported in this browser' };
+    }
+
+    try {
+      const result = await webauthnClient.enroll(email, displayName);
+      
+      if (!result.success || !result.tokens || !result.user) {
+        return { success: false, error: result.error || 'WebAuthn enrollment failed' };
+      }
+
+      // Store auth data
+      localStorage.setItem('admin_token', result.tokens.accessToken);
+      localStorage.setItem('admin_user', JSON.stringify(result.user));
+
+      setAuthState(prev => ({
+        ...prev,
+        isAuthenticated: true,
+        user: result.user,
+        token: result.tokens!.accessToken
+      }));
+
+      return { success: true };
+    } catch (error) {
+      console.error('WebAuthn enrollment error:', error);
+      return { success: false, error: 'WebAuthn enrollment failed' };
+    }
+  }, [authState.webauthnSupported, webauthnClient]);
+
+  // Generic signIn method that tries password first, then suggests WebAuthn
+  const signIn = useCallback(async (email: string, password: string): Promise<{ success: boolean; error?: string }> => {
+    // Try password authentication first
+    const passwordResult = await signInWithPassword(email, password);
+    
+    if (passwordResult.success) {
+      return passwordResult;
+    }
+
+    // If password failed and WebAuthn is supported, suggest WebAuthn
+    if (authState.webauthnSupported && passwordResult.error?.includes('Invalid credentials')) {
+      return { 
+        success: false, 
+        error: `${passwordResult.error}. You can also try WebAuthn authentication if you have enrolled a device.`
+      };
+    }
+
+    return passwordResult;
+  }, [signInWithPassword, authState.webauthnSupported]);
+
+  const signOut = useCallback(async () => {
+    try { await secureAdminApi.logout(); } catch {}
+    localStorage.removeItem(TOKEN_KEY); localStorage.removeItem(USER_KEY);
+    localStorage.removeItem('admin_token'); localStorage.removeItem('admin_user');
+    setAuthState(prev => ({ ...prev, isAuthenticated: false, user: null, token: null }));
+  }, []);
+
+  const waitForAuthResolution = useCallback((): Promise<void> => {
+    return new Promise((resolve) => {
+      if (authState.isReady) {
+        resolve();
+      } else {
+        const checkReady = () => {
+          if (authState.isReady) {
+            resolve();
+          } else {
+            setTimeout(checkReady, 100);
+          }
+        };
+        checkReady();
+      }
+    });
+  }, [authState.isReady]);
+
+  const waitForToken = useCallback(async (): Promise<string | null> => {
+    await waitForAuthResolution();
+    return authState.token;
+  }, [authState.token, waitForAuthResolution]);
+
+  const makeAuthenticatedRequest = useCallback(async (url: string, options: RequestInit = {}): Promise<Response> => {
+    // Use the working admin auth worker for all API requests
+    const gatewayBase = 'https://evenour-admin-auth.evenour-in.workers.dev';
+    const token = await waitForToken();
+    const gatewayToken = secureAdminApi.getToken() || token;
+
+    let finalUrl = url;
+    if (url.startsWith('/api/admin')) {
+      // Route all admin API calls through the working gateway
+      finalUrl = `${gatewayBase}${url}`;
+    } else if (url.startsWith('/hatsadmin')) {
+      finalUrl = `${gatewayBase}${url}`;
+    }
+
+    return fetch(finalUrl, {
+      ...options,
+      headers: {
+        ...options.headers,
+        'Authorization': gatewayToken ? `Bearer ${gatewayToken}` : '',
+        'Content-Type': (options.headers as any)?.['Content-Type'] || 'application/json'
+      },
+    });
+  }, [waitForToken]);
+
+  const getToken = useCallback(() => authState.token, [authState.token]);
 
   return {
-    token,
-    isReady,
-    isAuthenticated,
-    user,
-    getAuthHeaders,
-    makeAuthenticatedRequest,
-    makeAuthenticatedJson,
-    waitForToken,
+    // Legacy properties for compatibility
+    token: authState.token,
+    isReady: authState.isReady,
+    isAuthenticated: authState.isAuthenticated,
+    user: authState.user ? {
+      uid: authState.user.id,
+      email: authState.user.email,
+      emailVerified: authState.user.emailVerified
+    } : null,
+    
+    // Methods
+    signIn,
+    signInWithPassword,
+    signInWithWebAuthn,
+    enrollWebAuthn,
+    signOut,
     waitForAuthResolution,
+    waitForToken,
+    makeAuthenticatedRequest,
+    getToken,
+    
+    // Admin-specific properties
+    adminUser: authState.user,
+    webauthnSupported: authState.webauthnSupported
   };
 }

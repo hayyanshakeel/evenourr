@@ -44,16 +44,18 @@ export default function AnalyticsPage() {
   useEffect(() => { fetchData(); }, [timeframe, isReady, isAuthenticated]);
 
   return (
-    <div className="p-6 space-y-6">
+    <div className="p-3 sm:p-4 lg:p-6 space-y-4 sm:space-y-6">
       {/* Header */}
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 sm:gap-4">
         <div>
-          <h1 className="text-3xl font-bold">Analytics</h1>
-          <p className="text-gray-600">Enterprise metrics powered by Turso</p>
+          <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold text-gray-900">Analytics</h1>
+          <p className="text-xs sm:text-sm text-gray-500">Track your store's performance and insights</p>
         </div>
-        <div className="flex items-center gap-3">
+        <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2 sm:gap-3">
           <Select value={timeframe} onValueChange={(v: TF) => setTimeframe(v)}>
-            <SelectTrigger className="w-40"><SelectValue /></SelectTrigger>
+            <SelectTrigger className="w-full sm:w-40 text-xs sm:text-sm">
+              <SelectValue />
+            </SelectTrigger>
             <SelectContent>
               <SelectItem value="24h">Last 24 hours</SelectItem>
               <SelectItem value="7d">Last 7 days</SelectItem>
@@ -61,68 +63,72 @@ export default function AnalyticsPage() {
               <SelectItem value="90d">Last 90 days</SelectItem>
             </SelectContent>
           </Select>
-          <Button variant="outline" size="sm" onClick={fetchData} disabled={loading}>
-            <RefreshCw className={`h-4 w-4 mr-2 ${loading ? 'animate-spin' : ''}`} /> Refresh
+          <Button variant="outline" size="sm" onClick={fetchData} disabled={loading} className="w-full sm:w-auto text-xs sm:text-sm">
+            <RefreshCw className={`h-3 w-3 sm:h-4 sm:w-4 mr-1 sm:mr-2 ${loading ? 'animate-spin' : ''}`} /> 
+            Refresh
           </Button>
         </div>
       </div>
 
       {loading || !data ? (
-        <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 xl:grid-cols-3 gap-4 sm:gap-6">
           {/* Loading skeleton for left side */}
-          <div className="xl:col-span-2 space-y-6">
+          <div className="xl:col-span-2 space-y-4 sm:space-y-6">
             <div className="animate-pulse">
-              <div className="h-4 bg-gray-200 rounded w-1/4 mb-4"></div>
-              <div className="h-32 bg-gray-200 rounded"></div>
+              <div className="h-3 sm:h-4 bg-gray-200 rounded w-1/4 mb-3 sm:mb-4"></div>
+              <div className="h-24 sm:h-32 bg-gray-200 rounded"></div>
             </div>
           </div>
           {/* Loading skeleton for right side */}
-          <div className="space-y-4">
+          <div className="space-y-3 sm:space-y-4">
             {[...Array(4)].map((_, i) => (
               <Card key={i} className="animate-pulse">
-                <CardContent className="p-6">
-                  <div className="h-4 bg-gray-200 rounded w-3/4 mb-2"></div>
-                  <div className="h-8 bg-gray-200 rounded w-1/2 mb-2"></div>
-                  <div className="h-3 bg-gray-200 rounded w-2/3"></div>
+                <CardContent className="p-3 sm:p-4 lg:p-6">
+                  <div className="h-3 sm:h-4 bg-gray-200 rounded w-3/4 mb-1 sm:mb-2"></div>
+                  <div className="h-6 sm:h-8 bg-gray-200 rounded w-1/2 mb-1 sm:mb-2"></div>
+                  <div className="h-2 sm:h-3 bg-gray-200 rounded w-2/3"></div>
                 </CardContent>
               </Card>
             ))}
-            <div className="h-96 bg-gray-200 rounded animate-pulse"></div>
+            <div className="h-64 sm:h-96 bg-gray-200 rounded animate-pulse"></div>
           </div>
         </div>
       ) : (
         <>
           {/* Main Layout: Left side content, Right side overview cards + globe */}
-          <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 xl:grid-cols-3 gap-4 sm:gap-6">
             {/* Left Side - Charts and Analytics */}
-            <div className="xl:col-span-2 space-y-6">
+            <div className="xl:col-span-2 space-y-4 sm:space-y-6">
 
               {/* Live */}
               <Card>
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2">Live (last 30m)
-                    <Badge variant="outline" className="ml-2">{timeframe}</Badge>
+                <CardHeader className="p-3 sm:p-4 lg:p-6">
+                  <CardTitle className="flex flex-col sm:flex-row items-start sm:items-center gap-1 sm:gap-2 text-sm sm:text-base">
+                    Live (last 30m)
+                    <Badge variant="outline" className="text-xs">{timeframe}</Badge>
                   </CardTitle>
                 </CardHeader>
-                <CardContent>
-                  <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-center">
+                <CardContent className="p-3 sm:p-4 lg:p-6 pt-0">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4 text-center">
                     <div>
-                      <p className="text-2xl font-bold text-green-600">{formatCurrency(data.live.last30mRevenue)}</p>
-                      <p className="text-sm text-gray-600">Revenue</p>
+                      <p className="text-lg sm:text-xl lg:text-2xl font-bold text-green-600">{formatCurrency(data.live.last30mRevenue)}</p>
+                      <p className="text-xs sm:text-sm text-gray-600">Revenue</p>
                     </div>
                     <div>
-                      <p className="text-2xl font-bold text-blue-600">{data.live.last30mOrders}</p>
-                      <p className="text-sm text-gray-600">Orders</p>
+                      <p className="text-lg sm:text-xl lg:text-2xl font-bold text-blue-600">{data.live.last30mOrders}</p>
+                      <p className="text-xs sm:text-sm text-gray-600">Orders</p>
                     </div>
                   </div>
                 </CardContent>
               </Card>
 
               {/* Time Series (Chart) */}
-              <RevenueOverTimeChart
-                data={data.timeseries?.map((p: any) => ({ date: p.date, revenue: p.revenue })) || []}
-                compare={data.compareTimeseries?.map((p: any) => ({ date: p.date, revenue: p.revenue })) || undefined}
-              />
+              <div className="min-h-[200px] sm:min-h-[300px] lg:min-h-[400px]">
+                <RevenueOverTimeChart
+                  data={data.timeseries?.map((p: any) => ({ date: p.date, revenue: p.revenue })) || []}
+                  compare={data.compareTimeseries?.map((p: any) => ({ date: p.date, revenue: p.revenue })) || undefined}
+                />
+              </div>
 
               {/* Hourly Heatmap */}
               <Card>

@@ -12,6 +12,7 @@ import { HiArrowLeft, HiPlus, HiTrash } from "react-icons/hi2"
 import { useAdminAuth } from "@/hooks/useAdminAuth"
 import { useSettings } from "@/hooks/useSettings"
 import { formatCurrency } from "@/lib/currencies"
+import { secureAdminApi } from '@/lib/secure-admin-api';
 
 interface OrderItem {
   id: string
@@ -83,15 +84,8 @@ export default function AddOrderPage() {
 
     try {
       if (!isReady || !isAuthenticated) throw new Error('Not authenticated')
-      const res = await makeAuthenticatedRequest('/api/admin/orders', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload),
-      })
-      if (!res.ok) {
-        const err = await res.json().catch(() => ({}))
-        throw new Error(err?.error?.message || `Failed to create order (${res.status})`)
-      }
+      const res = await secureAdminApi.createOrder(payload)
+      if (!res.success) throw new Error(res.error || 'Failed to create order')
       router.push("/hatsadmin/dashboard/orders")
     } catch (err) {
       console.error('Create order failed', err)
@@ -142,23 +136,16 @@ export default function AddOrderPage() {
   }
 
   const searchProducts = async (id: string, query: string) => {
-    // basic guard
     if (!isReady || !isAuthenticated) return;
-    if (query.trim().length < 1) {
-      setSearchResults(prev => ({ ...prev, [id]: [] }))
-      return
-    }
-    // cancel previous
+    if (query.trim().length < 1) { setSearchResults(prev => ({ ...prev, [id]: [] })); return }
     if (searchAbortRef.current[id]) searchAbortRef.current[id].abort()
-    const ac = new AbortController()
-    searchAbortRef.current[id] = ac
+    const ac = new AbortController(); searchAbortRef.current[id] = ac
     try {
-      const res = await makeAuthenticatedRequest(`/api/admin/products?limit=8&search=${encodeURIComponent(query)}`, { signal: ac.signal })
-      if (!res.ok) return
-      const data = await res.json()
-      const products: SearchProduct[] = (data?.products || data || []).map((p: any) => ({ id: p.id, name: p.name, price: p.price }))
+      const res = await secureAdminApi.getProducts({ limit: 8, search: query })
+      if (!res.success) return
+      const products: SearchProduct[] = ((res as any).data?.products || (res as any).products || []).map((p: any) => ({ id: p.id, name: p.name, price: p.price }))
       setSearchResults(prev => ({ ...prev, [id]: products }))
-    } catch (err: any) {
+    } catch (err:any) {
       if (err?.name === 'AbortError') return
       console.warn('product search failed', err)
     }

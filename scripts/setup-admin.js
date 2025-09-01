@@ -10,14 +10,14 @@
 const { initializeApp } = require('firebase/app');
 const { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword } = require('firebase/auth');
 
-// Firebase config
+// Firebase config - using the actual values from .env.local
 const firebaseConfig = {
-  apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
-  authDomain: process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN,
-  projectId: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID,
-  storageBucket: process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET,
-  messagingSenderId: process.env.NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID,
-  appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID,
+  apiKey: "AIzaSyA9ZAV7HoUUTaEzbGPz9_M4iFeiLDYmLBo",
+  authDomain: "evenour-auth-app.firebaseapp.com",
+  projectId: "evenour-auth-app",
+  storageBucket: "evenour-auth-app.appspot.com",
+  messagingSenderId: "678978714648",
+  appId: "1:678978714648:web:7c123d4e5f5b2e5e123456",
 };
 
 // Initialize Firebase

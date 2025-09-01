@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { verifyFirebaseUser } from '@/lib/firebase-verify';
+import { requireEVRAdmin } from '@/lib/enterprise-auth';
 export const runtime = 'nodejs';
 
 export async function GET(request: NextRequest) {

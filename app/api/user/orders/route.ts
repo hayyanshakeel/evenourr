@@ -1,17 +1,17 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { verifyFirebaseUser } from '@/lib/firebase-verify';
+import { verifyEVRAuth } from '@/lib/enterprise-auth';
 import prisma from '@/lib/db';
 
 export async function GET(request: NextRequest) {
   try {
-    // Verify Firebase token and get user
-    const result = await verifyFirebaseUser(request);
+    // Verify EVR token and get user
+    const result = await verifyEVRAuth(request);
     
-    if ('error' in result) {
-      return NextResponse.json({ error: result.error }, { status: result.status });
+    if (!result.isValid || !result.user) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const { user } = result;
+    const { user } = verification;
 
     // For now, return empty orders array since we need to establish the relationship
     // between Firebase users and local orders. This will be populated as users place orders.

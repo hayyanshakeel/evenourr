@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Direct API Test</title>
+</head>
+<body>
+    <h1>Direct API Test</h1>
+    <button onclick="testLogin()">Test Login</button>
+    <button onclick="testDashboard()">Test Dashboard (requires login first)</button>
+    <div id="output"></div>
+
+    <script>
+        let authToken = null;
+
+        async function testLogin() {
+            const output = document.getElementById('output');
+            output.innerHTML = 'Testing login...';
+            
+            try {
+                const response = await fetch('https://evenour-admin-auth.evenour-in.workers.dev/auth/login', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        username: 'admin',
+                        password: 'Hayyaan123@1'
+                    }),
+                    mode: 'cors',
+                    credentials: 'omit'
+                });
+
+                console.log('Login response status:', response.status);
+                console.log('Login response headers:', Object.fromEntries(response.headers.entries()));
+
+                if (response.ok) {
+                    const data = await response.json();
+                    console.log('Login success:', data);
+                    authToken = data.token;
+                    output.innerHTML = `<pre>Login Success:\n${JSON.stringify(data, null, 2)}</pre>`;
+                } else {
+                    const errorText = await response.text();
+                    console.error('Login failed:', response.status, errorText);
+                    output.innerHTML = `<pre>Login Failed (${response.status}):\n${errorText}</pre>`;
+                }
+            } catch (error) {
+                console.error('Login error:', error);
+                output.innerHTML = `<pre>Login Error:\n${error.message}\nStack: ${error.stack}</pre>`;
+            }
+        }
+
+        async function testDashboard() {
+            const output = document.getElementById('output');
+            
+            if (!authToken) {
+                output.innerHTML = 'Please login first to get an auth token';
+                return;
+            }
+
+            output.innerHTML = 'Testing dashboard...';
+            
+            try {
+                const response = await fetch('https://evenour-admin-auth.evenour-in.workers.dev/api/admin/dashboard/metrics', {
+                    method: 'GET',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${authToken}`
+                    },
+                    mode: 'cors',
+                    credentials: 'omit'
+                });
+
+                console.log('Dashboard response status:', response.status);
+                console.log('Dashboard response headers:', Object.fromEntries(response.headers.entries()));
+
+                if (response.ok) {
+                    const data = await response.json();
+                    console.log('Dashboard success:', data);
+                    output.innerHTML = `<pre>Dashboard Success:\n${JSON.stringify(data, null, 2)}</pre>`;
+                } else {
+                    const errorText = await response.text();
+                    console.error('Dashboard failed:', response.status, errorText);
+                    output.innerHTML = `<pre>Dashboard Failed (${response.status}):\n${errorText}</pre>`;
+                }
+            } catch (error) {
+                console.error('Dashboard error:', error);
+                output.innerHTML = `<pre>Dashboard Error:\n${error.message}\nStack: ${error.stack}</pre>`;
+            }
+        }
+    </script>
+</body>
+</html>

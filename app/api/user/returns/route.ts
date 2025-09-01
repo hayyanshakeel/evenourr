@@ -1,24 +1,24 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { verifyFirebaseUser } from '@/lib/firebase-verify';
+import { requireEVRAdmin } from '@/lib/enterprise-auth';
 import prisma from '@/lib/db';
 
 // GET /api/user/returns - Get user's returns
 export async function GET(request: NextRequest) {
   try {
-    const result = await verifyFirebaseUser(request);
-    if (result.error) {
+    const verification = await requireEVRAdmin(request);
+    if (!verification.isValid) {
       return NextResponse.json(
-        { success: false, message: result.error },
-        { status: result.status || 401 }
+        { success: false, message: 'Authentication required' },
+        { status: 401 }
       );
     }
-    const user = result.user;
+    const user = verification.user;
 
     const returns = await prisma.returnRequest.findMany({
       where: {
         OR: [
-          { userId: parseInt(user.uid) },
-          { customerId: parseInt(user.uid) }
+          { userId: parseInt(user.id) },
+          { customerId: parseInt(user.id) }
         ]
       },
       include: {
@@ -85,14 +85,14 @@ export async function GET(request: NextRequest) {
 // POST /api/user/returns - Create new return request
 export async function POST(request: NextRequest) {
   try {
-    const result = await verifyFirebaseUser(request);
-    if (result.error) {
+    const verification = await requireEVRAdmin(request);
+    if (!verification.isValid) {
       return NextResponse.json(
-        { success: false, message: result.error },
-        { status: result.status || 401 }
+        { success: false, message: 'Authentication required' },
+        { status: 401 }
       );
     }
-    const user = result.user;
+    const user = verification.user;
 
     const { orderId, reason, description, returnItems } = await request.json();
 
@@ -107,7 +107,7 @@ export async function POST(request: NextRequest) {
     const order = await prisma.order.findFirst({
       where: {
         id: orderId,
-        customerId: user.uid,
+        customerId: user.id,
       },
       include: {
         orderItems: {
@@ -186,7 +186,7 @@ export async function POST(request: NextRequest) {
       data: {
         rmaNumber,
         orderId,
-        userId: parseInt(user.uid),
+        userId: parseInt(user.id),
         status: 'requested',
         reason,
         reasonCategory: 'other', // You might want to categorize reasons

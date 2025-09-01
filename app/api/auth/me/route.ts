@@ -1,14 +1,14 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { verifyFirebaseUser } from '@/lib/firebase-verify';
+import { requireEVRAdmin } from '@/lib/enterprise-auth';
 
 export async function GET(request: NextRequest) {
-  const result = await verifyFirebaseUser(request);
+  const verification = await requireEVRAdmin(request);
   
   if ('error' in result) {
-    return NextResponse.json({ error: result.error }, { status: result.status });
+    return NextResponse.json({ error: verification.error || 'Unauthorized' }, { status: result.status });
   }
 
-  const user = result.user;
+  const user = verification.user;
   
   // For auth/me endpoint, we just need to verify the user is authenticated
   // The actual token will be handled by the Authorization header

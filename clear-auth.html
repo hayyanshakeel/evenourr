@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Clear Admin Auth</title>
+</head>
+<body>
+    <h1>Clear Admin Authentication</h1>
+    <button onclick="clearAuth()">Clear All Auth Data</button>
+    <div id="status"></div>
+    
+    <script>
+    function clearAuth() {
+        // Clear all possible token keys
+        localStorage.removeItem('evenour_admin_token');
+        localStorage.removeItem('evenour_admin_user');
+        localStorage.removeItem('admin_token');
+        localStorage.removeItem('admin_user');
+        
+        // Clear any other admin-related storage
+        Object.keys(localStorage).forEach(key => {
+            if (key.includes('admin') || key.includes('evenour')) {
+                localStorage.removeItem(key);
+            }
+        });
+        
+        document.getElementById('status').innerHTML = '<p style="color: green;">✅ All admin auth data cleared! You can now try logging in fresh.</p>';
+    }
+    </script>
+</body>
+</html>

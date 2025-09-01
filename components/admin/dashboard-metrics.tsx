@@ -7,6 +7,7 @@ import { useEffect, useState } from "react"
 import { useAdminAuth } from "@/hooks/useAdminAuth"
 import { useSettings } from "@/hooks/useSettings"
 import { formatCurrency } from "@/lib/currencies"
+import { secureAdminApi } from '@/lib/secure-admin-api';
 
 interface DashboardMetricsData {
   totalRevenue: number;
@@ -26,6 +27,7 @@ interface DashboardMetricsData {
 export function DashboardMetrics() {
   const [metrics, setMetrics] = useState<DashboardMetricsData | null>(null)
   const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
   const { makeAuthenticatedRequest, isReady, isAuthenticated } = useAdminAuth()
   const { currency } = useSettings()
 
@@ -33,72 +35,49 @@ export function DashboardMetrics() {
     let isMounted = true
 
     const fetchMetrics = async () => {
-      if (!isReady || !isAuthenticated || !isMounted) {
-        return
-      }
+      if (!isMounted) return
 
       try {
-        const response = await makeAuthenticatedRequest('/api/admin/dashboard/metrics')
+        console.log('[DashboardMetrics] Starting fetch, auth status:', {
+          apiAuthenticated: secureAdminApi.isAuthenticated(),
+          hasValidToken: secureAdminApi.hasValidToken(),
+          isReady,
+          hookAuthenticated: isAuthenticated
+        });
+
+        setError(null); // Clear any previous errors
+
+        let metricsRes;
+        metricsRes = await secureAdminApi.getDashboardMetrics();
+        if (!metricsRes.success) {
+          console.log('[DashboardMetrics] getDashboardMetrics failed, trying getDashboardStats');
+          metricsRes = await secureAdminApi.getDashboardStats();
+        }
         
-        if (!isMounted) return
-        
-        if (response.ok) {
-          const raw = await response.json()
-          const data = raw?.data ?? raw
-          setMetrics(data)
+        if (metricsRes.success) {
+          setMetrics(metricsRes as any);
         } else {
-          console.error('Failed to fetch metrics:', response.status)
-          setMetrics({
-            totalRevenue: 0,
-            totalOrders: 0,
-            totalProducts: 0,
-            totalCustomers: 0,
-            revenueChange: 0,
-            ordersChange: 0,
-            productsChange: 0,
-            customersChange: 0,
-            lowStockCount: 0,
-            pendingOrdersCount: 0,
-            recentOrders: [],
-            topProducts: [],
-          })
+          console.error('[DashboardMetrics] Both API calls failed:', metricsRes.error);
+          setError(metricsRes.error || 'Failed to load dashboard metrics');
+          setMetrics({ data: null } as any);
         }
-      } catch (error) {
-        console.error('Error fetching metrics:', error)
-        if (isMounted) {
-          setMetrics({
-            totalRevenue: 0,
-            totalOrders: 0,
-            totalProducts: 0,
-            totalCustomers: 0,
-            revenueChange: 0,
-            ordersChange: 0,
-            productsChange: 0,
-            customersChange: 0,
-            lowStockCount: 0,
-            pendingOrdersCount: 0,
-            recentOrders: [],
-            topProducts: [],
-          })
-        }
-      }
-      
-      if (isMounted) {
-        setLoading(false)
+      } catch (e) {
+        console.error('[DashboardMetrics] Failed to load metrics via gateway', e);
+        const errorMessage = e instanceof Error ? e.message : 'Unknown error occurred';
+        setError(`Network error: ${errorMessage}`);
+        setMetrics({ data: null } as any);
+      } finally {
+        setLoading(false);
       }
     }
 
-    // Only start fetching when auth is ready and authenticated
-    if (isReady && isAuthenticated) {
-      fetchMetrics()
-    } else if (isReady && !isAuthenticated) {
-      setLoading(false)
-    }
+    // Always try to fetch, regardless of auth state for development
+    fetchMetrics()
 
     return () => {
       isMounted = false
     }
-  }, [isReady, isAuthenticated]) // Only depend on auth state, not functions
+  }, [isReady, isAuthenticated, makeAuthenticatedRequest])
 
   if (loading || !metrics) {
     return (
@@ -115,6 +94,33 @@ export function DashboardMetrics() {
             </CardContent>
           </Card>
         ))}
+      </div>
+    )
+  }
+
+  // Show error state if there's an error
+  if (error) {
+    return (
+      <div className="grid gap-4 md:gap-6 lg:gap-8 grid-cols-1">
+        <Card className="admin-card border-red-200">
+          <CardHeader>
+            <CardTitle className="text-red-600">Dashboard Error</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <p className="text-red-600">{error}</p>
+            {error.includes('Authentication required') && (
+              <p className="text-sm text-gray-600 mt-2">
+                Please refresh the page and login again to access the admin dashboard.
+              </p>
+            )}
+            <button 
+              onClick={() => window.location.reload()} 
+              className="mt-4 px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
+            >
+              Reload Page
+            </button>
+          </CardContent>
+        </Card>
       </div>
     )
   }
@@ -182,7 +188,7 @@ export function DashboardMetrics() {
             )}
           >
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-3">
-              <CardTitle className="text-sm font-medium text-gray-600 dark:text-gray-400">
+              <CardTitle className="text-sm font-medium text-gray-600">
                 {metric.title}
               </CardTitle>
               <div className={cn("p-2 rounded-lg", metric.bgColor, "bg-opacity-10")}>
@@ -190,7 +196,7 @@ export function DashboardMetrics() {
               </div>
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold text-gray-900 dark:text-white mb-2">
+              <div className="text-2xl font-bold text-gray-900 mb-2">
                 {metric.value}
               </div>
               <div className="flex items-center text-xs">

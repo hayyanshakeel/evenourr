@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { verifyFirebaseUser } from '@/lib/firebase-verify';
+import { requireEVRAdmin } from '@/lib/enterprise-auth';
 import prisma from '@/lib/db';
 
 export const runtime = 'nodejs';
@@ -26,11 +26,11 @@ export async function POST(request: NextRequest) {
 
 export async function GET(request: NextRequest) {
   try {
-    const result = await verifyFirebaseUser(request);
-    if ('error' in result) {
-      return NextResponse.json({ error: result.error }, { status: result.status });
+    const verification = await requireEVRAdmin(request);
+    if (!verification.valid) {
+      return NextResponse.json({ error: verification.error || 'Unauthorized' }, { status: 401 });
     }
-    const { user } = result;
+    const { user } = verification;
     if (user.role !== 'admin') {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
     }

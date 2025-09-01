@@ -10,6 +10,7 @@ import { AdminOrder } from "@/lib/admin-data"
 import { useAdminAuth } from "@/hooks/useAdminAuth"
 import { useSettings } from "@/hooks/useSettings"
 import { formatCurrency } from "@/lib/currencies"
+import { secureAdminApi } from '@/lib/secure-admin-api';
 
 export default function OrderDetailsPage() {
   const params = useParams()
@@ -29,34 +30,26 @@ export default function OrderDetailsPage() {
 
   async function fetchOrder() {
     try {
-      const response = await makeAuthenticatedRequest(`/api/admin/orders/${orderId}`)
-      if (response.ok) {
-        const data = await response.json()
+      const response = await secureAdminApi.getOrder(String(orderId))
+      if (response.success) {
+        const data: any = (response as any).data || response
         setOrder(data)
       }
     } catch (error) {
-      console.error('Failed to fetch order:', error)
-    } finally {
-      setLoading(false)
-    }
+      console.error('Failed to fetch order via gateway:', error)
+    } finally { setLoading(false) }
   }
 
   async function updateStatus(nextStatus: string) {
     try {
       setUpdating(true)
-      const res = await makeAuthenticatedRequest(`/api/admin/orders/${orderId}`, {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ status: nextStatus })
-      })
-      if (!res.ok) throw new Error(`Failed to update status (${res.status})`)
+      const res = await secureAdminApi.updateOrderStatus(String(orderId), nextStatus)
+      if (!res.success) throw new Error(res.error || 'Failed to update status')
       await fetchOrder()
     } catch (err) {
       console.error('updateStatus failed', err)
       alert(err instanceof Error ? err.message : 'Failed to update status')
-    } finally {
-      setUpdating(false)
-    }
+    } finally { setUpdating(false) }
   }
 
   async function cancelOrder() {

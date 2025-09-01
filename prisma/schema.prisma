@@ -5,17 +5,19 @@ generator client {
 
 datasource db {
   provider = "sqlite"
-  url      = env("DATABASE_URL") // Local SQLite for schema management, Turso handled in runtime
+  url      = "file:./dev.db" // Schema operations use local SQLite, runtime uses Turso via adapter
 }
 
 // User model for authentication and authorization
 model User {
   id                    Int      @id @default(autoincrement())
   email                 String   @unique
-  password              String
+  password              String?  // For EVR auth
+  passwordHash          String?  // For EVR auth with bcrypt
   firstName             String
   lastName              String
-  role                  String   @default("user") // user, admin, moderator
+  name                  String?  // Full name for enterprise users
+  role                  String   @default("user") // user, admin, moderator, STORE_OWNER
   isActive              Boolean  @default(true)
   emailVerified         Boolean  @default(false)
   emailVerificationToken String?
@@ -24,6 +26,13 @@ model User {
   lastLogin             DateTime?
   failedLoginAttempts   Int      @default(0)
   lockedUntil           DateTime?
+  
+  // Enterprise store fields
+  storeName             String?  // Store name for enterprise users
+  databaseUrl           String?  // Dedicated Turso database URL
+  databaseToken         String?  // Turso auth token for database access
+  securityLevel         String   @default("STANDARD") // STANDARD, ENHANCED, MAXIMUM
+  
   createdAt             DateTime @default(now())
   updatedAt             DateTime @updatedAt
 
@@ -32,6 +41,7 @@ model User {
   carts     Cart[]
   sessions  UserSession[]
   returns   ReturnRequest[]
+  authCredentials AuthCredentials? // Link to auth credentials
 }
 
 // User sessions for secure session management
@@ -47,11 +57,13 @@ model UserSession {
 }
 
 model Category {
-  id        Int      @id @default(autoincrement())
-  name      String   @unique
-  products  Product[]
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  id          Int      @id @default(autoincrement())
+  name        String   @unique
+  description String?
+  imageUrl    String?
+  products    Product[]
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
 }
 
 model Product {
@@ -550,4 +562,31 @@ model CmsLayout {
   published Boolean  @default(false)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+}
+
+// Authentication credentials table (separate from User for security)
+model AuthCredentials {
+  id            String   @id @default(cuid())
+  email         String   @unique
+  passwordHash  String   // bcrypt hashed password
+  salt          String   // Additional salt for extra security
+  isActive      Boolean  @default(true)
+  lastLogin     DateTime?
+  failedAttempts Int     @default(0)
+  lockedUntil   DateTime?
+  securityLevel String   @default("ENHANCED") // STANDARD, ENHANCED, MAXIMUM
+  
+  // Enterprise fields
+  storeName     String?  // Associated store name
+  databaseUrl   String?  // Dedicated Turso database URL  
+  databaseToken String?  // Turso auth token
+  
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+  
+  // Link to user profile (if needed)
+  userId        Int?     @unique
+  user          User?    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  @@map("auth_credentials")
 }

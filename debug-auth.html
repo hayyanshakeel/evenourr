@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Debug Admin Auth Flow</title>
+    <script>
+        async function testLoginFlow() {
+            document.getElementById('status').innerHTML = 'Testing login flow...';
+            
+            try {
+                // Step 1: Login
+                const loginResp = await fetch('https://admin-api-gateway.evenour-in.workers.dev/hatsadmin/auth/login', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ username: 'admin', password: 'Admin@123!Secure' })
+                });
+                const loginData = await loginResp.json();
+                
+                if (!loginData.success) {
+                    document.getElementById('status').innerHTML = `Login failed: ${loginData.error}`;
+                    return;
+                }
+                
+                document.getElementById('status').innerHTML += `<br>✅ Login successful, token received`;
+                
+                // Step 2: Validate token
+                const validateResp = await fetch('https://admin-api-gateway.evenour-in.workers.dev/hatsadmin/auth/validate', {
+                    method: 'GET',
+                    headers: { 'Authorization': `Bearer ${loginData.token}` }
+                });
+                const validateData = await validateResp.json();
+                
+                if (!validateData.success) {
+                    document.getElementById('status').innerHTML += `<br>❌ Validation failed: ${validateData.error}`;
+                    return;
+                }
+                
+                document.getElementById('status').innerHTML += `<br>✅ Token validation successful`;
+                document.getElementById('status').innerHTML += `<br>Token: ${loginData.token}`;
+                document.getElementById('status').innerHTML += `<br>User: ${JSON.stringify(validateData.user, null, 2)}`;
+                
+                // Step 3: Decode token locally
+                try {
+                    const decoded = JSON.parse(atob(loginData.token));
+                    document.getElementById('status').innerHTML += `<br>✅ Local decode successful`;
+                    document.getElementById('status').innerHTML += `<br>Decoded: ${JSON.stringify(decoded, null, 2)}`;
+                    
+                    const now = Math.floor(Date.now() / 1000);
+                    const isExpired = decoded.exp <= now;
+                    document.getElementById('status').innerHTML += `<br>Token expired: ${isExpired}`;
+                    document.getElementById('status').innerHTML += `<br>Current time: ${now}, Token exp: ${decoded.exp}`;
+                } catch (e) {
+                    document.getElementById('status').innerHTML += `<br>❌ Local decode failed: ${e.message}`;
+                }
+                
+            } catch (error) {
+                document.getElementById('status').innerHTML += `<br>❌ Network error: ${error.message}`;
+            }
+        }
+    </script>
+</head>
+<body>
+    <h1>Debug Admin Auth Flow</h1>
+    <button onclick="testLoginFlow()">Test Complete Login Flow</button>
+    <div id="status"></div>
+</body>
+</html>

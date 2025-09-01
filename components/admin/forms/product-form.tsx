@@ -7,6 +7,7 @@ import { useSettings } from "@/hooks/useSettings";
 import { CURRENCIES } from "@/lib/currencies";
 import { Product } from '@prisma/client';
 import { PhotoIcon, XMarkIcon } from '@heroicons/react/24/outline';
+import { secureAdminApi } from '@/lib/secure-admin-api';
 
 // This interface defines the props the component accepts.
 interface ProductFormProps {
@@ -35,33 +36,18 @@ export function ProductForm({ initialData }: ProductFormProps) {
   const [categories, setCategories] = useState<{ id: number; name: string }[]>([]);
   const [categoryId, setCategoryId] = useState<string>(initialData?.categoryId ? String(initialData.categoryId) : '');
 
-  const fetchCategories = async () => {
-    console.log('ProductForm: Starting to fetch categories...');
-    try {
-      const res = await makeAuthenticatedRequest('/api/admin/categories', {
-        cache: 'no-store',
-        headers: {
-          'Cache-Control': 'no-cache',
-        }
-      });
-      console.log('ProductForm: Categories response status:', res.status);
-      if (!res.ok) {
-        throw new Error(`Failed to fetch categories: ${res.status}`);
-      }
-      const data = await res.json();
-      const list = Array.isArray(data) ? data : (data?.data ?? []);
-      console.log('ProductForm: Categories loaded:', list);
-      setCategories(list);
-    } catch (err) {
-      console.error('ProductForm: Error fetching categories:', err);
-      setError('Failed to load categories');
-    }
-  };
-
   useEffect(() => {
-    if (!isReady || !isAuthenticated || loadedRef.current) return;
-    loadedRef.current = true;
-    fetchCategories();
+    async function loadCategories() {
+      if (!isReady || !isAuthenticated) return;
+      try {
+        const cats = await secureAdminApi.getCategories();
+        if (cats.success) setCategories((cats as any).data?.categories || (cats as any).categories || []);
+      } catch (e) { console.error('Failed loading categories via gateway', e); }
+    }
+    loadCategories();
+    async function fetchCategories() { await loadCategories(); }
+    // Expose for refresh button
+    (window as any).refreshCategories = fetchCategories;
   }, [isReady, isAuthenticated]);
 
   // Handles changes in text inputs, textareas, and selects.
@@ -319,7 +305,7 @@ export function ProductForm({ initialData }: ProductFormProps) {
                     </label>
                     <button
                       type="button"
-                      onClick={fetchCategories}
+                      onClick={() => (window as any).refreshCategories?.()}
                       className="text-xs text-blue-600 hover:text-blue-500"
                     >
                       Refresh

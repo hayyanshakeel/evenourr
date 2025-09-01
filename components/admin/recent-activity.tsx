@@ -6,6 +6,7 @@ import { useEffect, useState } from "react"
 import { useAdminAuth } from "@/hooks/useAdminAuth"
 import { useSettings } from "@/hooks/useSettings"
 import { formatCurrency } from "@/lib/currencies"
+import { secureAdminApi } from '@/lib/secure-admin-api';
 
 interface ActivityItem {
   type: string;
@@ -50,46 +51,18 @@ export function RecentActivity() {
       }
 
       try {
-        // Use real dashboard metrics endpoint
-        const response = await makeAuthenticatedRequest('/api/admin/dashboard/metrics')
-        
-        if (!isMounted) return
-        
-        if (response.ok) {
-          const raw = await response.json()
-          const data = raw?.data ?? raw
-          // Map recent orders from real data to activity items
-          if (Array.isArray(data.recentOrders)) {
-            const mappedActivities: ActivityItem[] = data.recentOrders.map((order: any) => {
-              const createdAt = order.createdAt ? new Date(order.createdAt) : new Date()
-              const customerName = order.customer?.name || 'Guest'
-              const totalPrice = typeof order.totalPrice === 'number' ? order.totalPrice : 0
-              const numItems = Array.isArray(order.orderItems) ? order.orderItems.length : 0
-              const status = (order.status || '').toLowerCase()
-              const activityStatus: ActivityItem['status'] = status === 'cancelled' ? 'error' : status === 'pending' ? 'warning' : 'success'
-              return {
-                type: 'order',
-                title: `Order #${order.id} - ${order.status || 'unknown'}`,
-                description: `${customerName} • ${formatCurrency(totalPrice, currency)} • ${numItems} items`,
-                time: createdAt.toLocaleString(),
-                icon: iconMap.order,
-                status: activityStatus,
-              }
-            })
-            setActivities(mappedActivities)
-          } else {
-            setActivities([])
+          let res = await secureAdminApi.getDashboardMetrics();
+          if (!res.success) {
+            res = await secureAdminApi.getDashboardStats();
           }
-        } else {
-          console.error('Failed to fetch recent activities:', response.status)
+          if (res.success) {
+            setActivities((res as any).recentActivity || []);
+          }
+        } catch (e) {
+          console.error('Failed loading recent activity via gateway', e);
+        } finally {
+          setLoading(false);
         }
-      } catch (error) {
-        console.error('Failed to fetch recent activities:', error)
-        // Fallback to empty state instead of dummy data
-        if (isMounted) setActivities([])
-      } finally {
-        if (isMounted) setLoading(false)
-      }
     }
 
     fetchActivities()
@@ -97,14 +70,14 @@ export function RecentActivity() {
     return () => {
       isMounted = false
     }
-  }, [isReady, isAuthenticated]) // Only depend on auth state
+  }, [isReady, isAuthenticated, makeAuthenticatedRequest]) // Only depend on auth state
 
   if (loading) {
     return (
-      <Card>
+      <Card className="admin-card">
         <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Activity className="h-5 w-5" />
+          <CardTitle className="flex items-center gap-2 text-slate-900">
+            <Activity className="h-5 w-5 text-slate-700" />
             Recent Activity
           </CardTitle>
         </CardHeader>
@@ -126,11 +99,11 @@ export function RecentActivity() {
     )
   }
 
-  return (
-    <Card>
+      return (
+    <Card className="admin-card">
       <CardHeader>
-        <CardTitle className="flex items-center gap-2">
-          <Activity className="h-5 w-5" />
+        <CardTitle className="flex items-center gap-2 text-slate-900">
+          <Activity className="h-5 w-5 text-slate-700" />
           Recent Activity
         </CardTitle>
       </CardHeader>

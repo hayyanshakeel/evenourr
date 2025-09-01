@@ -118,6 +118,15 @@ const PlayIcon = () => (
   </svg>
 );
 
+const CategoryIcon = () => (
+  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+    <rect x="3" y="3" width="7" height="7" />
+    <rect x="14" y="3" width="7" height="7" />
+    <rect x="14" y="14" width="7" height="7" />
+    <rect x="3" y="14" width="7" height="7" />
+  </svg>
+);
+
 const TrashIcon = () => (
   <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
     <polyline points="3,6 5,6 21,6" />
@@ -125,7 +134,7 @@ const TrashIcon = () => (
   </svg>
 );
 
-type RightView = 'builder' | 'search' | 'cart' | 'listBlog' | 'page' | 'header' | 'footer';
+type RightView = 'builder' | 'search' | 'cart' | 'listBlog' | 'page' | 'header' | 'footer' | 'category';
 
 interface RightPanelProps {
   asideRef: React.RefObject<HTMLDivElement>;
@@ -133,44 +142,71 @@ interface RightPanelProps {
   setRightView: (view: RightView) => void;
   viewport?: 'mobile' | 'tablet' | 'desktop';
   onLayoutChange?: (items: Array<{ title: string; type: string; subtitle?: string; badge?: string }>) => void;
+  onCategoryLayoutChange?: (layoutName: string, layoutData: any) => void;
 }
 
-export default function RightPanel({ asideRef, rightView, setRightView, viewport = 'mobile', onLayoutChange }: RightPanelProps) {
-  const [pages, setPages] = useState<Array<{ id: string; name: string; thumbnail?: string; type?: string; isAdd?: boolean }>>(() => {
-    // Try to load pages from localStorage, fallback to default
+export default function RightPanel({ asideRef, rightView, setRightView, viewport = 'mobile', onLayoutChange, onCategoryLayoutChange }: RightPanelProps) {
+  const [pages, setPages] = useState<Array<{ id: string; name: string; thumbnail?: string; type?: string; isAdd?: boolean }>>([
+    { 
+      id: 'home', 
+      name: 'Home', 
+      type: 'home',
+      thumbnail: 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="120" height="80"><rect width="120" height="80" fill="%23f3f4f6"/><circle cx="20" cy="20" r="8" fill="%236366f1"/><rect x="35" y="15" width="70" height="3" rx="1" fill="%23d1d5db"/><rect x="35" y="22" width="50" height="3" rx="1" fill="%23d1d5db"/><rect x="15" y="35" width="90" height="35" rx="4" fill="%23e5e7eb"/></svg>' 
+    },
+    {
+      id: 'add',
+      name: 'Add',
+      isAdd: true
+    }
+  ]);
+  const [activePageId, setActivePageId] = useState<string>('home');
+  
+  // Helper to generate a unique page id like "page-1", "page-2", ... without collisions
+  const generateUniquePageId = (existing: Array<{ id: string; isAdd?: boolean }>) => {
+    const used = new Set<number>();
+    for (const p of existing) {
+      const m = /^page-(\d+)$/.exec(p.id);
+      if (m) used.add(Number(m[1]));
+    }
+    let n = 1;
+    while (used.has(n)) n++;
+    return `page-${n}`;
+  };
+  const [isHydrated, setIsHydrated] = useState(false);
+
+  // Hydrate from localStorage after component mounts
+  useEffect(() => {
     try {
-      const saved = localStorage.getItem('cmsPages');
-      if (saved) {
-        return JSON.parse(saved);
+      const savedPageId = localStorage.getItem('cmsActivePageId');
+      const savedPages = localStorage.getItem('cmsPages');
+      
+      if (savedPageId) {
+        setActivePageId(savedPageId);
+      }
+      
+      if (savedPages) {
+        const parsedPages = JSON.parse(savedPages);
+        // Filter out any existing 'add' pages to avoid duplicates
+        const pagesWithoutAdd = (parsedPages as any[]).filter((p: any) => !p.isAdd);
+        // Deduplicate by id to avoid duplicate keys
+        const uniqueByIdMap = new Map<string, any>();
+        for (const p of pagesWithoutAdd) {
+          if (p && typeof p.id === 'string' && !uniqueByIdMap.has(p.id)) {
+            uniqueByIdMap.set(p.id, p);
+          }
+        }
+        const uniquePages = Array.from(uniqueByIdMap.values());
+        const pagesWithAdd = [...uniquePages, { id: 'add', name: 'Add', isAdd: true }];
+        setPages(pagesWithAdd);
       }
     } catch {}
-    
-    return [
-      { 
-        id: 'home', 
-        name: 'Home', 
-        type: 'home',
-        thumbnail: 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="120" height="80"><rect width="120" height="80" fill="%23f3f4f6"/><circle cx="20" cy="20" r="8" fill="%236366f1"/><rect x="35" y="15" width="70" height="3" rx="1" fill="%23d1d5db"/><rect x="35" y="22" width="50" height="3" rx="1" fill="%23d1d5db"/><rect x="15" y="35" width="90" height="35" rx="4" fill="%23e5e7eb"/></svg>' 
-      },
-      {
-        id: 'add',
-        name: 'Add',
-        isAdd: true
-      }
-    ];
-  });
-  const [activePageId, setActivePageId] = useState<string>(() => {
-    // Try to load active page ID from localStorage, fallback to 'home'
-    try {
-      const saved = localStorage.getItem('cmsActivePageId');
-      return saved || 'home';
-    } catch {
-      return 'home';
-    }
-  });
+    setIsHydrated(true);
+  }, []);
   const [startIndex, setStartIndex] = useState<number>(0);
   const [showAddWidget, setShowAddWidget] = useState<boolean>(false);
-  const [showPageCapture, setShowPageCapture] = useState<boolean>(false);
+
+
+
   // Store layouts for pages
   const [pageLayouts, setPageLayouts] = useState<Record<string, Array<{ title: string; type: string; subtitle?: string; badge?: string }>>>({
     'home': []
@@ -202,7 +238,7 @@ export default function RightPanel({ asideRef, rightView, setRightView, viewport
     if (Array.isArray(input)) {
       return input.map(sanitizeForLayout);
     }
-    if (typeof input === 'object') {
+    if (typeof input === 'object' && input !== null) {
       const out: any = Array.isArray(input) ? [] : {};
       for (const key of Object.keys(input)) {
         const val = (input as any)[key];
@@ -221,19 +257,23 @@ export default function RightPanel({ asideRef, rightView, setRightView, viewport
     console.log('HeaderOverviewPanel onChange:', v);
     setHeaderNavConfig(v);
     // Update the header item in currentPageLayout with the new config
-    setPageLayouts(prev => ({
-      ...prev,
-      [activePageId]: (prev[activePageId] || []).map((it: any) => 
-        it.type === 'header' ? { 
-          ...it, 
-          // Persist a sanitized config (no React nodes) to the layout used by the renderer
-          headerNav: sanitizeForLayout({
-            ...it.headerNav,
-            ...v
-          })
-        } : it
-      )
-    }));
+    setPageLayouts(prev => {
+      const currentLayout = prev[activePageId];
+      const safeLayout = Array.isArray(currentLayout) ? currentLayout : [];
+      return {
+        ...prev,
+        [activePageId]: safeLayout.map((it: any) => 
+          it.type === 'header' ? { 
+            ...it, 
+            // Persist a sanitized config (no React nodes) to the layout used by the renderer
+            headerNav: sanitizeForLayout({
+              ...it.headerNav,
+              ...v
+            })
+          } : it
+        )
+      };
+    });
     // Bridge to Renderer via localStorage event to force refresh
     try {
       localStorage.setItem('cmsHeaderState', JSON.stringify(sanitizeForLayout(v)));
@@ -329,7 +369,9 @@ export default function RightPanel({ asideRef, rightView, setRightView, viewport
   // Persist pages to localStorage
   useEffect(() => {
     try {
-      localStorage.setItem('cmsPages', JSON.stringify(pages));
+      // Only save non-add pages to prevent duplicate "add" pages on hydration
+      const pagesForStorage = pages.filter(p => !p.isAdd);
+      localStorage.setItem('cmsPages', JSON.stringify(pagesForStorage));
     } catch {}
   }, [pages]);
 
@@ -380,62 +422,90 @@ export default function RightPanel({ asideRef, rightView, setRightView, viewport
   }, [currentPageLayout, rightView, layoutLoaded]); // Removed headerNavConfig to prevent circular dependency
 
   const addPage = () => {
-    setShowPageCapture(true);
-  };
-
-  const createStaticPage = (pageType: string) => {
-    const pageTypeNames: Record<string, string> = {
-      'home': 'Home Page',
-      'listBlog': 'List Blog',
-      'wishlist': 'Wishlist',
-      'profile': 'Profile', 
-      'cart': 'Shopping Cart',
-      'search': 'Search Results',
-      'about': 'About Us',
-      'contact': 'Contact',
-      'category': 'Category Page',
-      'product': 'Product Page'
-    };
-
-    const generateThumbnail = (type: string) => {
-      const thumbnails: Record<string, string> = {
-        'home': 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="120" height="80"><rect width="120" height="80" fill="%23f3f4f6"/><circle cx="20" cy="20" r="8" fill="%236366f1"/><rect x="35" y="15" width="70" height="3" rx="1" fill="%23d1d5db"/></svg>',
-        'listBlog': 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="120" height="80"><rect width="120" height="80" fill="%23f9fafb"/><rect x="10" y="10" width="100" height="12" rx="2" fill="%23f59e0b"/></svg>',
-        'wishlist': 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="120" height="80"><rect width="120" height="80" fill="%23fef2f2"/><path d="M60 25c-8-12-24-12-24 0-6 15 12 25 24 30 12-5 30-15 24-30 0-12-16-12-24 0z" fill="%23ef4444"/></svg>',
-        'profile': 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="120" height="80"><rect width="120" height="80" fill="%23f0f9ff"/><circle cx="60" cy="30" r="12" fill="%233b82f6"/></svg>',
-        'cart': 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="120" height="80"><rect width="120" height="80" fill="%23f0fdf4"/><rect x="30" y="25" width="60" height="40" rx="4" fill="none" stroke="%2316a34a" stroke-width="2"/></svg>',
-        'search': 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="120" height="80"><rect width="120" height="80" fill="%23fefce8"/><circle cx="50" cy="35" r="15" fill="none" stroke="%23eab308" stroke-width="3"/><line x1="62" y1="47" x2="75" y2="60" stroke="%23eab308" stroke-width="3"/></svg>',
-        'about': 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="120" height="80"><rect width="120" height="80" fill="%23faf5ff"/><circle cx="60" cy="40" r="20" fill="%23a855f7"/><text x="60" y="48" text-anchor="middle" fill="white" font-size="16" font-family="Arial">i</text></svg>',
-        'contact': 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="120" height="80"><rect width="120" height="80" fill="%23ecfdf5"/><rect x="25" y="25" width="70" height="30" rx="4" fill="none" stroke="%2310b981" stroke-width="2"/><path d="M25 25l35 20 35-20" fill="none" stroke="%2310b981" stroke-width="2"/></svg>',
-        'category': 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="120" height="80"><rect width="120" height="80" fill="%23fff7ed"/><rect x="15" y="15" width="25" height="25" rx="3" fill="%23f97316"/><rect x="47" y="15" width="25" height="25" rx="3" fill="%23f97316"/><rect x="79" y="15" width="25" height="25" rx="3" fill="%23f97316"/><rect x="15" y="47" width="25" height="25" rx="3" fill="%23f97316"/></svg>',
-        'product': 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="120" height="80"><rect width="120" height="80" fill="%23fef7f0"/><rect x="30" y="15" width="60" height="40" rx="4" fill="%23fb923c"/><rect x="35" y="60" width="50" height="3" rx="1" fill="%23d1d5db"/><rect x="40" y="67" width="40" height="3" rx="1" fill="%23d1d5db"/></svg>'
-      };
-      return thumbnails[type] || thumbnails['home'];
-    };
-
-    // Remove the Add page temporarily
+    // Create a simple blank page with just header
     const pagesWithoutAdd = pages.filter(p => !p.isAdd);
-    const idx = pagesWithoutAdd.length + 1;
+    const newId = generateUniquePageId(pagesWithoutAdd);
+    const newIndex = Number(/^page-(\d+)$/.exec(newId)?.[1] || pagesWithoutAdd.length + 1);
     const newPage = {
-      id: `page-${idx}`,
-      name: pageTypeNames[pageType] || `Page ${idx}`,
-      type: pageType,
-      thumbnail: generateThumbnail(pageType)
+      id: newId,
+      name: 'Static Page',
+      type: 'static',
+      thumbnail: 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="120" height="80"><rect width="120" height="80" fill="%23f8f9fa"/><rect x="10" y="10" width="100" height="15" rx="2" fill="%236366f1"/></svg>'
     };
 
-    // Insert the new page before the Add page
+    // Insert the new page before the Add page, ensuring only one Add page exists
     const updatedPages = [...pagesWithoutAdd, newPage, { id: 'add', name: 'Add', isAdd: true }];
     setPages(updatedPages);
     
-    // Copy home layout to new page (as a starting point)
-    const homeLayout = pageLayouts['home'] || [];
+    // Create blank layout with just the configured header
+    const currentHeaderLayout = pageLayouts['home']?.find((item: any) => item.type === 'header') || {
+      title: 'Header',
+      type: 'header',
+      subtitle: 'Navigation bar'
+    };
+    
     setPageLayouts(prev => ({
       ...prev,
-      [newPage.id]: [...homeLayout] // Create a copy of home layout
+      [newPage.id]: [currentHeaderLayout] // Start with just the header
     }));
     
     setActivePageId(newPage.id);
-    setShowPageCapture(false);
+    
+    // Adjust startIndex to show the new page if it's beyond the current view
+    const newPageIndex = updatedPages.findIndex(p => p.id === newPage.id);
+    if (newPageIndex >= startIndex + 5) {
+      setStartIndex(Math.max(0, newPageIndex - 4)); // Show new page at the end of the 5-page view
+    }
+  };
+  const deletePage = () => {
+    // Don't allow deleting the home page or if only home page exists
+    if (activePageId === 'home') {
+      alert('Cannot delete the home page');
+      return;
+    }
+    
+    const pagesWithoutAdd = pages.filter(p => !p.isAdd);
+    if (pagesWithoutAdd.length <= 1) {
+      alert('Cannot delete the last remaining page');
+      return;
+    }
+
+    // Confirm deletion
+    if (!confirm(`Are you sure you want to delete "${pages.find(p => p.id === activePageId)?.name}"?`)) {
+      return;
+    }
+
+    // Remove the page from pages array
+    const updatedPages = pages.filter(p => p.id !== activePageId);
+    setPages(updatedPages);
+
+    // Remove the page layout
+    setPageLayouts(prev => {
+      const newLayouts = { ...prev };
+      delete newLayouts[activePageId];
+      return newLayouts;
+    });
+
+    // Switch to home page
+    setActivePageId('home');
+    
+    // Adjust startIndex if necessary after deletion
+    const maxStartIndex = Math.max(0, updatedPages.length - 5);
+    if (startIndex > maxStartIndex) {
+      setStartIndex(maxStartIndex);
+    }
+    
+    // Update localStorage
+    try {
+      const updatedPagesForStorage = updatedPages.filter(p => !p.isAdd);
+      localStorage.setItem('cmsPages', JSON.stringify(updatedPagesForStorage));
+      localStorage.setItem('cmsActivePageId', 'home');
+      
+      // Trigger page change event
+      setTimeout(() => {
+        window.dispatchEvent(new Event('cmsPageChanged'));
+      }, 10);
+    } catch {}
   };
 
   const VISIBLE = 2; // Show home page and add page
@@ -459,7 +529,7 @@ export default function RightPanel({ asideRef, rightView, setRightView, viewport
     >
       {/* Breadcrumb + Delete - starts from very top */}
       <div
-        className="flex items-center justify-between px-4 py-3 bg-black"
+        className="bg-black"
         style={{ 
           borderBottom: '1px solid #1f1f22', 
           position: 'sticky', 
@@ -467,55 +537,218 @@ export default function RightPanel({ asideRef, rightView, setRightView, viewport
           zIndex: 10
         }}
       >
-        <div className="flex items-center gap-2 text-sm text-gray-300">
-          <span className="text-gray-400">App Info</span>
-          <span className="text-gray-600">›</span>
-          <span className="text-white font-medium">{pages.find(p => p.id === activePageId)?.name || 'Home'}</span>
+        {/* Top row with breadcrumb, delete, and navigation arrows */}
+        <div className="flex items-center justify-between px-4 pt-3 pb-2">
+          <div className="flex items-center gap-2 text-sm text-gray-300">
+            <span className="text-gray-400">App Info</span>
+            <span className="text-gray-600">›</span>
+            <span className="text-white font-medium">{pages.find(p => p.id === activePageId)?.name || 'Home'}</span>
+          </div>
+          <div className="flex items-center gap-3">
+            {/* Navigation arrows at top right - always visible, blue, larger */}
+            {(() => {
+              const nonAddPages = visibleItems.filter(p => !p.isAdd);
+              const maxStartIndex = Math.max(0, nonAddPages.length - 3);
+              const canPageLeft = startIndex > 0;
+              const canPageRight = startIndex < maxStartIndex;
+              
+              console.log('Arrow Debug:', {
+                nonAddPagesCount: nonAddPages.length,
+                startIndex,
+                maxStartIndex,
+                canPageLeft,
+                canPageRight
+              });
+              
+              return (
+                <div className="flex gap-2 mr-2">
+                  <button
+                    onClick={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      console.log('Left arrow clicked, current startIndex:', startIndex);
+                      setStartIndex(prev => {
+                        const newIndex = Math.max(0, prev - 1);
+                        console.log('Setting startIndex from', prev, 'to', newIndex);
+                        return newIndex;
+                      });
+                    }}
+                    className={`w-7 h-7 bg-blue-700 hover:bg-blue-800 text-white rounded flex items-center justify-center transition-colors ${!canPageLeft ? 'opacity-40 cursor-not-allowed' : ''}`}
+                    title="Previous pages"
+                    disabled={!canPageLeft}
+                    type="button"
+                  >
+                    <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+                      <polyline points="10,4 6,8 10,12" />
+                    </svg>
+                  </button>
+                  <button
+                    onClick={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      console.log('Right arrow clicked, current startIndex:', startIndex, 'maxStartIndex:', maxStartIndex);
+                      setStartIndex(prev => {
+                        const newIndex = Math.min(maxStartIndex, prev + 1);
+                        console.log('Setting startIndex from', prev, 'to', newIndex);
+                        return newIndex;
+                      });
+                    }}
+                    className={`w-7 h-7 bg-blue-700 hover:bg-blue-800 text-white rounded flex items-center justify-center transition-colors ${!canPageRight ? 'opacity-40 cursor-not-allowed' : ''}`}
+                    title="Next pages"
+                    disabled={!canPageRight}
+                    type="button"
+                  >
+                    <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+                      <polyline points="6,4 10,8 6,12" />
+                    </svg>
+                  </button>
+                </div>
+              );
+            })()}
+            <button 
+              className="flex items-center gap-1 text-red-400 text-sm hover:text-red-300 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              onClick={deletePage}
+              disabled={activePageId === 'home'}
+              title={activePageId === 'home' ? 'Cannot delete home page' : 'Delete current page'}
+            >
+              <TrashIcon />
+              Delete
+            </button>
+          </div>
         </div>
-        <button className="flex items-center gap-1 text-red-400 text-sm hover:text-red-300">
-          <TrashIcon />
-          Delete
-        </button>
+        
+        {/* Arrows are now rendered near delete, leaving old ones too */}
       </div>
 
       {/* Pages row */}
-      <div className="px-6 pt-6">
-        <div className="flex items-center justify-center pb-4 gap-4">
-          {visibleItems.map((p) => (
-            <div key={p.id} className="flex flex-col items-center">
-              <div
-                className="rounded-md transition-colors cursor-pointer"
-                style={{
-                  width: 72,
-                  height: 104,
-                  border: p.isAdd ? '1px dashed #3a3a42' : (activePageId === p.id ? '2px solid #2563eb' : '1px solid #2a2a30'),
-                  background: '#111317',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center'
-                }}
-                onClick={() => {
-                  if (p.isAdd) addPage(); else setActivePageId(p.id);
-                }}
-              >
-                {p.isAdd ? (
-                  <span className="text-gray-300 text-xl">+</span>
-                ) : p.thumbnail ? (
-                  // eslint-disable-next-line @next/next/no-img-element
-                  <img src={p.thumbnail} alt={p.name} style={{ width: 64, height: 90, objectFit: 'cover', borderRadius: 6 }} />
-                ) : (
-                  <div className="w-10 h-10 rounded-full border-2 border-dashed" style={{ borderColor: '#3a3a42' }} />
-                )}
-              </div>
-              <div className="text-[10px] text-white mt-1">{p.name}</div>
-            </div>
-          ))}
+      <div className="px-6 pt-2">
+        {/* Navigation arrows moved to sticky header row */}
+        <div className="flex items-center justify-start pb-4 gap-4 relative">
+          {/* Debug info removed */}
+          {/* Pages display area - always show the Add page at the end */}
+          <div className="flex items-center gap-4 overflow-hidden transition-all duration-300 w-full">
+            {(() => {
+              // Always show 4 pages + Add button if paginated
+              const nonAddPages = visibleItems.filter(p => !p.isAdd);
+              const addPageObj = visibleItems.find(p => p.isAdd);
+              const paged = nonAddPages.slice(startIndex, startIndex + 4);
+              const result = [...paged];
+              if (addPageObj) result.push(addPageObj);
+              
+              console.log('Page Display Debug:', {
+                totalNonAddPages: nonAddPages.length,
+                startIndex,
+                pagedPageNames: paged.map(p => p.name),
+                resultPageNames: result.map(p => p.name)
+              });
+              
+              return result.map((p) => (
+                <div key={p.id} className="flex flex-col items-center relative group flex-shrink-0">
+                  <div
+                    className="rounded-md transition-colors cursor-pointer relative"
+                    style={{
+                      width: 72,
+                      height: 104,
+                      border: p.isAdd ? '1px dashed #3a3a42' : (activePageId === p.id ? '2px solid #2563eb' : '1px solid #2a2a30'),
+                      background: '#111317',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center'
+                    }}
+                    onClick={() => {
+                      if (p.isAdd) {
+                        addPage();
+                      } else {
+                        setActivePageId(p.id);
+                        // Set the rightView based on the page type
+                        let nextView: RightView = 'builder';
+                        if (p.type === 'home') nextView = 'builder';
+                        else if (p.type === 'header') nextView = 'header';
+                        else if (p.type === 'footer') nextView = 'footer';
+                        else if (p.type === 'category') nextView = 'category';
+                        else if (p.type === 'search') nextView = 'search';
+                        else if (p.type === 'cart') nextView = 'cart';
+                        else if (p.type === 'listBlog') nextView = 'listBlog';
+                        else if (p.type === 'page') nextView = 'page';
+                        setRightView(nextView);
+                        setTimeout(() => {
+                          window.dispatchEvent(new Event('cmsPageChanged'));
+                        }, 10);
+                      }
+                    }}
+                  >
+                    {p.isAdd ? (
+                      <span className="text-gray-300 text-xl">+</span>
+                    ) : p.thumbnail ? (
+                      <img src={p.thumbnail} alt={p.name} style={{ width: 64, height: 90, objectFit: 'cover', borderRadius: 6 }} />
+                    ) : (
+                      <div className="w-10 h-10 rounded-full border-2 border-dashed" style={{ borderColor: '#3a3a42' }} />
+                    )}
+                    {/* Delete button on hover - only for non-home, non-add pages */}
+                    {!p.isAdd && p.id !== 'home' && (
+                      <button
+                        className="absolute top-1 right-1 w-6 h-6 bg-red-500 hover:bg-red-600 text-white rounded-full flex items-center justify-center text-xs opacity-0 group-hover:opacity-100 transition-opacity z-10"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          if (confirm(`Are you sure you want to delete "${p.name}"?`)) {
+                            if (activePageId === p.id) {
+                              setActivePageId('home');
+                            }
+                            const updatedPages = pages.filter(page => page.id !== p.id);
+                            setPages(updatedPages);
+                            setPageLayouts(prev => {
+                              const newLayouts = { ...prev };
+                              delete newLayouts[p.id];
+                              return newLayouts;
+                            });
+                            const maxStartIndex = Math.max(0, updatedPages.length - 4);
+                            if (startIndex > maxStartIndex) {
+                              setStartIndex(maxStartIndex);
+                            }
+                            try {
+                              const updatedPagesForStorage = updatedPages.filter(page => !page.isAdd);
+                              localStorage.setItem('cmsPages', JSON.stringify(updatedPagesForStorage));
+                              if (activePageId === p.id) {
+                                localStorage.setItem('cmsActivePageId', 'home');
+                              }
+                              setTimeout(() => {
+                                window.dispatchEvent(new Event('cmsPageChanged'));
+                              }, 10);
+                            } catch {}
+                          }
+                        }}
+                        title={`Delete ${p.name}`}
+                      >
+                        ×
+                      </button>
+                    )}
+                  </div>
+                  <div className="text-[10px] text-white mt-1">{p.name}</div>
+                </div>
+              ));
+            })()}
+          </div>
+
+
+          
+          {/* Debug info - remove this later */}
+          <div className="absolute bottom-[-20px] left-0 text-xs text-gray-500">
+            {visibleItems.length > 5 && `Pages: ${visibleItems.length}, Start: ${startIndex}, Showing: ${startIndex + 1}-${Math.min(startIndex + 5, visibleItems.length)}`}
+          </div>
         </div>
       </div>
 
       {/* DESIGN LAYOUT panel */}
       <div className="px-4 py-4 space-y-4">
-        <DesignLayoutPanel rightView={rightView} setRightView={setRightView} />
+        <DesignLayoutPanel 
+          rightView={rightView} 
+          setRightView={setRightView} 
+          pageLayouts={pageLayouts}
+          setPageLayouts={setPageLayouts}
+          activePageId={activePageId}
+          pages={pages}
+          setPages={setPages}
+        />
         {rightView === 'header' && headerNavConfig !== null && (
           <div className="mt-4">
             <HeaderOverviewPanel
@@ -551,6 +784,10 @@ export default function RightPanel({ asideRef, rightView, setRightView, viewport
               Add & Configure Footer
             </button>
           </div>
+        )}
+        
+        {rightView === 'category' && (
+          <CategoryLayoutPanel onLayoutChange={onCategoryLayoutChange} />
         )}
 
         {rightView === 'builder' && (
@@ -601,63 +838,28 @@ export default function RightPanel({ asideRef, rightView, setRightView, viewport
         />
       )}
 
-      {/* Page Capture Modal */}
-      {showPageCapture && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-          <div className="bg-black border border-[#2a2a30] rounded-lg p-6 max-w-md w-full mx-4">
-            <div className="flex items-center justify-between mb-4">
-              <h3 className="text-white text-lg font-medium">Create New Page</h3>
-              <button 
-                onClick={() => setShowPageCapture(false)} 
-                className="text-gray-400 hover:text-white"
-              >
-                ✕
-              </button>
-            </div>
-            <p className="text-gray-400 text-sm mb-6">Choose a page type to capture and create a static page based on the current layout.</p>
-            
-            <div className="grid grid-cols-2 gap-3">
-              {[
-                { key: 'home', label: 'Home Page', icon: '🏠' },
-                { key: 'listBlog', label: 'List Blog', icon: '📝' },
-                { key: 'wishlist', label: 'Wishlist', icon: '❤️' },
-                { key: 'profile', label: 'Profile', icon: '👤' },
-                { key: 'cart', label: 'Shopping Cart', icon: '🛒' },
-                { key: 'search', label: 'Search Results', icon: '🔍' },
-                { key: 'about', label: 'About Us', icon: 'ℹ️' },
-                { key: 'contact', label: 'Contact', icon: '📧' },
-                { key: 'category', label: 'Category Page', icon: '📂' },
-                { key: 'product', label: 'Product Page', icon: '📦' }
-              ].map(({ key, label, icon }) => (
-                <button
-                  key={key}
-                  onClick={() => createStaticPage(key)}
-                  className="flex flex-col items-center gap-2 p-4 rounded-lg border border-[#2a2a30] bg-[#0f0f12] hover:bg-[#151518] hover:border-[#3a3a42] transition-colors text-white"
-                >
-                  <span className="text-2xl">{icon}</span>
-                  <span className="text-xs text-center">{label}</span>
-                </button>
-              ))}
-            </div>
-
-            <div className="mt-6 flex gap-3">
-              <button 
-                onClick={() => setShowPageCapture(false)}
-                className="flex-1 px-4 py-2 rounded bg-[#2a2a30] hover:bg-[#3a3a42] text-white transition-colors"
-              >
-                Cancel
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
     </aside>
   );
 }
 
 // DESIGN LAYOUT PANEL
-function DesignLayoutPanel({ rightView, setRightView }: { rightView: RightView; setRightView: (v: RightView) => void }) {
+function DesignLayoutPanel({ 
+  rightView, 
+  setRightView, 
+  pageLayouts, 
+  setPageLayouts, 
+  activePageId,
+  pages,
+  setPages
+}: { 
+  rightView: RightView; 
+  setRightView: (v: RightView) => void;
+  pageLayouts: Record<string, Array<{ title: string; type: string; subtitle?: string; badge?: string }>>;
+  setPageLayouts: React.Dispatch<React.SetStateAction<Record<string, Array<{ title: string; type: string; subtitle?: string; badge?: string }>>>>;
+  activePageId: string;
+  pages: Array<{ id: string; name: string; thumbnail?: string; type?: string; isAdd?: boolean }>;
+  setPages: React.Dispatch<React.SetStateAction<Array<{ id: string; name: string; thumbnail?: string; type?: string; isAdd?: boolean }>>>;
+}) {
   const [open, setOpen] = useState(true);
   const [showThemeColors, setShowThemeColors] = useState(false);
   const [designColors, setDesignColors] = useState<{ header: string; body: string; footer: string }>(() => {
@@ -698,6 +900,7 @@ function DesignLayoutPanel({ rightView, setRightView }: { rightView: RightView; 
               { name: 'Cart', icon: <ShoppingCartIcon />, view: 'cart' as RightView },
               { name: 'List Blog', icon: <ListIcon />, view: 'listBlog' as RightView },
               { name: 'Page', icon: <FileTextIcon />, view: 'page' as RightView },
+              { name: 'Category', icon: <CategoryIcon />, view: 'category' as RightView },
               { name: 'Theme Settings', icon: <span className="w-4 h-4 flex items-center justify-center">
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                   <circle cx="12" cy="12" r="3"/>
@@ -715,20 +918,66 @@ function DesignLayoutPanel({ rightView, setRightView }: { rightView: RightView; 
             ].map((item) => (
               <div
                 key={item.name}
-                className={`rounded-lg p-3 text-center cursor-pointer transition-all duration-200 ${(rightView === item.view || (item.action === 'themeColors' && showThemeColors)) ? 'bg-[#1a1b1f] border border-[#2a2a30]' : 'bg-[#0f0f12] border border-[#2a2a30] hover:bg-[#151518]'}`}
+                className={`rounded-lg p-3 text-center cursor-pointer transition-all duration-200 bg-[#0f0f12] border border-[#2a2a30] hover:bg-[#151518] hover:border-[#3a3a42]`}
                 onClick={() => {
                   if (item.action === 'themeColors') {
                     setShowThemeColors(true);
                   } else if (item.view) {
-                    setRightView(item.view as RightView);
+                    // Update the current page type based on the component selected
+                    const componentType = item.view;
+                    
+                    // Update the page type in pages array
+                    setPages(prev => prev.map(p => 
+                      p.id === activePageId 
+                        ? { ...p, type: componentType, name: item.name === 'Category' ? 'Category Page' : item.name }
+                        : p
+                    ));
+                    
+                    // Store page type in localStorage for MainCanvas to pick up
+                    try {
+                      const savedPages = localStorage.getItem('cmsPages');
+                      if (savedPages) {
+                        const pages = JSON.parse(savedPages);
+                        const updatedPages = pages.map((p: any) => 
+                          p.id === activePageId 
+                            ? { ...p, type: componentType, name: item.name === 'Category' ? 'Category Page' : item.name }
+                            : p
+                        );
+                        localStorage.setItem('cmsPages', JSON.stringify(updatedPages));
+                        
+                        // Trigger custom event for immediate update
+                        window.dispatchEvent(new Event('cmsPageChanged'));
+                      }
+                    } catch {}
+                    
+                    // Add component to current page layout if not already present (except for special cases)
+                    const currentLayout = pageLayouts[activePageId] || [];
+                    const existingComponent = currentLayout.find((c: any) => c.type === componentType);
+                    
+                    if (!existingComponent && componentType !== 'category') {
+                      // Add the new component to the current page (except for category which is handled by page type)
+                      const newComponent = {
+                        title: item.name,
+                        type: componentType,
+                        subtitle: `${item.name} component`
+                      };
+                      
+                      setPageLayouts(prev => ({
+                        ...prev,
+                        [activePageId]: [...(prev[activePageId] || []), newComponent]
+                      }));
+                    }
+                    
+                    // Switch to the appropriate settings view (like the old behavior)
+                    setRightView(componentType as RightView);
                     setShowThemeColors(false);
                   }
                 }}
               >
-                <div className={`flex items-center justify-center w-8 h-8 mx-auto mb-2 rounded ${(rightView === item.view || (item.action === 'themeColors' && showThemeColors)) ? 'bg-[#2563eb] text-white' : 'bg-[#1a1a1f] text-gray-300'}`}>
+                <div className="flex items-center justify-center w-8 h-8 mx-auto mb-2 rounded bg-[#1a1a1f] text-gray-300">
                   {item.icon}
                 </div>
-                <div className="text-xs font-medium" style={{ color: (rightView === item.view || (item.action === 'themeColors' && showThemeColors)) ? '#fff' : '#e5e7eb' }}>
+                <div className="text-xs font-medium" style={{ color: '#e5e7eb' }}>
                   {item.name}
                 </div>
               </div>
@@ -763,6 +1012,68 @@ function DesignLayoutPanel({ rightView, setRightView }: { rightView: RightView; 
       )}
 
 
+    </div>
+  );
+}
+
+// CATEGORY LAYOUT PANEL
+function CategoryLayoutPanel({ onLayoutChange }: { onLayoutChange?: (layoutName: string, layoutData: any) => void }) {
+  const [layouts, setLayouts] = useState<Array<{ title: string; subtitle?: string; badge?: string }>>([
+    { title: 'Header', subtitle: 'Category header' },
+    { title: 'Category', subtitle: 'Category component' }
+  ]);
+
+  // Add new layout/component to the list
+  const handleAddLayout = () => {
+    setLayouts(prev => [
+      ...prev,
+      { title: `Layout ${prev.length + 1}`, subtitle: 'Custom category layout' }
+    ]);
+  };
+
+  // Remove layout/component from the list
+  const handleRemove = (idx: number) => {
+    setLayouts(prev => prev.filter((_, i) => i !== idx));
+  };
+
+  return (
+    <div className="rounded-lg border border-[#2a2a30] bg-black">
+      <div className="flex items-center justify-between px-4 py-3 border-b border-[#2a2a30]">
+        <div className="text-sm font-medium text-gray-200">CATEGORY LAYOUT</div>
+      </div>
+      <div className="p-4">
+        {/* List of layouts/components */}
+        {layouts.length === 0 ? (
+          <div className="text-xs text-gray-400 mb-3">No layouts yet. Click "+ ADD NEW LAYOUT" to insert your first layout.</div>
+        ) : (
+          layouts.map((it, idx) => (
+            <div key={idx} className="flex items-center justify-between px-3 py-2 rounded bg-[#0f0f12] border border-[#2a2a30] mb-2">
+              <div>
+                <div className="text-sm text-white flex items-center gap-2">
+                  <span>{it.title}</span>
+                  {it.badge && <span className="text-[10px] text-red-400 bg-red-400/10 px-1 py-0.5 rounded">{it.badge}</span>}
+                </div>
+                {it.subtitle && <div className="text-xs text-gray-400 mt-0.5">{it.subtitle}</div>}
+              </div>
+              <button
+                className="text-red-400 hover:text-red-300 transition-colors text-sm"
+                onClick={() => handleRemove(idx)}
+                aria-label="remove"
+              >
+                Remove✕
+              </button>
+            </div>
+          ))
+        )}
+        <div className="pt-2">
+          <button
+            className="w-full text-xs text-white px-3 py-2 rounded bg-[#2563eb] hover:bg-[#1d4ed8] transition-colors"
+            onClick={handleAddLayout}
+          >
+            + ADD NEW LAYOUT
+          </button>
+        </div>
+      </div>
     </div>
   );
 }

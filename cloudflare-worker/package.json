@@ -1,0 +1,39 @@
+{
+  "name": "evenour-cloudflare-auth",
+  "version": "1.0.0",
+  "description": "Cloudflare Workers authentication service for Evenour",
+  "main": "worker.ts",
+  "scripts": {
+    "dev": "wrangler dev",
+    "deploy": "wrangler publish",
+    "deploy:staging": "wrangler publish --env development",
+    "deploy:production": "wrangler publish --env production",
+    "tail": "wrangler tail",
+    "kv:create": "npm run kv:create:auth && npm run kv:create:security && npm run kv:create:sessions",
+    "kv:create:auth": "wrangler kv:namespace create AUTH_TOKENS",
+    "kv:create:security": "wrangler kv:namespace create SECURITY_EVENTS",
+    "kv:create:sessions": "wrangler kv:namespace create USER_SESSIONS",
+    "kv:list": "wrangler kv:key list --binding AUTH_TOKENS",
+    "kv:get": "wrangler kv:key get --binding AUTH_TOKENS",
+    "secret:put": "wrangler secret put",
+    "logs": "wrangler tail --format pretty"
+  },
+  "devDependencies": {
+    "@cloudflare/workers-types": "^4.20240909.0",
+    "typescript": "^5.5.4",
+    "wrangler": "^3.75.0"
+  },
+  "dependencies": {},
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "keywords": [
+    "cloudflare-workers",
+    "authentication",
+    "jwt",
+    "kv-storage",
+    "edge-computing"
+  ],
+  "author": "Evenour Team",
+  "license": "MIT"
+}

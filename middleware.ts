@@ -17,6 +17,24 @@ function applyHeaders(res: NextResponse) {
 }
 
 export function middleware(request: NextRequest) {
+  // Enforce all admin API traffic through Cloudflare Worker
+  const pathname = request.nextUrl.pathname;
+  if (pathname.startsWith('/api/admin') && !pathname.startsWith('/api/admin/cms')) {
+    const internalHeader = request.headers.get('x-internal-gateway');
+    if (!internalHeader) {
+      return new NextResponse(JSON.stringify({
+        success: false,
+        error: 'Direct admin API access blocked. Use Cloudflare gateway /hatsadmin/*.'
+      }), {
+        status: 403,
+        headers: {
+          'Content-Type': 'application/json',
+          ...SECURITY_HEADERS,
+        }
+      });
+    }
+  }
+
   const origin = request.headers.get('origin');
 
   // Handle CORS preflight quickly

@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html>
+<head><title>Test Gateway Connection</title></head>
+<body>
+    <button onclick="testConnection()">Test Connection</button>
+    <div id="result"></div>
+    <script>
+        async function testConnection() {
+            const result = document.getElementById('result');
+            result.innerHTML = 'Testing...';
+            
+            try {
+                console.log('Environment Gateway URL:', process?.env?.NEXT_PUBLIC_ADMIN_API_GATEWAY_URL || 'undefined');
+                
+                const url = 'https://admin-api-gateway.evenour-in.workers.dev/hatsadmin/auth/login';
+                console.log('Testing URL:', url);
+                
+                const response = await fetch(url, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        username: 'admin',
+                        password: 'Admin@123!Secure'
+                    })
+                });
+                
+                console.log('Response status:', response.status);
+                console.log('Response headers:', [...response.headers.entries()]);
+                
+                const data = await response.json();
+                console.log('Response data:', data);
+                
+                result.innerHTML = `
+                    <h3>✅ Success!</h3>
+                    <p><strong>Status:</strong> ${response.status}</p>
+                    <p><strong>Success:</strong> ${data.success}</p>
+                    <p><strong>Token received:</strong> ${data.token ? 'Yes' : 'No'}</p>
+                    <pre>${JSON.stringify(data, null, 2)}</pre>
+                `;
+            } catch (error) {
+                console.error('Connection test failed:', error);
+                result.innerHTML = `
+                    <h3>❌ Failed</h3>
+                    <p><strong>Error:</strong> ${error.message}</p>
+                    <p><strong>Type:</strong> ${error.name}</p>
+                    <p><strong>Stack:</strong><br><pre>${error.stack}</pre></p>
+                `;
+            }
+        }
+    </script>
+</body>
+</html>

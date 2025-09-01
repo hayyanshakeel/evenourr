@@ -11,8 +11,9 @@ import { Badge } from '@/components/ui/badge';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Search, Package, User, AlertTriangle } from 'lucide-react';
 import { useAuth } from '@/components/auth/AuthContext';
-import { auth } from '@/lib/firebase';
-import { onAuthStateChanged, User as FirebaseUser } from 'firebase/auth';
+// REMOVE firebase auth import
+// @ts-ignore Firebase types may be missing in this environment
+import { secureAdminApi } from '@/lib/secure-admin-api';
 
 interface Order {
   id: number;
@@ -77,7 +78,6 @@ interface CreateReturnFormProps {
 }
 
 export default function CreateReturnForm({ onSuccess }: CreateReturnFormProps) {
-  const [user, setUser] = useState<FirebaseUser | null>(null);
   const [loading, setLoading] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [orders, setOrders] = useState<Order[]>([]);
@@ -95,31 +95,12 @@ export default function CreateReturnForm({ onSuccess }: CreateReturnFormProps) {
     items: [],
   });
 
-  // Firebase auth state listener
-  useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, (firebaseUser) => {
-      setUser(firebaseUser);
-    });
-
-    return () => unsubscribe();
-  }, []);
-
   // Search orders
   const searchOrders = async () => {
-    if (!user || !searchQuery.trim()) return;
-
+    if (!searchQuery.trim()) return;
     try {
-      const token = await user.getIdToken();
-      const response = await fetch(`/api/admin/orders?search=${encodeURIComponent(searchQuery.trim())}&limit=10`, {
-        headers: {
-          'Authorization': `Bearer ${token}`,
-        },
-      });
-
-      if (response.ok) {
-        const data = await response.json();
-        setOrders(data.orders || []);
-      }
+      const res = await secureAdminApi.getOrders({ search: searchQuery.trim(), limit: 10 });
+      if (res.success) setOrders((res as any).orders || (res as any).data?.orders || []);
     } catch (error) {
       console.error('Error searching orders:', error);
     }
@@ -127,16 +108,8 @@ export default function CreateReturnForm({ onSuccess }: CreateReturnFormProps) {
 
   // Get returnable items for selected order
   const getReturnableItems = async (orderId: number) => {
-    if (!user) return;
-
     try {
-      const token = await user.getIdToken();
-      const response = await fetch(`/api/admin/orders/${orderId}/returnable-items`, {
-        headers: {
-          'Authorization': `Bearer ${token}`,
-        },
-      });
-
+      const response = await fetch(`/hatsadmin/orders/${orderId}/returnable-items`);
       if (response.ok) {
         const data = await response.json();
         setReturnableItems(data.items || []);
@@ -196,28 +169,19 @@ export default function CreateReturnForm({ onSuccess }: CreateReturnFormProps) {
 
   // Submit return request
   const handleSubmit = async () => {
-    if (!user || !formData.orderId || formData.items.length === 0) return;
+    if (!formData.orderId || formData.items.length === 0) return;
 
     setLoading(true);
     try {
-      const token = await user.getIdToken();
-      const response = await fetch('/api/admin/returns', {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          orderId: parseInt(formData.orderId),
-          reason: formData.reason,
-          reasonCategory: formData.reasonCategory,
-          description: formData.description,
-          customerNotes: formData.customerNotes,
-          items: formData.items,
-        }),
+      const res = await secureAdminApi.createReturn({
+        orderId: parseInt(formData.orderId),
+        reason: formData.reason,
+        reasonCategory: formData.reasonCategory,
+        description: formData.description,
+        customerNotes: formData.customerNotes,
+        items: formData.items,
       });
-
-      if (response.ok) {
+      if (res.success) {
         onSuccess();
         // Reset form
         setStep('search');
@@ -235,8 +199,7 @@ export default function CreateReturnForm({ onSuccess }: CreateReturnFormProps) {
         setSearchQuery('');
         setOrders([]);
       } else {
-        const error = await response.json();
-        alert(`Error creating return: ${error.error}`);
+        alert(`Error creating return: ${res.error}`);
       }
     } catch (error) {
       console.error('Error creating return:', error);

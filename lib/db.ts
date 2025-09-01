@@ -9,15 +9,8 @@ declare global { var __prisma: InstanceType<typeof PrismaClient> | undefined; }
 let prismaInstance: InstanceType<typeof PrismaClient> | undefined;
 
 function buildClient(): InstanceType<typeof PrismaClient> {
-  const preferLocal = process.env.USE_LOCAL_SQLITE === 'true' && process.env.NODE_ENV !== 'production';
   const url = process.env.TURSO_DATABASE_URL;
   const token = process.env.TURSO_AUTH_TOKEN;
-
-  if (preferLocal) {
-    console.log('[db] Using local SQLite via Prisma datasource (USE_LOCAL_SQLITE=true)');
-    // Use the default Prisma datasource (e.g., file:./dev.db)
-    return new PrismaClient({ log: ['error', 'warn'] } as any);
-  }
 
   console.log('[db] buildClient config:', {
     adapter: 'turso',
@@ -28,9 +21,9 @@ function buildClient(): InstanceType<typeof PrismaClient> {
     usingTurso: true,
   });
 
-  // Require Turso credentials in non-local mode
+  // Always require Turso credentials - no local fallback
   if (!url || !token) {
-    throw new Error('❌ Missing Turso credentials. Please set TURSO_DATABASE_URL and TURSO_AUTH_TOKEN');
+    throw new Error('❌ Missing Turso credentials. Please set TURSO_DATABASE_URL and TURSO_AUTH_TOKEN. Local SQLite is disabled.');
   }
 
   try {

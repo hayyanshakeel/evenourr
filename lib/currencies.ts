@@ -152,6 +152,11 @@ export const CURRENCIES: Record<string, Currency> = {
 export const DEFAULT_CURRENCY = 'USD';
 
 export function formatCurrency(amount: number, currencyCode: string = DEFAULT_CURRENCY): string {
+  // Safety check for undefined/null/NaN amounts
+  if (amount == null || isNaN(amount)) {
+    amount = 0;
+  }
+  
   const currency = CURRENCIES[currencyCode];
   if (!currency) {
     // Fallback to USD if currency not found

@@ -13,6 +13,7 @@ import { Package, TrendingUp, AlertTriangle, Eye, Edit, Trash2, MoreHorizontal }
 import { useAdminAuth } from "@/hooks/useAdminAuth"
 import { useSettings } from "@/hooks/useSettings"
 import { formatCurrency } from "@/lib/currencies"
+import { secureAdminApi } from '@/lib/secure-admin-api';
 
 interface Product {
   id: number;
@@ -44,33 +45,37 @@ export default function ProductsPage() {
   }, [searchTerm])
 
   useEffect(() => {
+    // Only fetch data when authenticated and ready
     if (isReady && isAuthenticated) {
+      console.log('[Products] Fetching data with proper authentication');
       fetchProducts();
     }
   }, [isReady, isAuthenticated, debouncedSearchTerm, statusFilter]);
 
   const fetchProducts = async () => {
-    if (!isReady || !isAuthenticated) return;
-    
     try {
+      console.log('[Products] Starting API call...');
       setLoading(true);
       
-      const params = new URLSearchParams();
+      const params: any = {};
       if (debouncedSearchTerm.trim()) {
-        params.append('search', debouncedSearchTerm.trim());
+        params.search = debouncedSearchTerm.trim();
       }
       if (statusFilter !== 'all') {
-        params.append('status', statusFilter);
+        params.status = statusFilter;
       }
       
-      const response = await makeAuthenticatedRequest(`/api/admin/products?${params}`);
+      console.log('[Products] Calling secureAdminApi.getProducts with params:', params);
+      const response = await secureAdminApi.getProducts(params);
+      console.log('[Products] API response received:', response);
       
-      if (!response.ok) {
-        throw new Error('Failed to fetch products');
+      if (response.success) {
+        const data = response.data || response;
+        setProducts(data.data || data.products || data || []);
+      } else {
+        console.error('Failed to fetch products:', response.error);
+        setProducts([]);
       }
-      
-      const data = await response.json();
-      setProducts(data.products || []);
     } catch (error) {
       console.error('Error fetching products:', error);
       setProducts([]);
@@ -81,18 +86,36 @@ export default function ProductsPage() {
 
   const handleExport = async () => {
     try {
-      const response = await makeAuthenticatedRequest('/api/admin/products/export');
-      if (response.ok) {
-        const blob = await response.blob();
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = 'products.csv';
-        document.body.appendChild(a);
-        a.click();
-        document.body.removeChild(a);
-        URL.revokeObjectURL(url);
+      // For now, create CSV from current products data
+      if (products.length === 0) {
+        console.warn('No products to export');
+        return;
       }
+
+      const headers = ['ID', 'Name', 'Price', 'Inventory', 'Status', 'Created', 'Updated'];
+      const csvData = products.map(product => [
+        product.id,
+        product.name,
+        product.price,
+        product.inventory,
+        product.status,
+        new Date(product.createdAt).toLocaleDateString(),
+        new Date(product.updatedAt).toLocaleDateString()
+      ]);
+      
+      const csvContent = [headers, ...csvData]
+        .map(row => row.map(field => `"${field}"`).join(','))
+        .join('\n');
+      
+      const blob = new Blob([csvContent], { type: 'text/csv' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'products.csv';
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
     } catch (error) {
       console.error('Failed to export products:', error);
     }
@@ -114,17 +137,20 @@ export default function ProductsPage() {
     if (!confirm('Are you sure you want to delete this product?')) return;
     
     try {
-      const response = await makeAuthenticatedRequest(`/api/admin/products/${id}`, {
-        method: 'DELETE',
-      });
+      console.log(`Attempting to delete product ID: ${id}`);
+      const response = await secureAdminApi.deleteProduct(id.toString());
       
-      if (response.ok) {
-        await fetchProducts();
-      } else {
-        console.error('Failed to delete product');
+      console.log('Delete response:', response);
+      
+      if (!response.success) {
+        throw new Error(response.error || 'Failed to delete product');
       }
+
+      console.log('Product deleted successfully, refreshing list...');
+      await fetchProducts();
     } catch (error) {
       console.error('Error deleting product:', error);
+      alert(`Error deleting product: ${error instanceof Error ? error.message : String(error)}`);
     }
   };
 
@@ -214,99 +240,159 @@ export default function ProductsPage() {
     >
       {/* Products Table */}
       <Card className="border shadow-sm">
-        <CardHeader>
-          <CardTitle>All Products</CardTitle>
+        <CardHeader className="p-3 sm:p-4 lg:p-6">
+          <CardTitle className="text-base sm:text-lg">All Products</CardTitle>
         </CardHeader>
-        <CardContent>
+        <CardContent className="p-0 sm:p-4 lg:p-6">
           {products.length === 0 ? (
-            <div className="text-center py-8">
-              <Package className="mx-auto h-12 w-12 text-gray-400" />
-              <h3 className="mt-2 text-sm font-semibold text-gray-900">No products</h3>
-              <p className="mt-1 text-sm text-gray-500">Get started by creating a new product.</p>
-              <div className="mt-6">
-                <Button onClick={handleAddProduct}>
-                  <Package className="h-4 w-4 mr-2" />
+            <div className="text-center py-6 sm:py-8 px-4">
+              <Package className="mx-auto h-10 w-10 sm:h-12 sm:w-12 text-gray-400" />
+              <h3 className="mt-2 text-sm sm:text-base font-semibold text-gray-900">No products</h3>
+              <p className="mt-1 text-xs sm:text-sm text-gray-500">Get started by creating a new product.</p>
+              <div className="mt-4 sm:mt-6">
+                <Button onClick={handleAddProduct} size="sm" className="text-xs sm:text-sm">
+                  <Package className="h-3 w-3 sm:h-4 sm:w-4 mr-1 sm:mr-2" />
                   Add Product
                 </Button>
               </div>
             </div>
           ) : (
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Product</TableHead>
-                  <TableHead>Price</TableHead>
-                  <TableHead>Stock</TableHead>
-                  <TableHead>Status</TableHead>
-                  <TableHead>Created</TableHead>
-                  <TableHead className="text-right">Actions</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
+            <div className="overflow-x-auto">
+              {/* Mobile Card View - visible on small screens */}
+              <div className="block sm:hidden space-y-3 p-3">
                 {products.map((product) => {
                   const stockStatus = getStockStatus(product.inventory);
                   return (
-                    <TableRow key={product.id} className="hover:bg-gray-50">
-                      <TableCell>
-                        <div className="flex items-center space-x-3">
-                          <div className="h-10 w-10 rounded-md bg-gray-100 flex items-center justify-center">
-                            <Package className="h-5 w-5 text-gray-500" />
+                    <Card key={product.id} className="p-3 shadow-sm">
+                      <div className="flex items-start justify-between mb-2">
+                        <div className="flex-1 min-w-0">
+                          <h3 className="font-medium text-sm text-gray-900 truncate">{product.name}</h3>
+                          <p className="text-xs text-gray-500 mt-1">{formatPrice(product.price)}</p>
+                        </div>
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <Button variant="ghost" size="sm" className="h-6 w-6 p-0">
+                              <MoreHorizontal className="h-3 w-3" />
+                            </Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="end">
+                            <DropdownMenuItem onClick={() => handleViewProduct(product.id)}>
+                              <Eye className="mr-2 h-3 w-3" />
+                              View
+                            </DropdownMenuItem>
+                            <DropdownMenuItem onClick={() => handleEditProduct(product.id)}>
+                              <Edit className="mr-2 h-3 w-3" />
+                              Edit
+                            </DropdownMenuItem>
+                            <DropdownMenuItem 
+                              onClick={() => handleDeleteProduct(product.id)}
+                              className="text-red-600"
+                            >
+                              <Trash2 className="mr-2 h-3 w-3" />
+                              Delete
+                            </DropdownMenuItem>
+                          </DropdownMenuContent>
+                        </DropdownMenu>
+                      </div>
+                      <div className="flex items-center justify-between text-xs">
+                        <div className="flex items-center space-x-2">
+                          <Badge className={getStatusColor(product.status)}>
+                            {product.status}
+                          </Badge>
+                          <Badge className={stockStatus.color}>
+                            {stockStatus.status} ({product.inventory})
+                          </Badge>
+                        </div>
+                        <span className="text-gray-500">
+                          {new Date(product.createdAt).toLocaleDateString()}
+                        </span>
+                      </div>
+                    </Card>
+                  );
+                })}
+              </div>
+
+              {/* Table View - visible on larger screens */}
+              <Table className="hidden sm:table">
+                <TableHeader>
+                  <TableRow>
+                    <TableHead className="text-xs sm:text-sm">Product</TableHead>
+                    <TableHead className="text-xs sm:text-sm">Price</TableHead>
+                    <TableHead className="text-xs sm:text-sm">Stock</TableHead>
+                    <TableHead className="text-xs sm:text-sm">Status</TableHead>
+                    <TableHead className="text-xs sm:text-sm hidden lg:table-cell">Created</TableHead>
+                    <TableHead className="text-right text-xs sm:text-sm">Actions</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {products.map((product) => {
+                    const stockStatus = getStockStatus(product.inventory);
+                    return (
+                      <TableRow key={product.id} className="hover:bg-gray-50">
+                        <TableCell className="py-2 sm:py-4">
+                        <div className="flex items-center space-x-2 sm:space-x-3">
+                          <div className="h-8 w-8 sm:h-10 sm:w-10 rounded-md bg-gray-100 flex items-center justify-center">
+                            <Package className="h-4 w-4 sm:h-5 sm:w-5 text-gray-500" />
                           </div>
                           <div>
-                            <div className="font-medium">{product.name}</div>
-                            <div className="text-sm text-gray-500">ID: {product.id}</div>
+                            <div className="font-medium text-xs sm:text-sm">{product.name}</div>
+                            <div className="text-xs text-gray-500">ID: {product.id}</div>
                           </div>
                         </div>
                       </TableCell>
-                      <TableCell className="font-medium">
+                      <TableCell className="font-medium text-xs sm:text-sm py-2 sm:py-4">
                         {formatPrice(product.price)}
                       </TableCell>
-                      <TableCell>
+                      <TableCell className="py-2 sm:py-4">
                         <div className="flex flex-col space-y-1">
-                          <span className="font-medium">{product.inventory}</span>
+                          <span className="font-medium text-xs sm:text-sm">{product.inventory}</span>
                           <Badge className={`${stockStatus.color} text-xs`}>
                             {stockStatus.status}
                           </Badge>
                         </div>
                       </TableCell>
-                      <TableCell>
-                        <Badge className={getStatusColor(product.status)}>
+                      <TableCell className="py-2 sm:py-4">
+                        <Badge className={`${getStatusColor(product.status)} text-xs`}>
                           {product.status.charAt(0).toUpperCase() + product.status.slice(1)}
                         </Badge>
                       </TableCell>
-                      <TableCell className="text-sm text-gray-500">
+                      <TableCell className="text-xs text-gray-500 py-2 sm:py-4 hidden lg:table-cell">
                         {new Date(product.createdAt).toLocaleDateString()}
                       </TableCell>
-                      <TableCell className="text-right">
-                        <div className="flex items-center justify-end gap-2">
+                      <TableCell className="text-right py-2 sm:py-4">
+                        <div className="flex items-center justify-end gap-1 sm:gap-2">
                           <Button 
                             variant="ghost" 
                             size="sm"
                             onClick={() => handleEditProduct(product.id)}
+                            className="h-6 w-6 sm:h-8 sm:w-8 p-0 sm:p-2"
                           >
-                            <Edit className="h-4 w-4" />
+                            <Edit className="h-3 w-3 sm:h-4 sm:w-4" />
                           </Button>
                           <DropdownMenu>
                             <DropdownMenuTrigger asChild>
-                              <Button variant="ghost" size="sm">
-                                <MoreHorizontal className="h-4 w-4" />
+                              <Button variant="ghost" size="sm" className="h-6 w-6 sm:h-8 sm:w-8 p-0 sm:p-2">
+                                <MoreHorizontal className="h-3 w-3 sm:h-4 sm:w-4" />
                               </Button>
                             </DropdownMenuTrigger>
                             <DropdownMenuContent align="end">
                               <DropdownMenuItem onClick={() => handleViewProduct(product.id)}>
+                                <Eye className="h-3 w-3 mr-2" />
                                 View product
                               </DropdownMenuItem>
                               <DropdownMenuItem onClick={() => handleEditProduct(product.id)}>
+                                <Edit className="h-3 w-3 mr-2" />
                                 Edit product
                               </DropdownMenuItem>
                               <DropdownMenuItem onClick={() => router.push(`/hatsadmin/dashboard/products/${product.id}/duplicate`)}>
+                                <Package className="h-3 w-3 mr-2" />
                                 Duplicate
                               </DropdownMenuItem>
                               <DropdownMenuItem 
                                 className="text-red-600"
                                 onClick={() => handleDeleteProduct(product.id)}
                               >
-                                <Trash2 className="h-4 w-4 mr-2" />
+                                <Trash2 className="h-3 w-3 mr-2" />
                                 Delete
                               </DropdownMenuItem>
                             </DropdownMenuContent>
@@ -318,6 +404,7 @@ export default function ProductsPage() {
                 })}
               </TableBody>
             </Table>
+            </div>
           )}
         </CardContent>
       </Card>

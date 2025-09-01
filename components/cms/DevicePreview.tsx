@@ -235,6 +235,87 @@ export function DevicePreview({
           return <div className="h-8 bg-muted border-dashed border-2 border-border flex items-center justify-center text-muted-foreground text-sm">Spacer</div>;
         case 'divider':
           return <hr className="border-border" />;
+        case 'filter':
+          return (
+            <div className="p-4" style={{ backgroundColor: element.config?.backgroundColor || '#ffffff' }}>
+              <div className="flex flex-wrap gap-2 items-center" style={{ 
+                color: element.config?.textColor || '#000000',
+                padding: `${element.config?.padding || 8}px`,
+                borderRadius: `${element.config?.borderRadius || 4}px`,
+                border: `1px solid ${element.config?.borderColor || '#e5e7eb'}`
+              }}>
+                {element.config?.showSearch && (
+                  <div className="flex-1 min-w-[200px]">
+                    <input
+                      type="text"
+                      placeholder={element.config?.searchPlaceholder || "Search products..."}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm"
+                      style={{ 
+                        backgroundColor: 'white',
+                        color: '#000000',
+                        borderColor: element.config?.borderColor || '#e5e7eb'
+                      }}
+                    />
+                  </div>
+                )}
+                
+                {element.config?.filters?.map((filter: any, idx: number) => (
+                  <button
+                    key={idx}
+                    className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+                      filter.active 
+                        ? 'bg-blue-600 text-white' 
+                        : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                    }`}
+                    style={{
+                      backgroundColor: filter.active ? '#2563eb' : '#f3f4f6',
+                      color: filter.active ? '#ffffff' : '#374151',
+                      border: `1px solid ${element.config?.borderColor || '#e5e7eb'}`
+                    }}
+                  >
+                    {filter.icon && <span className="mr-2">{filter.icon}</span>}
+                    {filter.label}
+                  </button>
+                ))}
+                
+                {element.config?.showSort && (
+                  <select 
+                    className="px-3 py-2 border border-gray-300 rounded-lg text-sm bg-white"
+                    style={{ borderColor: element.config?.borderColor || '#e5e7eb' }}
+                  >
+                    <option>Sort by: Featured</option>
+                    <option>Price: Low to High</option>
+                    <option>Price: High to Low</option>
+                    <option>Newest</option>
+                    <option>Rating</option>
+                  </select>
+                )}
+                
+                {element.config?.showViewToggle && (
+                  <div className="flex border border-gray-300 rounded-lg overflow-hidden">
+                    <button className="px-3 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700">
+                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                        <rect x="3" y="3" width="7" height="7"></rect>
+                        <rect x="14" y="3" width="7" height="7"></rect>
+                        <rect x="14" y="14" width="7" height="7"></rect>
+                        <rect x="3" y="14" width="7" height="7"></rect>
+                      </svg>
+                    </button>
+                    <button className="px-3 py-2 bg-white hover:bg-gray-50 text-gray-700 border-l border-gray-300">
+                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                        <line x1="8" y1="6" x2="21" y2="6"></line>
+                        <line x1="8" y1="12" x2="21" y2="12"></line>
+                        <line x1="8" y1="18" x2="21" y2="18"></line>
+                        <line x1="3" y1="6" x2="3.01" y2="6"></line>
+                        <line x1="3" y1="12" x2="3.01" y2="12"></line>
+                        <line x1="3" y1="18" x2="3.01" y2="18"></line>
+                      </svg>
+                    </button>
+                  </div>
+                )}
+              </div>
+            </div>
+          );
         default:
           return (
             <div className="p-4 bg-muted text-center border border-border">

@@ -3,31 +3,53 @@
 interface AddWidgetDrawerProps {
   onClose: () => void;
   onSelect: (item: { title: string; type: string }) => void;
+  context?: 'category' | 'home' | 'default';
 }
 
 import type { ReactElement } from 'react'
 
-export default function AddWidgetDrawer({ onClose, onSelect }: AddWidgetDrawerProps) {
-  const widgets: Array<{ title: string; type: string; badge?: string; icon: ReactElement }> = [
-    { title: 'Header', type: 'header', icon: <HeaderIcon /> },
-    { title: 'Footer', type: 'footer', icon: <FooterIcon /> },
-    { title: 'Background', type: 'background', icon: <ImageIcon /> },
-    { title: 'Banner Image', type: 'bannerImage', icon: <ImageIcon /> },
-    { title: 'Blogs', type: 'blogs', icon: <ListIcon /> },
-    { title: 'Dynamic Blog', type: 'dynamicBlog', badge: 'New!', icon: <ListIcon /> },
-    { title: 'Button', type: 'button', icon: <SquareIcon /> },
-    { title: 'Divider', type: 'divider', icon: <DividerIcon /> },
-    { title: 'Header Search', type: 'headerSearch', icon: <SearchIcon /> },
-    { title: 'Header View', type: 'headerView', badge: 'New!', icon: <HeaderViewIcon /> },
-    { title: 'Horizontal Products', type: 'horizontalProducts', icon: <ProductsIcon /> },
-    { title: 'Instagram Story', type: 'instagramStory', icon: <StoryIcon /> },
-    { title: 'List Card', type: 'listCard', badge: 'New!', icon: <CardIcon /> },
-    // Removed: Logo, Menu List, Spacer, Story, Animated Stack per request
-    { title: 'Testimonial', type: 'testimonial', icon: <TestimonialIcon /> },
-    { title: 'Testimonial Slider', type: 'testimonialSlider', icon: <SliderIcon /> },
-    { title: 'Text', type: 'text', icon: <TextIcon /> },
-    { title: 'Web Embed', type: 'webEmbed', icon: <EmbedIcon /> }
+export default function AddWidgetDrawer({ onClose, onSelect, context = 'default' }: AddWidgetDrawerProps) {
+  // Define all available widgets
+  const allWidgets: Array<{ title: string; type: string; badge?: string; icon: ReactElement; category?: string }> = [
+    { title: 'Header', type: 'header', icon: <HeaderIcon />, category: 'layout' },
+    { title: 'Footer', type: 'footer', icon: <FooterIcon />, category: 'layout' },
+    { title: 'Background', type: 'background', icon: <ImageIcon />, category: 'media' },
+    { title: 'Banner Image', type: 'bannerImage', icon: <ImageIcon />, category: 'media' },
+    { title: 'Blogs', type: 'blogs', icon: <ListIcon />, category: 'content' },
+    { title: 'Dynamic Blog', type: 'dynamicBlog', badge: 'New!', icon: <ListIcon />, category: 'content' },
+    { title: 'Button', type: 'button', icon: <SquareIcon />, category: 'interactive' },
+    { title: 'Divider', type: 'divider', icon: <DividerIcon />, category: 'layout' },
+    { title: 'Header Search', type: 'headerSearch', icon: <SearchIcon />, category: 'interactive' },
+    { title: 'Header View', type: 'headerView', badge: 'New!', icon: <HeaderViewIcon />, category: 'layout' },
+    { title: 'Horizontal Products', type: 'horizontalProducts', icon: <ProductsIcon />, category: 'commerce' },
+    { title: 'Instagram Story', type: 'instagramStory', icon: <StoryIcon />, category: 'media' },
+    { title: 'List Card', type: 'listCard', badge: 'New!', icon: <CardIcon />, category: 'content' },
+    { title: 'Testimonial', type: 'testimonial', icon: <TestimonialIcon />, category: 'content' },
+    { title: 'Testimonial Slider', type: 'testimonialSlider', icon: <SliderIcon />, category: 'content' },
+    { title: 'Text', type: 'text', icon: <TextIcon />, category: 'content' },
+    { title: 'Web Embed', type: 'webEmbed', icon: <EmbedIcon />, category: 'interactive' },
+    { title: 'Filter', type: 'filter', icon: <FilterIcon />, category: 'commerce' }
   ];
+
+  // Reorder widgets based on context
+  const getOrderedWidgets = () => {
+    if (context === 'category') {
+      // Category-relevant widgets first
+      const categoryPriority = [
+        'filter', 'horizontalProducts', 'bannerImage', 'text', 'button', 'divider'
+      ];
+      
+      const priorityWidgets = allWidgets.filter(w => categoryPriority.includes(w.type));
+      const otherWidgets = allWidgets.filter(w => !categoryPriority.includes(w.type));
+      
+      return [...priorityWidgets, ...otherWidgets];
+    }
+    
+    // Default order for home and other contexts
+    return allWidgets;
+  };
+
+  const widgets = getOrderedWidgets();
 
   return (
     <div style={{ position: 'fixed', right: 0, top: 0, height: '100vh', width: 420, background: '#000', borderLeft: '1px solid #2a2a30', zIndex: 50 }}>
@@ -81,6 +103,7 @@ function TestimonialIcon() { return (<svg width="16" height="16" viewBox="0 0 24
 function SliderIcon() { return (<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><line x1="4" y1="12" x2="20" y2="12"/><circle cx="8" cy="12" r="2"/><circle cx="16" cy="12" r="2"/></svg>); }
 function TextIcon() { return (<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M4 6h16M9 6v12"/></svg>); }
 function EmbedIcon() { return (<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="7 8 3 12 7 16"/><polyline points="17 8 21 12 17 16"/></svg>); }
+function FilterIcon() { return (<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"/></svg>); }
 
 function HeaderIcon() { return (<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="3" y="4" width="18" height="4" rx="2" /><rect x="3" y="10" width="12" height="2" rx="1" /></svg>); }
 function FooterIcon() { return (<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="3" y="16" width="18" height="4" rx="2" /><rect x="3" y="12" width="12" height="2" rx="1" /></svg>); }

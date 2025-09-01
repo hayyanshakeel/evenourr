@@ -4,8 +4,7 @@ import { useState, useEffect } from 'react';
 import { useAdminAuth } from '@/hooks/useAdminAuth';
 import { useSettings } from '@/hooks/useSettings';
 import { formatCurrency as formatCurrencyUtil } from '@/lib/currencies';
-import { auth } from '@/lib/firebase';
-import { onAuthStateChanged, User as FirebaseUser } from 'firebase/auth';
+import { secureAdminApi } from '@/lib/secure-admin-api';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -137,7 +136,7 @@ export default function ReturnDetailPage() {
   const router = useRouter();
   const { token, isReady, isAuthenticated } = useAdminAuth();
   const { currency } = useSettings();
-  const [user, setUser] = useState<FirebaseUser | null>(null);
+  const [user, setUser] = useState<any>(null);
   const [returnData, setReturnData] = useState<ReturnDetail | null>(null);
   const [loading, setLoading] = useState(true);
   const [editing, setEditing] = useState(false);
@@ -157,110 +156,56 @@ export default function ReturnDetailPage() {
   });
   const [showUpdateDialog, setShowUpdateDialog] = useState(false);
 
-  // Firebase auth state listener
-  useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, (firebaseUser) => {
-      setUser(firebaseUser);
-    });
-
-    return () => unsubscribe();
-  }, []);
-
   // Fetch return data
   const fetchReturnData = async () => {
     if (!user || !params.id) return;
-    
     try {
       setLoading(true);
-      const token = await user.getIdToken();
-      const response = await fetch(`/api/admin/returns/${params.id}`, {
-        headers: {
-          'Authorization': `Bearer ${token}`,
-        },
-      });
-
-      if (!response.ok) {
-        throw new Error('Failed to fetch return data');
+      const res = await secureAdminApi.getReturn(String(params.id));
+      if (res.success) {
+        const data: any = (res as any).data || res;
+        setReturnData(data);
+        setUpdateData({
+          status: data.status,
+          refundAmount: data.refundAmount?.toString() || '0',
+            refundMethod: data.refundMethod || '',
+          priority: data.priority,
+          trackingNumber: data.trackingNumber || '',
+          carrierName: data.carrierName || '',
+          returnLabel: data.returnLabel || '',
+          adminNotes: data.adminNotes || '',
+        });
       }
-
-      const data = await response.json();
-      setReturnData(data);
-      setUpdateData({
-        status: data.status,
-        refundAmount: data.refundAmount.toString(),
-        refundMethod: data.refundMethod || '',
-        priority: data.priority,
-        trackingNumber: data.trackingNumber || '',
-        carrierName: data.carrierName || '',
-        returnLabel: data.returnLabel || '',
-        adminNotes: data.adminNotes || '',
-      });
-    } catch (error) {
-      console.error('Error fetching return data:', error);
-    } finally {
-      setLoading(false);
-    }
+    } catch (error) { console.error('Error fetching return data via gateway:', error); } finally { setLoading(false); }
   };
 
   // Update return
   const handleUpdateReturn = async () => {
     if (!user || !params.id) return;
-    
     try {
-      const token = await user.getIdToken();
-      const response = await fetch(`/api/admin/returns/${params.id}`, {
-        method: 'PUT',
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          ...updateData,
-          refundAmount: parseFloat(updateData.refundAmount) || 0,
-        }),
-      });
-
-      if (!response.ok) {
-        throw new Error('Failed to update return');
-      }
-
-      await fetchReturnData();
+      const payload = { ...updateData, refundAmount: parseFloat(updateData.refundAmount) || 0 };
+      const res = await secureAdminApi.updateReturn(String(params.id), payload);
+      if (res.success) await fetchReturnData();
       setEditing(false);
-    } catch (error) {
-      console.error('Error updating return:', error);
-    }
+    } catch (error) { console.error('Error updating return via gateway:', error); }
   };
 
   // Add return update
   const handleAddUpdate = async () => {
     if (!user || !params.id || !newUpdate.message.trim()) return;
-    
     try {
-      const token = await user.getIdToken();
-      const response = await fetch(`/api/admin/returns/${params.id}/updates`, {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(newUpdate),
-      });
-
-      if (!response.ok) {
-        throw new Error('Failed to add update');
+      const res = await secureAdminApi.addReturnUpdate(String(params.id), newUpdate);
+      if (res.success) {
+        await fetchReturnData();
+        setNewUpdate({ message: '', isPublic: true });
+        setShowUpdateDialog(false);
       }
-
-      await fetchReturnData();
-      setNewUpdate({ message: '', isPublic: true });
-      setShowUpdateDialog(false);
-    } catch (error) {
-      console.error('Error adding update:', error);
-    }
+    } catch (error) { console.error('Error adding update via gateway:', error); }
   };
 
   useEffect(() => {
     fetchReturnData();
-  }, [user, params.id]);
+  }, [params.id]);
 
   // Status badge styling
   const getStatusBadge = (status: string) => {

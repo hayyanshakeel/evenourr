@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation"
 import { useAdminAuth } from "@/hooks/useAdminAuth"
 import { useSettings } from "@/hooks/useSettings"
 import { formatCurrency as formatCurrencyUtil } from "@/lib/currencies"
+import { secureAdminApi } from "@/lib/secure-admin-api"
 import { AdminPageLayout } from "@/components/admin/admin-page-layout"
 import { AdminStatsCard } from "@/components/admin/admin-stats-card"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
@@ -56,7 +57,9 @@ export default function InventoryPage() {
   const [warehouseId, setWarehouseId] = useState<number | null>(null)
 
   useEffect(() => {
+    // Only fetch data when authenticated and ready
     if (isReady && isAuthenticated) {
+      console.log('[Inventory] Fetching data with proper authentication');
       Promise.all([fetchWarehouses()]).then(() => {
         fetchInventory()
         fetchStats()
@@ -66,9 +69,9 @@ export default function InventoryPage() {
 
   const fetchWarehouses = async () => {
     try {
-      const res = await makeAuthenticatedRequest('/api/admin/warehouses')
-      if (res.ok) {
-        const list: Warehouse[] = await res.json()
+      const res = await secureAdminApi.getWarehouses()
+      if (res.success && res.data) {
+        const list: Warehouse[] = Array.isArray(res.data) ? res.data : []
         setWarehouses(list)
         if (!warehouseId && list.length > 0) {
           const first = list[0]
@@ -76,22 +79,29 @@ export default function InventoryPage() {
             setWarehouseId(first.id)
           }
         }
+      } else {
+        console.error('Failed to fetch warehouses:', res.error)
+        setWarehouses([])
       }
     } catch (e) {
       console.error('Failed to load warehouses', e)
+      setWarehouses([])
     }
   }
 
   const fetchInventory = async () => {
     try {
       setLoading(true)
-      const qs = new URLSearchParams()
-      if (warehouseId) qs.set('warehouseId', String(warehouseId))
-      const response = await makeAuthenticatedRequest(`/api/admin/inventory?${qs.toString()}`)
-      if (!response.ok) throw new Error('Failed to fetch inventory')
+      const params: any = {}
+      if (warehouseId) params.warehouseId = String(warehouseId)
       
-      const data = await response.json()
-      setInventory(data || [])
+      const response = await secureAdminApi.getInventory(params)
+      if (response.success && response.data) {
+        setInventory(Array.isArray(response.data) ? response.data : [])
+      } else {
+        console.error('Failed to fetch inventory:', response.error)
+        setInventory([])
+      }
     } catch (err) {
       console.error('Failed to fetch inventory:', err)
       setInventory([])
@@ -102,22 +112,27 @@ export default function InventoryPage() {
 
   const fetchStats = async () => {
     try {
-      const response = await makeAuthenticatedRequest('/api/admin/inventory/stats')
-      if (!response.ok) throw new Error('Failed to fetch stats')
-      
-      const data = await response.json()
-      setStats(data)
+      const response = await secureAdminApi.getInventoryStats()
+      if (response.success && response.data) {
+        setStats(response.data)
+      } else {
+        console.error('Failed to fetch inventory stats:', response.error)
+        setStats(null)
+      }
     } catch (err) {
       console.error('Failed to fetch inventory stats:', err)
+      setStats(null)
     }
   }
 
   useEffect(() => {
+    // Only fetch data when authenticated and ready
     if (isReady && isAuthenticated) {
+      console.log('[Inventory] Fetching data for warehouse change');
       fetchInventory()
       fetchStats()
     }
-  }, [warehouseId])
+  }, [isReady, isAuthenticated, warehouseId])
 
   const getStatusColor = (status: string) => {
     switch (status.toLowerCase()) {
@@ -166,11 +181,11 @@ export default function InventoryPage() {
     }
   }
 
-  const statsCards = stats ? (
+  const statsCards = (
     <>
       <AdminStatsCard
         title="Total Items"
-        value={stats.totalItems.toString()}
+        value={(stats?.totalItems || 0).toString()}
         subtitle="All items"
         icon={Package}
         color="text-blue-500"
@@ -179,7 +194,7 @@ export default function InventoryPage() {
       />
       <AdminStatsCard
         title="Low Stock Items"
-        value={stats.lowStock.toString()}
+        value={(stats?.lowStock || 0).toString()}
         subtitle="Need attention"
         icon={AlertTriangle}
         color="text-yellow-500"
@@ -188,7 +203,7 @@ export default function InventoryPage() {
       />
       <AdminStatsCard
         title="Out of Stock"
-        value={stats.outOfStock.toString()}
+        value={(stats?.outOfStock || 0).toString()}
         subtitle="No inventory"
         icon={AlertTriangle}
         color="text-red-500"
@@ -197,7 +212,7 @@ export default function InventoryPage() {
       />
       <AdminStatsCard
         title="Total Value"
-        value={formatPrice(stats.totalValue)}
+        value={formatPrice(stats?.totalValue || 0)}
         subtitle="Inventory value"
         icon={DollarSign}
         color="text-green-500"
@@ -205,7 +220,7 @@ export default function InventoryPage() {
         borderColor="border-green-200"
       />
     </>
-  ) : null
+  )
 
   return (
     <AdminPageLayout

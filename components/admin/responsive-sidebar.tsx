@@ -32,6 +32,7 @@ import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { usePathname, useRouter } from "next/navigation"
 import { cn } from "@/lib/utils"
+import { secureAdminApi } from '@/lib/secure-admin-api';
 
 interface SidebarData {
   pendingOrders: number;
@@ -63,43 +64,26 @@ export function ResponsiveSidebar({
   }, [])
 
   useEffect(() => {
-    let isActive = true;
-    
-    const fetchSidebarData = async () => {
-      if (!isReady || !isAuthenticated || !isActive) return;
-      
+    let mounted = true;
+    async function load() {
+      if (!isReady || !isAuthenticated || !mounted) return;
       try {
-        // Fetch pending orders count
-        const ordersResponse = await makeAuthenticatedRequest('/api/admin/orders/stats')
-        const ordersData = ordersResponse.ok ? await ordersResponse.json() : {}
-        
-        // Fetch low stock count
-        const inventoryResponse = await makeAuthenticatedRequest('/api/admin/inventory/stats')
-        const inventoryData = inventoryResponse.ok ? await inventoryResponse.json() : {}
-        
-        if (isActive) {
-          setSidebarData({
-            pendingOrders: ordersData.pending || 0,
-            lowStockCount: inventoryData.lowStock || 0,
-          })
-        }
-      } catch (error) {
-        if (isActive) {
-          console.error('Failed to fetch sidebar data:', error)
-        }
+        const [ordersStats, inventoryStats] = await Promise.all([
+          secureAdminApi.getOrderStats(),
+          secureAdminApi.getInventoryStats()
+        ]);
+        setSidebarData({
+          pendingOrders: (ordersStats as any)?.data?.pending || (ordersStats as any)?.pending || 0,
+          lowStockCount: (inventoryStats as any)?.data?.lowStock || (inventoryStats as any)?.lowStock || 0
+        });
+      } catch (e) {
+        console.error('Responsive sidebar stats via gateway failed', e);
       }
     }
-
-    if (mounted && isReady && isAuthenticated) {
-      fetchSidebarData()
-      // Refresh every 5 minutes
-      const interval = setInterval(fetchSidebarData, 300000)
-      return () => {
-        isActive = false
-        clearInterval(interval)
-      }
-    }
-  }, [mounted, isReady, isAuthenticated])
+    load();
+    const intv = setInterval(load, 300000);
+    return () => { mounted = false; clearInterval(intv); };
+  }, [isReady, isAuthenticated])
 
   interface NavItemBase { title: string; url: string; icon: any; badge?: string }
   interface NavItemLink extends NavItemBase { targetBlank?: false }

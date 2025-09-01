@@ -526,16 +526,17 @@
   transform: translateY(-1px);
 }
 
-/* Dark mode admin cards */
+/* Dark mode admin cards - Override to use white backgrounds */
 .dark .admin-card {
-  border: 0.5px solid #374151 !important;
-  background: #1f2937;
-  box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.3), 0 1px 2px 0 rgba(0, 0, 0, 0.2);
+  border: 0.5px solid #e5e7eb !important;
+  background: #ffffff !important;
+  box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06);
 }
 
 .dark .admin-card:hover {
-  border-color: #4b5563 !important;
-  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.4), 0 2px 4px -1px rgba(0, 0, 0, 0.3);
+  border-color: #111827 !important;
+  box-shadow: 0 8px 24px -8px rgba(0,0,0,0.15);
+  transform: translateY(-1px);
 }
 
 /* Legacy card hover for existing cards */
@@ -551,10 +552,45 @@
   transform: translateY(-2px);
 }
 
-.dark .card-hover { border: 1px solid #374151 !important; background: #111827; }
+.dark .card-hover { border: 1px solid #e5e7eb !important; background: #ffffff !important; }
 
 .dark .card-hover:hover {
-  border-color: #4b5563 !important;
+  border-color: #111827 !important;
+}
+
+/* Force white backgrounds for all cards in dashboard - COMPREHENSIVE OVERRIDE */
+.dark .admin-panel .card,
+.dark .admin-panel [data-testid*="card"],
+.dark .admin-panel [class*="card"],
+.dark [data-admin-panel="true"] .card,
+.dark [data-admin-panel="true"] [data-testid*="card"],
+.dark [data-admin-panel="true"] [class*="card"],
+.dark [data-radix-collection-item],
+.dark .bg-card,
+.dark [class*="Card"],
+.dark div[class*="card"],
+.dark div[class*="Card"],
+html.dark .bg-card,
+html.dark [class*="card"],
+html.dark [class*="Card"],
+body.dark .bg-card,
+body.dark [class*="card"],
+body.dark [class*="Card"] {
+  background: #ffffff !important;
+  background-color: #ffffff !important;
+  color: #1f2937 !important;
+}
+
+/* Ensure text is readable on white backgrounds */
+.dark .admin-panel .text-white,
+.dark [data-admin-panel="true"] .text-white {
+  color: #1f2937 !important;
+}
+
+/* Fix button text colors in dashboard */
+.dark .admin-panel button,
+.dark [data-admin-panel="true"] button {
+  color: #374151 !important;
 }
 
 /* Medium borders for all admin components */
@@ -727,4 +763,61 @@ h4,
 h5,
 h6 {
   line-height: 1.4;
+}
+
+/* CRITICAL: Force all dashboard cards to be white regardless of theme */
+[data-admin-panel="true"] * {
+  --card: #ffffff !important;
+  --card-foreground: #1f2937 !important;
+}
+
+/* Ultra-specific card overrides for dashboard */
+[data-admin-panel="true"] .bg-card,
+[data-admin-panel="true"] [class*="card"],
+[data-admin-panel="true"] [class*="Card"],
+[data-admin-panel="true"] div[data-testid*="card"],
+.dark [data-admin-panel="true"] .bg-card,
+.dark [data-admin-panel="true"] [class*="card"],
+.dark [data-admin-panel="true"] [class*="Card"],
+.dark [data-admin-panel="true"] div[data-testid*="card"] {
+  background: #ffffff !important;
+  background-color: #ffffff !important;
+  color: #1f2937 !important;
+}
+
+/* Fix text colors inside cards */
+[data-admin-panel="true"] .text-card-foreground,
+[data-admin-panel="true"] .text-muted-foreground {
+  color: #6b7280 !important;
+}
+
+/* Line clamp utilities for text truncation */
+.line-clamp-1 {
+  overflow: hidden;
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 1;
+}
+
+.line-clamp-2 {
+  overflow: hidden;
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+}
+
+.line-clamp-3 {
+  overflow: hidden;
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 3;
+}
+
+/* NUCLEAR OPTION: Force white cards everywhere in admin */
+body:has([data-admin-panel="true"]) .bg-card,
+body:has([data-admin-panel="true"]) [class*="card"],
+body:has([data-admin-panel="true"]) [class*="Card"] {
+  background: #ffffff !important;
+  background-color: #ffffff !important;
+  color: #1f2937 !important;
 }

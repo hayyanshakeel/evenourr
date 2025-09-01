@@ -7,6 +7,7 @@ import VariantsManager from './variants-manager';
 import { formatCurrency, CURRENCIES } from '@/lib/currencies';
 import { useSettings } from '@/hooks/useSettings';
 import { useAdminAuth } from '@/hooks/useAdminAuth';
+import { secureAdminApi } from '@/lib/secure-admin-api';
 
 interface SimpleProductFormProps {
   initialData?: any;
@@ -133,30 +134,17 @@ function SimpleProductForm({ initialData }: SimpleProductFormProps) {
       let response;
       if (initialData?.id) {
         // Update existing product
-        response = await makeAuthenticatedRequest(`/api/admin/products/${initialData.id}`, {
-          method: 'PUT',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify(productData),
-        });
+        response = await secureAdminApi.updateProduct(initialData.id, productData);
       } else {
         // Create new product
-        response = await makeAuthenticatedRequest('/api/admin/products', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify(productData),
-        });
+        response = await secureAdminApi.createProduct(productData);
       }
 
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || 'Failed to save product');
+      if (!response.success) {
+        throw new Error(response.error || 'Failed to save product');
       }
 
-      const result = await response.json();
+      const result = response.data;
       console.log('Product saved successfully:', result);
       
       // Redirect back to products page

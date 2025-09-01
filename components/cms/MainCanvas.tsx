@@ -4,13 +4,116 @@ import { useEffect, useState } from "react";
 import { CmsLayoutData, CmsBlockType } from '@/lib/cms/schema';
 import { DevicePreview } from '@/components/cms/DevicePreview';
 
+// Default Category Page Preview Component
+function DefaultCategoryPreview() {
+  return (
+    <div className="h-full w-full overflow-auto" style={{ backgroundColor: '#f8f9fa' }}>
+      {/* Header */}
+      <div className="flex justify-between items-center p-4 bg-white border-b border-gray-200">
+        <span className="text-xl">←</span>
+        <div className="flex-1 mx-4 text-center text-lg font-medium text-gray-800">Categories</div>
+        <span className="text-xl">⋮</span>
+      </div>
+
+      {/* Search Bar */}
+      <div className="p-4 bg-white">
+        <div className="relative">
+          <input
+            type="text"
+            placeholder="Search products..."
+            className="w-full p-3 pr-10 bg-gray-50 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+          />
+          <span className="absolute right-3 top-3 text-gray-400">🔍</span>
+        </div>
+      </div>
+
+      {/* Filter Tabs */}
+      <div className="flex gap-3 px-4 py-3 bg-white border-b border-gray-100 overflow-x-auto">
+        {['All', 'Featured', 'New', 'Sale'].map((tab, index) => (
+          <div
+            key={tab}
+            className={`px-4 py-2 rounded-full text-sm whitespace-nowrap cursor-pointer transition-colors ${
+              index === 0 
+                ? 'bg-blue-500 text-white' 
+                : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+            }`}
+          >
+            {tab}
+          </div>
+        ))}
+      </div>
+
+      {/* Product Grid */}
+      <div className="grid gap-4 p-4 grid-cols-2">
+        {/* Product 1 */}
+        <div className="bg-white rounded-lg overflow-hidden shadow-sm border border-gray-100">
+          <div className="aspect-square bg-gray-100 flex items-center justify-center">
+            <span className="text-4xl">👔</span>
+          </div>
+          <div className="p-3">
+            <div className="text-sm font-medium text-gray-800 mb-1">T-Shirt</div>
+            <div className="text-xs text-gray-500 mb-2">Basic cotton tee</div>
+            <div className="text-lg font-bold text-blue-600">$29.99</div>
+          </div>
+        </div>
+
+        {/* Product 2 */}
+        <div className="bg-white rounded-lg overflow-hidden shadow-sm border border-gray-100">
+          <div className="aspect-square bg-gray-100 flex items-center justify-center">
+            <span className="text-4xl">👗</span>
+          </div>
+          <div className="p-3">
+            <div className="text-sm font-medium text-gray-800 mb-1">Dress</div>
+            <div className="text-xs text-gray-500 mb-2">Summer collection</div>
+            <div className="text-lg font-bold text-blue-600">$49.99</div>
+          </div>
+        </div>
+
+        {/* Product 3 */}
+        <div className="bg-white rounded-lg overflow-hidden shadow-sm border border-gray-100">
+          <div className="aspect-square bg-gray-100 flex items-center justify-center">
+            <span className="text-4xl">👟</span>
+          </div>
+          <div className="p-3">
+            <div className="text-sm font-medium text-gray-800 mb-1">Sneakers</div>
+            <div className="text-xs text-gray-500 mb-2">Comfortable fit</div>
+            <div className="text-lg font-bold text-blue-600">$89.99</div>
+          </div>
+        </div>
+
+        {/* Product 4 */}
+        <div className="bg-white rounded-lg overflow-hidden shadow-sm border border-gray-100">
+          <div className="aspect-square bg-gray-100 flex items-center justify-center">
+            <span className="text-4xl">🎒</span>
+          </div>
+          <div className="p-3">
+            <div className="text-sm font-medium text-gray-800 mb-1">Backpack</div>
+            <div className="text-xs text-gray-500 mb-2">Travel essential</div>
+            <div className="text-lg font-bold text-blue-600">$39.99</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 interface MainCanvasProps {
   setShowSeeAll: (show: boolean) => void;
   editorLayout?: any[];
+  categoryLayoutActive?: boolean;
+  currentPageType?: string;
+  activePageId?: string;
 }
 
 // Main Canvas Component with Device Preview
-export default function MainCanvas({ setShowSeeAll, viewport = 'mobile', editorLayout = [] }: MainCanvasProps & { viewport?: 'mobile' | 'tablet' | 'desktop' }) {
+export default function MainCanvas({ 
+  setShowSeeAll, 
+  viewport = 'mobile', 
+  editorLayout = [], 
+  categoryLayoutActive = false, 
+  currentPageType = 'home',
+  activePageId = 'home'
+}: MainCanvasProps & { viewport?: 'mobile' | 'tablet' | 'desktop' }) {
   const [dims, setDims] = useState<{ width: number; height: number }>({ width: 300, height: 650 });
   const [pageComponents, setPageComponents] = useState<any[]>([]);
   const [layoutData, setLayoutData] = useState<CmsLayoutData | null>(null);
@@ -18,12 +121,7 @@ export default function MainCanvas({ setShowSeeAll, viewport = 'mobile', editorL
   useEffect(() => {
     let cancelled = false;
     
-    // Skip API call if we're in development without database
-    if (process.env.NODE_ENV === 'development') {
-      setLayoutData(null);
-      return;
-    }
-    
+    // Always make API calls for real data
     fetch('/api/cms/layouts/home')
       .then((r) => (r.ok ? r.json() : null))
       .then((json) => {
@@ -115,6 +213,7 @@ export default function MainCanvas({ setShowSeeAll, viewport = 'mobile', editorL
             }}
           >
             <div className="h-full w-full overflow-hidden" style={{ background: '#ffffff' }}>
+              {/* Show block-based preview for all page types including category */}
               <DevicePreview
                 device={viewport}
                 layout={editorLayout.length ? editorLayout : pageComponents}

@@ -1,0 +1,16 @@
+name = "evenour-ddos-protection"
+main = "layer1-ddos-protection.ts"
+compatibility_date = "2024-09-01"
+compatibility_flags = ["nodejs_compat"]
+
+# KV Namespaces for rate limiting
+[[kv_namespaces]]
+binding = "RATE_LIMITER"
+id = "f75fa83ed9274f1cb6d887345b7dab71"
+
+# Environment variables
+[vars]
+LAYER2_WORKER_URL = "https://evenour-auth-validator.evenour-in.workers.dev"
+
+# Routes
+routes = ["ddos-protection.evenour-in.workers.dev/*"]

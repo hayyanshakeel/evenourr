@@ -19,7 +19,7 @@ export function LayoutProvider({ children }: LayoutProviderProps) {
 
   return (
     <AuthProvider>
-      <ThemeProvider>
+      <ThemeProvider forcedTheme={isAdminPage ? "light" : undefined}>
         <BehaviorTrackingProvider>
           <ErrorTracker />
           {/*

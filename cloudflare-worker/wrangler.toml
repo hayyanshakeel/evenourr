@@ -1,0 +1,9 @@
+name = "admin-api-gateway"
+main = "worker.ts" 
+compatibility_date = "2024-09-01"
+compatibility_flags = ["nodejs_compat"]
+
+# KV Namespaces
+[[kv_namespaces]]
+binding = "AUTH_TOKENS"
+id = "28c1e47c429f498584975a33fe748d7a"

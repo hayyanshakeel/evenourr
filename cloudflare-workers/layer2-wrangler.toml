@@ -1,0 +1,24 @@
+name = "evenour-auth-validator"
+main = "layer2-auth-validation.ts"
+compatibility_date = "2024-09-01"
+compatibility_flags = ["nodejs_compat"]
+
+# KV Namespaces for authentication
+[[kv_namespaces]]
+binding = "AUTH_TOKENS"
+id = "0654e5f09da7474b81fd0970ca847455"
+
+[[kv_namespaces]]
+binding = "ADMIN_SESSIONS"
+id = "aad0e34b4cd44ec08f87e1a05353e671"
+
+# Environment variables
+[vars]
+LAYER3_WORKER_URL = "https://admin-api-gateway.evenour-in.workers.dev"
+ADMIN_USERNAME = "admin"
+
+# Secrets (use wrangler secret put for these)
+# ADMIN_PASSWORD
+
+# Routes
+routes = ["evenour-auth-validator.evenour-in.workers.dev/*"]

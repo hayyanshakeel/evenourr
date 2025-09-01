@@ -1,8 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { z } from 'zod';
-import prisma from '@/lib/db';
-import { authSchemas, validateInput } from '@/lib/security/validation';
-import { sanitizeRequestBody } from '@/lib/security/middleware';
+import { EVRRegistrationService } from '@/lib/evr-registration';
 import crypto from 'crypto';
 
 // Secure password hashing (using built-in crypto since bcryptjs had install issues)

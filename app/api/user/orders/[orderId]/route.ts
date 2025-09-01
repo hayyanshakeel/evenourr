@@ -1,20 +1,25 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { verifyFirebaseUser } from '@/lib/firebase-verify';
-import prisma from '@/lib/db';
+import { verifyEVRAuth } from '@/lib/enterprise-auth';
+import { prisma } from '@/lib/db';
 
 export async function GET(
   request: NextRequest,
   context: { params: Promise<{ orderId: string }> }
 ) {
   try {
-    const result = await verifyFirebaseUser(request);
-    if (result.error) {
+    const verification = await verifyEVRAuth(request, {
+      requiredSecurityLevel: 'standard',
+      maxRiskScore: 50
+    });
+    
+    if (!verification.isValid || !verification.user) {
       return NextResponse.json(
-        { success: false, message: result.error },
-        { status: result.status || 401 }
+        { success: false, message: 'Authentication required' },
+        { status: 401 }
       );
     }
-    const user = result.user;
+    
+    const user = verification.user;
 
     const { orderId } = await context.params;
     const orderIdNum = parseInt(orderId);
@@ -25,10 +30,19 @@ export async function GET(
       );
     }
 
+    // Convert user.id to number if needed (depending on your schema)
+    const customerId = parseInt(user.id);
+    if (isNaN(customerId)) {
+      return NextResponse.json(
+        { success: false, message: 'Invalid user ID' },
+        { status: 400 }
+      );
+    }
+
     const order = await prisma.order.findFirst({
       where: {
         id: orderIdNum,
-        customerId: user.uid,
+        customerId: customerId,
       },
       include: {
         orderItems: {
